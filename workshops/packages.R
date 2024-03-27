@@ -3,6 +3,8 @@
 
 # Load packages
 
+# Github
+install.packages(c("gert", "credentials"))
 # Data manipulation
 install.packages("dplyr")
 install.packages("readr")
