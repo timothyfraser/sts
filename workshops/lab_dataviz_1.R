@@ -11,8 +11,15 @@
 # We're going to be analyzing trends in Global Health over Time.
 
 #######################################################################
-# Task 1: Load the dplyr, ggplot2, and gapminder packages.
+# Task 0: Load the dplyr, ggplot2, DBI, and RSQLite packages. 
 #######################################################################
+
+
+
+#######################################################################
+# Task 1: Connect to the gapminder sqlite database in `data/gapminder.sqlite`
+#######################################################################
+
 
 
 

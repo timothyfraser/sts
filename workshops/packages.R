@@ -13,11 +13,11 @@ install.packages("tidyr")
 # Databases
 install.packages(c("DBI", "RMySQL", "RSQLite"))
 # Geospatial
-install.packages(c("sf"))
+install.packages(c("sf", "ggspatial"))
 # Networks
 install.packages(c("igraph", "tidygraph", "network"))
 # Modeling
-install.packages(c("lmtest", "car", "texreg"))
+install.packages(c("broom", "lmtest", "car", "texreg"))
 # Visualization
 install.packages(c("viridis", "ggpubr"))
 # Extra techniques and stats
