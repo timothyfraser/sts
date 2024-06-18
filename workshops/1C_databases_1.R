@@ -44,7 +44,7 @@ library(readr) # for reading in data
 # These tables describe all flights going out of New York City in 2013.
 # It's a great big database of a massive socio-technical system.
 
-airports = read_csv("data/airports.csv")
+airlines = read_csv("data/airlines.csv")
 planes = read_csv("data/planes.csv")
 flights = read_csv("data/flights.csv")
 weather = read_csv("data/weather.csv")
