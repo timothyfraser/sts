@@ -199,12 +199,13 @@ server = function(input, output, session){
   }) %>% bindEvent({ stat(); input$carrier  })
   
   
-  # text_highlight #############################################
   
-  ## Render to text output 'text_highlight'
-  output$text_highlight = renderText({
+  # stat_highlight() ##########################################
+  
+  # Create reactive data.frame as 'stat_highlight()'
+  stat_highlight = reactive({
     # Let's get some highlight stats for your carrier at one specific time
-    stat_highlight = stat() %>%
+    stat() %>%
       filter(carrier == input$carrier, month == input$month) %>%
       # Format a number for highlighting
       mutate(highlight = scales::number(mean, accuracy = 0.1) ) %>%
@@ -214,11 +215,17 @@ server = function(input, output, session){
         name, " flights to ", origin_name, " in NYC had an average arrival delay of ", 
         highlight, " minutes."
       ))
-    
-    # Output a single text blob value. Must have just length 1.
-    stat_highlight$label
-    # When EITHER carrier or month changes, update this text.
+    # When EITHER stat() or carrier or month changes, update this text.
   }) %>% bindEvent({ stat(); input$carrier; input$month })
+  
+  ## text_highlight #############################################
+  
+  ## Render to text output 'text_highlight'
+  output$text_highlight = renderText({
+    # Output a single text blob value. Must have just length 1.
+    stat_highlight()$label
+    # Trigger whenever stat_highlight() changes
+  }) %>% bindEvent({ stat_highlight() })
   
 }
 

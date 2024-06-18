@@ -16,3 +16,6 @@ shiny::runApp("app3.R")
 shiny::runApp("app4.R")
 
 shiny::runApp("app5.R")
+
+shiny::runApp("app6.R")
+

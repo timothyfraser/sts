@@ -3,15 +3,21 @@
 #' @title nycflights app V5
 #' @description 
 #' 
-#' What if we want to add interactivity to a visual itself?
-#' The `plotly` package lets you convert directly from ggplot into `plotly` interactive visuals.
-#' We'll just need to update a few things:
+#' What about other formats of displaying our information? Let's try a few.
+#' - `shiny::textOutput()` and `shiny::renderText({ })` - takes a character value as input
+#' - `shiny::tableOutput()` and `shiny::renderTable({ })` - takes a data.frame as input.
+#' - `shiny::plotOutput()` and `shiny::renderPlot({ })` - takes a ggplot as input
+#' - `plotly::plotlyOutput()` and `plotly::renderPlotly({ })` - takes a plotly as input
+#' - `shiny::uiOutput()` and `shiny::renderUI({ })` - takes html text as input
 #' 
-#' - add `library(plotly)` to `global()`
-#' - Wherever we make a ggplot, make it into plotly with `plotly::ggplotly()`
-#' - use `tooltip = c("var1", "var2")` to select which variable names from the visual to show in tooltip
-#' - update all `renderPlot({ })` chunks to be `renderPlotly({})`
-#' - update all `plotOutput({ })` chunks to be `plotlyOutput({ })`
+#' Let's try some creative applications.
+#' - a value box showing the mean
+#' - a value box showing the standard deviation
+#' - a value box showing the sample size
+#' - a navigation menu for viewing plots vs. table
+#' - a table showing one month, many carriers
+#' - improved theming for our ggplots.
+
 
 global = function(){   
   
@@ -70,20 +76,60 @@ ui = function(){
     bslib::card_footer(textOutput("text_highlight"))
   )
   
+  
+  # VALUE BOXES CARD ##########################
+  box1 = bslib::value_box(
+    title = "Mean Delay", value = textOutput("text_mean"), "minutes",
+    class = "bg-primary text-light",
+    # add a fontawesome icon to showcase
+    showcase = shiny::icon("clock"))
+  box2 = bslib::value_box(
+    title = "Average Error (SE)", value = textOutput("text_se"), "minutes",
+    class = "bg-warning text-light",
+    # add a fontawesome icon to showcase
+    showcase = shiny::icon("hashtag"))
+  box3 = bslib::value_box(
+    title = "Sample Size", value = textOutput("text_n"), "flights",
+    class = "bg-dark text-light", 
+    # add a fontawesome icon to showcase
+    showcase = shiny::icon("plane"))
+  # Bundle them together with a header
+  c5 = card(
+    # Add a header describing the Selections you made
+    card_header(class = "bg-primary", card_title(textOutput("text_selection"))),
+    # Bundle the value boxes together
+    card_body(
+      layout_column_wrap(box1,box2,box3, width = 1/3)      
+    )
+  )
+  
+  # TABLE CARD ################################
+  c6 = card( tableOutput("table_one_month") )
+  
+  
   # Or add a sidebar-main split layout like this...  
   bslib::page(
     title = "NYC Flights", 
     # add a bootstrap theme to the page
     theme = bslib::bs_theme(preset = "cerulean"),
     # Stack cards
-    c1, 
+    c1, # header
     # Put next cards in a sidebar-main panel split layout
     bslib::layout_sidebar(
       # Sidebar...
       sidebar = bslib::sidebar(c2), 
       # main panel
-      c3,
-      c4)
+      c5,
+      # Make a series of panels we can click between
+      bslib::navset_card_pill(
+        selected = "plots",
+        # Open plots
+        bslib::nav_panel(title = "VISUALS", value = "plots", c3), # plots
+        # Or Open table
+        bslib::nav_panel(title = "TABLE", value = "tables", c6), # table
+      ),
+      c4 # text 
+    )
     
   )
   
@@ -154,8 +200,9 @@ server = function(input, output, session){
         data = stat_one_month,
         mapping = aes(x = name, y = mean)) +
       coord_flip() +
+      theme_bw() +
       labs(x = "Airline", y = "Mean Arrival Delay (minutes)")
-
+    
     # Make it plotly
     pp_one_month = plotly::ggplotly(gg_one_month, tooltip = c("name", "mean"))
     # return the visualization
@@ -187,24 +234,28 @@ server = function(input, output, session){
       labs(x = "Month", y = "Mean Arrival Delay (minutes)\n[with 95% Confidence Intervals]",
            fill = "Airline", title = "How Late is Your Airline?") +
       # you can ditch the legend for color or fill like this
-      guides(color = "none")
+      guides(color = "none") +
+      # EXTRA FORMATTING ################################
+      guides(fill = "none") +
+      theme_bw() + 
+      scale_x_discrete(breaks = c("January", "April", "July", "October"))
     
     # Make it plotly
     pp_one_carrier = plotly::ggplotly(gg_one_carrier, tooltip = c("mean"))
     # return the visualization
     pp_one_carrier
     
-
+    
     # Trigger this plot to re-render when input$carrier changes
   }) %>% bindEvent({ stat(); input$carrier  })
   
   
-  # text_highlight #############################################
+  # stat_highlight() ##########################################
   
-  ## Render to text output 'text_highlight'
-  output$text_highlight = renderText({
+  # Create reactive data.frame as 'stat_highlight()'
+  stat_highlight = reactive({
     # Let's get some highlight stats for your carrier at one specific time
-    stat_highlight = stat() %>%
+    stat() %>%
       filter(carrier == input$carrier, month == input$month) %>%
       # Format a number for highlighting
       mutate(highlight = scales::number(mean, accuracy = 0.1) ) %>%
@@ -214,12 +265,37 @@ server = function(input, output, session){
         name, " flights to ", origin_name, " in NYC had an average arrival delay of ", 
         highlight, " minutes."
       ))
-    
-    # Output a single text blob value. Must have just length 1.
-    stat_highlight$label
-    # When EITHER carrier or month changes, update this text.
+    # When EITHER stat() or carrier or month changes, update this text.
   }) %>% bindEvent({ stat(); input$carrier; input$month })
   
+  ## text_highlight #############################################
+  
+  ## Render to text output 'text_highlight'
+  output$text_highlight = renderText({
+    # Output a single text blob value. Must have just length 1.
+    stat_highlight()$label
+    # Trigger whenever stat_highlight() changes
+  }) %>% bindEvent({ stat_highlight() })
+
+  # Value Box Text ########################################
+  output$text_mean = renderText({ stat_highlight()$highlight }) %>% bindEvent({ stat_highlight() })  
+  output$text_se = renderText({ stat_highlight()$se %>% round(1) %>% paste0() }) %>% bindEvent({ stat_highlight()  }) # make into text with paste0()
+  output$text_n = renderText({ stat_highlight()$n %>% paste0() }) %>% bindEvent({ stat_highlight() })
+  output$text_selection = renderText({ paste0( stat_highlight()$name, " at ", stat_highlight()$origin_abb, " in ", stat_highlight()$month_name) })
+
+  # table_one_month ############################################  
+  output$table_one_month = renderTable({ 
+    stat() %>%
+      filter(month == input$month)  %>%
+      # Get and rename columns
+      select(Airline = name, Month = month_abb, Origin = origin_abb, 
+             `Mean Delay` = mean, `SD Delay` = sd, `Sample Size` = n, 
+             `Avg. Error` = se, 
+             `2.5% CI` = lower, `97.5% CI` = upper)
+  }, 
+  # Extra table settings
+  striped = TRUE, hover = TRUE, width = "100%"
+  ) %>% bindEvent({ stat(); input$month })
 }
 
 

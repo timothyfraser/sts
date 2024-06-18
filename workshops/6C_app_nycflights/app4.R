@@ -17,6 +17,9 @@
 #' Third, everywhere we wrote `stat` before, we'll now write `stat()`.
 #' 
 #' Fourth, in any function where `stat()` gets called, add a `bindEvent` condition for `stat()`
+#' 
+#' Fifth, to make our lives easier later, we're also going to turn `stat_highlight` into a reactive `stat_highlight()`.
+
 
 global = function(){   
   
@@ -110,7 +113,7 @@ server = function(input, output, session){
     select(month, day, carrier, origin, 
            arr_delay, arr_time, sched_arr_time)
   
-  # stats #######################################
+  # stat() #######################################
   # Wherever possible, do just 1 calculation, as few times as you can.
   
   # Generate stat() reactively.
@@ -142,7 +145,7 @@ server = function(input, output, session){
     # Trigger whenever input$origin changes
   }) %>% bindEvent({ input$origin })
   
-  # plots ##########################################
+  
   
   ## plot_one_month #########################################
   
@@ -198,26 +201,32 @@ server = function(input, output, session){
   }) %>% bindEvent({ stat(); input$carrier  })
   
   
-  # text_highlight #############################################
+  # stat_highlight() ##########################################
+  
+  # Create reactive data.frame as 'stat_highlight()'
+  stat_highlight = reactive({
+    # Let's get some highlight stats for your carrier at one specific time
+    stat() %>%
+    filter(carrier == input$carrier, month == input$month) %>%
+    # Format a number for highlighting
+    mutate(highlight = scales::number(mean, accuracy = 0.1) ) %>%
+    # Summarize a label
+    mutate(label = paste0(
+      "In ", month_name, ", ",
+      name, " flights to ", origin_name, " in NYC had an average arrival delay of ", 
+      highlight, " minutes."
+    ))
+    # When EITHER stat() or carrier or month changes, update this text.
+  }) %>% bindEvent({ stat(); input$carrier; input$month })
+  
+  ## text_highlight #############################################
   
   ## Render to text output 'text_highlight'
   output$text_highlight = renderText({
-    # Let's get some highlight stats for your carrier at one specific time
-    stat_highlight = stat() %>%
-      filter(carrier == input$carrier, month == input$month) %>%
-      # Format a number for highlighting
-      mutate(highlight = scales::number(mean, accuracy = 0.1) ) %>%
-      # Summarize a label
-      mutate(label = paste0(
-        "In ", month_name, ", ",
-        name, " flights to ", origin_name, " in NYC had an average arrival delay of ", 
-        highlight, " minutes."
-      ))
-    
     # Output a single text blob value. Must have just length 1.
-    stat_highlight$label
-    # When EITHER carrier or month changes, update this text.
-  }) %>% bindEvent({ stat(); input$carrier; input$month })
+    stat_highlight()$label
+    # Trigger whenever stat_highlight() changes
+  }) %>% bindEvent({ stat_highlight() })
   
 }
 
