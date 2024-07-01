@@ -58,7 +58,7 @@ flights = read_csv("data/flights.csv") %>% sample_n(size = 20000)
 
 # View whole data.frame (gets censored)
 flights
-# View first 5 rows
+# View first 6 rows
 head(flights)
 # tilt it on its side and view all the columns
 glimpse(flights)
@@ -74,12 +74,18 @@ View(flights)
 # What does a row mean in the 'weather' dataset?
 
 
+
 ## 0.2 Using Pipelines ####################################
 
 # The dyply package contains many useful functions, like glimpse().
 # Another key function is the pipeline, represented by this symbol: %>%
 
 # Pipelines connect data (dataframes, vectors, or values) to functions.
+
+
+head(flights)
+flights %>% head()
+
 
 ## LC 2 ######################################################
 
@@ -91,12 +97,21 @@ View(flights)
 mean(weather$precip)
 weather$precip %>% mean()
 
+
+
 unique(weather$month) # ooh, a new function - what does unique() do?
 weather$month %>% unique()
 
 # ooh, another new function - what does length() do?
+
 length(unique(weather$month))
-weather$month %>% unique() %>% length()
+
+# Take the month
+weather$month %>%
+  # get the unique values
+  unique() %>%
+  # get the length of the vector
+  length()
 
 
 # From now on, please always use pipelines when you can! 
@@ -109,11 +124,14 @@ weather$month %>% unique() %>% length()
 # The dplyr package gives us several helpful functions 
 # which we can pair with pipelines to make life easier.
 
+
+
 ## LC 3 ############################################
 
 # Learning Check:
 # Compare the following four chunks of code. 
-# What does the select() function do? Why do the contents of the select function matter?
+# What does the select() function do? 
+# Why do the contents of the select function matter?
 
 # Chunk 1
 flights
@@ -209,6 +227,8 @@ airlines %>%
 
 airlines %>%
   mutate(funds = rep(c(1,2,3,4),  4))
+
+rep(c(1,2,3,4), 4)
 
 airlines %>%
   mutate(funds = seq(from = 0, to = 4, length.out = 16))

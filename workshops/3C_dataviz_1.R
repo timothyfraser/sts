@@ -42,6 +42,9 @@ library(DBI) # optional
 # Option 2: connect via gapminder package
 gapminder = gapminder::gapminder
 
+# gapminder %>% write_csv("data/gapminder.csv")
+# gapminder = read_csv("data/gapminder.csv")
+
 # Each row is a country-year,
 # marking the life expectancy, population, and gross domestic product (GDP) per capita.
 # Only can see some of it, right?
@@ -63,7 +66,7 @@ glimpse(gapminder)
 # map a series of vectors to become aesthetic features in the visualization (point, colors, fills, etc.)
 ggplot(data = gapminder, mapping = aes(
   # Let's make the x-axis gross-domestic product per capita (wealth per person)
-  x = year, 
+  x = gdpPercap, 
   # Let's make the y-axis country life expectancy
   y = lifeExp))
 
@@ -87,6 +90,9 @@ ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + # same as 
 # Learning Check 2:
 # What happens when you add the "alpha" below, and change its value?
 ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(alpha = 0)
+
+ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) +
   geom_point(alpha = 0.2)
 
 ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
@@ -94,6 +100,10 @@ ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) +
 
 ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
   geom_point(alpha = 1)
+
+
+
+
 
 
 # Learning Check 3:
@@ -115,6 +125,22 @@ ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp,
                                        color = continent)) +
   geom_point(alpha = 0.5)
 
+# These don't work!
+# ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) +
+#   geom_point(alpha = 0.5, color = continent)
+# ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp, color = "steelblue")) +
+#   geom_point(alpha = 0.5)
+
+
+# View all of the colors
+colors()
+
+ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(alpha = 0.5, color = "springgreen1")
+ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(alpha = 0.5, color = "#256234")
+
+
 
 
 # 3. Improving our Visualizations #################################
@@ -132,10 +158,12 @@ ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp,
        subtitle = "Global Health Trends by Continent", # subtitle!
        caption = "Points display individual country-year observations.") # caption
 
+
+
 # We can actually save visualizations as objects too, which can make things faster.
 # Let's save our visual as 'myviz'
-myviz <- ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp, 
-                                                color = continent)) + 
+myviz = ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp, 
+                                               color = continent)) + 
   geom_point(alpha = 0.5) +
   labs(x = "GDP per capita (USD)", 
        y = "Life Expectancy (years)",
@@ -170,6 +198,7 @@ myviz +
 # I personally really like the default theme or theme_bw.
 
 
+
 # 4. Your first line plot #################################
 
 # Line plots are quite similar to scatterplots, 
@@ -178,6 +207,13 @@ myviz +
 
 # We can visualize many lines...
 # using the country variable to specify the points that should all be part of one line...
+
+ggplot() +
+  geom_line(data = gapminder, mapping = aes(x = year, y = lifeExp, group = country))
+
+
+gapminder %>%
+  filter(country == "Afghanistan")
 
 # Plot blank page
 mylines = ggplot() +
@@ -190,6 +226,8 @@ mylines = ggplot() +
     color = "grey"
   ) +
   theme_classic()
+
+mylines
 
 # or we could add one line!
 
@@ -208,6 +246,21 @@ mylines +
 # Remember that you can add many geom_ layers atop the same plot.
 
 
+# Plot blank page
+ggplot() +
+  geom_line(
+    data = gapminder,
+    mapping = aes(x = year, y = lifeExp, group = country),
+    color = "grey"
+  ) +
+  theme_classic() +
+  geom_line(
+    data = gapminder %>% filter(country == "China"),
+    mapping = aes(x = year, y = lifeExp, group = country),
+    color = "steelblue", linewidth = 2, linetype = "dashed"
+  )
+
+
 
 # 5: Visualize diamonds data #################################
 
@@ -223,6 +276,11 @@ glimpse(diamonds)
 
 # Looks like the cut is an ordinal variable, while price is numeric.
 # A boxplot might be helpful!
+
+
+ggplot() +
+  geom_boxplot(data = diamonds %>% filter(cut == "Ideal"),
+               mapping = aes(x = price))
 
 ggplot(data = diamonds, mapping = aes(x = cut, y = price, group = cut)) +
   # notice how we added group = cut, to tell it to use 5 different boxes, one per cut?
@@ -251,16 +309,25 @@ ggplot(data = diamonds, mapping = aes(x = cut, y = price,
   geom_boxplot()
 
 
+# Equivalent
+ggplot() +
+  geom_boxplot(
+    data = diamonds, 
+    mapping = aes(x = cut, y = price, group = cut, fill = cut))
+
+
 
 # Learning Check 7:
 
-# Sometimes, the names of categories won't fit well. We can try the following.
+# Sometimes, the names of categories won't fit well. 
+# We can try the following.
 # What did we do?
 ggplot(data = diamonds, mapping = aes(x = cut, y = price, 
                                       group = cut, fill = cut)) +
   geom_boxplot() + 
   coord_flip()
 
+#ggplot2::coord_flip()
 
 
 
@@ -274,6 +341,8 @@ ggplot(data = diamonds, mapping = aes(x = cut, y = price,
                                       group = cut, fill = cut)) +
   geom_boxplot() + coord_flip() +
   theme(legend.position = "bottom")
+
+
 
 ggplot(data = diamonds, mapping = aes(x = cut, y = price,
                                       group = cut, fill = cut)) +
@@ -291,6 +360,16 @@ ggplot(data = diamonds, mapping = aes(x = cut, y = price,
   theme(legend.position = "top")
 
 
+# Always put theme_bw() or other theme types 
+# BEFORE you customize theme() attributes.
+ggplot(data = diamonds, mapping = aes(x = cut, y = price, 
+                                      group = cut, fill = cut)) +
+  geom_boxplot() + coord_flip() +
+  theme_bw() +
+  theme(legend.position = "top") 
+
+
+
 # 6: Visualizing Distributions #################################
 
 
@@ -305,6 +384,9 @@ ggplot(data = diamonds, mapping = aes(x = price, group = cut, fill = cut)) +
        y = "Frequency of Price (Count)",
        title = "US Diamond Sales")
 
+# Compare
+ggplot(data = diamonds, mapping = aes(x = price, group = cut, fill = cut)) +
+  geom_histogram() 
 
 
 # Learning Check 9:
@@ -334,6 +416,12 @@ ggplot(data = diamonds, mapping = aes(x = cut)) +
 # Learning Check 11:
 
 # What changed in the code below, and what did it result in?
+ggplot(data = diamonds, mapping = aes(x = price, group = cut, fill = cut)) +
+  geom_histogram(color = "white") + # notice new function here
+  labs(x = "Price (USD)",
+       y = "Frequency of Price (Count)",
+       title = "US Diamond Sales")
+
 ggplot(data = diamonds, mapping = aes(x = price, fill = cut)) +
   geom_histogram(color = "white") + 
   facet_wrap(~cut) + # must be categorical variable

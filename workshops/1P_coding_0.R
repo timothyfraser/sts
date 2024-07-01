@@ -94,6 +94,7 @@ sqrt(4) # Square-Roots
 # To name something as an object, use an arrow!
 myvalue <- 2
 
+
 # Now let's highlight and press control enter on myvalue.
 # Notice how it's listed in the R Environment (upper right)
 # and how it outputs as 2 in the console?
@@ -179,6 +180,8 @@ sw <- data.frame(
 
 sw
 
+sw$height
+sw$town
 
 # Although, we could do this too, and it would be equivalent
 sw <- data.frame(
@@ -244,7 +247,7 @@ sd(sw$height) # the standard deviation of seawall heights
 # We would write:
 mysw <- c(4, 4.5, 5, 5, 5,
           5.5, 5.5, 6, 6.5, 6.5, NA) # see the 'NA' for non-applicable
-
+mysw
 # If you run mean(mysw) now, R doesn't know how to add 6.5 + NA
 # The output will become NA instead of 5.35
 mean(mysw)

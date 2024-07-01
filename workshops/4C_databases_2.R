@@ -1,4 +1,4 @@
-# class_4_databases_3.R
+# 4C_databases_3.R
 # Series: Databases 3
 # Topic: Database Functions: Grouping, Summarizing, and Reframing
 # Prof. Fraser
@@ -57,6 +57,7 @@ purchases <- data.frame(
 
 purchases # view it
 
+
 # Next, we're going to make a hypothetical dataset of customer names
 mycustomers <- data.frame(
   # Name of customer
@@ -67,7 +68,15 @@ mycustomers <- data.frame(
   rewards = c(2, 2, 1.5, 1.5, 1, 1, 1)
 )
 
+
 mycustomers # view it
+
+
+
+
+
+
+
 
 
 # 1. summarize() ##########################################
@@ -85,6 +94,7 @@ purchases$price %>% mean()
 purchases %>% 
   summarize(mean_price = mean(price))
 
+
 purchases %>% 
   summarize(mean_price = mean(price),
             sd_price = sd(price))
@@ -94,6 +104,7 @@ purchases %>%
 purchases %>% 
   summarize(`mean of price` = mean(price), 
             `sd of price` = sd(price))
+
 
 
 # Oh, and what do we learn about mutate() vs. summarize() from comparing these two code chunks?
@@ -106,6 +117,13 @@ purchases %>%
   summarize(mean_price = mean(price),
             sd_price = sd(price)) %>%
   mutate(label = "summary statistics")
+
+
+
+
+
+
+
 
 
 
@@ -135,7 +153,7 @@ purchases %>%
 purchases %>%
   group_by(location) %>%
   summarize(total_sales = sum(price),
-            mean_sales = mean(price))
+            mean_sales = mean(price) )
 
 
 purchases %>%
@@ -146,12 +164,24 @@ purchases %>%
 # Whoa - that's a cool function; what is n() counting? 
 # (Hint: if you add up the number of sales, what number is it?)
 
+purchases %>%
+  summarize(number_of_sales = n())
+
+
+
 
 # 3. reframe() ###########################################
 
 # If we want to summarize a table in a way 
 # that will create multiple rows per group, 
 # we need reframe() instead of summarize().
+
+purchases %>%
+  reframe(values = c(1,2,3)  )
+
+purchases %>%
+  reframe(values = c( mean(price), sd(price) )  )
+
 
 purchases %>%
   reframe(price_range = seq(
@@ -163,9 +193,21 @@ purchases %>%
 #   We made a sequence of numbers with seq() 
 #   that spans *from* the minimum price *to* the maximum price
 #   spaced *by* intervals of 0.5 dollars.
+seq(from = 2.5, to = 5.5, by = 0.5)
+
 #   But, that vector is has 7 values! 
 #   summarize() shrinks data.frames into 1 row, so it won't work.
 #   Instead, we need to `reframe()` that data to get multiple rows.
+# Try to avoid summarize for more than 1 row.
+purchases %>%
+  summarize(price_range = seq(
+    from = min(price, na.rm = TRUE), 
+    to = max(price, na.rm = TRUE), 
+    by = 0.5))
+
+
+
+
 
 ## LC 3 ###################################################
 
@@ -174,11 +216,12 @@ purchases %>%
 # We can use reframe() to create new summary tables of statistics, 
 # in shapes different from the original table.
 # Run the code chunk below.
-# If we wanted to add the max price to 3rd row in this table, how might we adjust this code?
+# If we wanted to add the max price to 3rd row in this table, 
+# how might we adjust this code?
 # Original version:
 purchases %>%
   reframe(type = c("mean", "sd"),
-          value = c(mean(price), sd(price)))
+          value = c( mean(price), sd(price) ))
 
 # Your Version with the max()
 # ...
@@ -216,6 +259,12 @@ purchases %>%
   left_join(by = "customer_id", 
             # we append the values for that matching row from our y data.frame.
             y = mycustomers)
+# Alternatively
+left_join(x = purchases, y = mycustomers, by = "customer_id")
+
+
+
+
 
 # We can chain on some useful functions.
 purchases %>%
@@ -225,6 +274,13 @@ purchases %>%
   summarize(total_sales = sum(price))
 
 # We have an NA, because one customer (customer #8) doesn't have a name.
+
+
+
+
+
+
+
 
 ## LC 5 #####################################
 
@@ -250,6 +306,15 @@ purchases %>%
 # I strongly recommend you just forget about inner_join and always use left_join().
 
 
+
+
+
+
+
+
+
+
+
 ## LC 4 #####################################
 
 # Learning Check:
@@ -261,6 +326,13 @@ purchases %>%
   mutate(rewards_points = price * rewards) %>%
   group_by(customer) %>%
   summarize(total_rewards_points = sum(rewards_points, na.rm = TRUE))
+
+
+
+
+
+
+
 
 
 
@@ -279,13 +351,26 @@ purchases %>%
   geom_histogram() +
   facet_wrap(~location) 
 
+
+
+
 # But we can also use their close cousin, density plots!
 
 # density plots (these approximate the shape of distributions)
 purchases %>%
   ggplot(mapping = aes(x = price, fill = location)) +
-  geom_density() +
+  geom_density(alpha = 0.5) +
   facet_wrap(~location) 
+
+ggplot() +
+  geom_density(
+    data = purchases,
+    mapping = aes(x = price, fill = location),
+    alpha = 0.5) +
+  facet_wrap(~location) 
+
+
+
 
 
 
@@ -297,6 +382,10 @@ purchases %>%
   ggplot(mapping = aes(x = location, y = price)) +
   geom_boxplot()
 
+
+
+
+
 # But we can also use their close cousin, violin plots!
 
 # A 'violin' plot!
@@ -306,34 +395,68 @@ purchases %>%
 
 
 
+
+
+
 # C. We can even use error bars to make the interquartile range.
 purchases %>%
   # grouping by location
   group_by(location) %>%
   # calculating summary statistics
   summarize(lower = quantile(price, probs = 0.25),
-            upper = quantile(price, probs = 0.75)) %>%
+            upper = quantile(price, probs = 0.75))  %>%
   # And adding some new aes() criteria, like 'ymin =' and 'ymax ='
   ggplot(mapping = aes(x = location, ymin = lower, ymax = upper)) +
   # Plus this new function
   geom_errorbar()
 
 
+viz = purchases %>%
+  group_by(location) %>%
+  summarize(lower = quantile(price, probs = 0.25),
+            upper = quantile(price, probs = 0.75))
+viz
+ggplot() +
+  geom_errorbar(
+    data = viz, 
+    mapping = aes(x = location, ymin = lower, ymax = upper))
+
+
+
+
+
+
+
+
+
 
 # Or we can depict the same range with lines
-purchases %>%
+viz2 = purchases %>%
   # grouping by location
   group_by(location) %>%
   # calculating summary statistics
   summarize(lower = quantile(price, probs = 0.25),
             median = quantile(price, probs = 0.5),
-            upper = quantile(price, probs = 0.75)) %>%
+            upper = quantile(price, probs = 0.75))
+
+viz2 %>%
   # And adding some new aes() criteria, like 'ymin =' and 'ymax ='
   ggplot(mapping = aes(x = location, y = median, ymin = lower, ymax = upper)) +
   # Plus this new function!
   geom_linerange() +
   # With points for the median!
   geom_point() 
+
+
+
+ggplot() +
+  geom_linerange(
+    data = viz2, 
+    mapping = aes(x = location, ymin = lower, ymax = upper)) +
+  geom_point(
+    data = viz2,
+    mapping = aes(x = location, y = median)
+  )
 
 
 
@@ -344,6 +467,78 @@ purchases %>%
 # Visualize the distribution of rewards points earned by location, 
 # using one of the new strategies above!
 # Hint: you will need to use left_join()! 
+
+
+viz3 = purchases %>%
+  left_join(by = "customer_id", y = mycustomers) %>%
+  mutate(reward_points = price * rewards) 
+
+ggplot() +
+  geom_density(
+    data = viz3, mapping = aes(x = reward_points),
+    fill = "steelblue"
+  )
+
+ggplot() +
+  geom_density(
+    data = viz3, 
+    mapping = aes(x = reward_points, fill = location, 
+                  group = location),
+  )
+
+
+viz4 = purchases %>%
+  left_join(by = "customer_id", y = mycustomers) %>%
+  mutate(reward_points = price * rewards)  %>%
+  group_by(location) %>%
+  summarize(lower = quantile(price, probs = 0.25),
+            median = quantile(price, probs = 0.5),
+            upper = quantile(price, probs = 0.75) )
+viz4
+
+
+
+ggplot() +
+  geom_linerange(
+    data = viz4,
+    mapping = aes(x = location, ymin = lower, ymax = upper)
+  ) +
+  geom_point(
+    data = viz4,
+    mapping = aes(x = location, y = median)
+  )
+
+ggplot() +
+  geom_crossbar(
+    data = viz4,
+    mapping = aes(x = location, y = median, ymin = lower, ymax = upper)
+  )
+
+
+ggplot() +
+  geom_linerange(
+    data = viz4,
+    mapping = aes(x = location, ymin = lower, ymax = upper),
+    linewidth = 2
+  ) +
+  geom_point(
+    data = viz4,
+    mapping = aes(x = location, y = median),
+    size = 5
+  ) +
+  geom_point(
+    data = viz4,
+    mapping = aes(x = location, y = median),
+    size = 4, color = "white"
+  ) 
+
+
+
+
+
+
+
+
 
 
 
