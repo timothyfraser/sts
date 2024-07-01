@@ -1,4 +1,4 @@
-# Lab 13: Mapping Practicum!
+# Practice: Mapping Practicum!
 # Prof: Tim Fraser
 
 # Load Packages
