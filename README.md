@@ -113,42 +113,42 @@ class server,secure_server, type5;
 
 ### cheatsheet: `RStudio` Interface
 
-![`rstudio` interface](docs/cheatsheets_rstudio_1.png)
+![`rstudio` interface](docs/cheatsheet_rstudio_1.png)
 
-![`rstudio` interface](docs/cheatsheets_rstudio_2.png)
+![`rstudio` interface](docs/cheatsheet_rstudio_2.png)
 
 ### cheatsheet: `dplyr` package
 
-![`dplyr` package](docs/cheatsheets_dplyr_1.png)
+![`dplyr` package](docs/cheatsheet_dplyr_1.png)
 
-![`dplyr` package](docs/cheatsheets_dplyr_2.png)
+![`dplyr` package](docs/cheatsheet_dplyr_2.png)
 
 ### cheatsheet: `ggplot2` package
 
-![`ggplot` package](docs/cheatsheets_ggplot_1.png)
+![`ggplot` package](docs/cheatsheet_ggplot_1.png)
 
-![`ggplot` package](docs/cheatsheets_ggplot_2.png)
+![`ggplot` package](docs/cheatsheet_ggplot_2.png)
 
 ### cheatsheet: `stringr` package
 
-![`stringr` package](docs/cheatsheets_stringr_1.png)
+![`stringr` package](docs/cheatsheet_stringr_1.png)
 
-![`stringr` package](docs/cheatsheets_stringr_2.png)
+![`stringr` package](docs/cheatsheet_stringr_2.png)
 
 ### cheatsheet: `lubridate` package
 
-![`lubridate` package](docs/cheatsheets_lubridate_1.png)
+![`lubridate` package](docs/cheatsheet_lubridate_1.png)
 
-![`lubridate` package](docs/cheatsheets_lubridate_2.png)
+![`lubridate` package](docs/cheatsheet_lubridate_2.png)
 
 ### cheatsheet: `shiny` package
 
-![`shiny` package](docs/cheatsheets_shiny_1.png)
+![`shiny` package](docs/cheatsheet_shiny_1.png)
 
-![`shiny` package](docs/cheatsheets_shiny_2.png)
+![`shiny` package](docs/cheatsheet_shiny_2.png)
 
 ### cheatsheet: `sf` package
 
-![`sf` package](docs/cheatsheets_sf_1.png)
+![`sf` package](docs/cheatsheet_sf_1.png)
 
-![`sf` package](docs/cheatsheets_sf_2.png)
+![`sf` package](docs/cheatsheet_sf_2.png)
