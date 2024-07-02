@@ -154,6 +154,10 @@ read_sf("data/social_infra/sites.geojson") %>%
 
 # Use Case 0: Describe Cities ############################
 
+library(dplyr)
+library(readr)
+library(ggplot2)
+
 bg = read_rds("data/social_infra/bg_data.rds") %>%
   # Grab just variables of interest
   select(name, year, geoid, median_household_income) %>%
