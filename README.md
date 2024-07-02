@@ -1,7 +1,20 @@
 # sts
-Exercises for course on Data Science for Socio-Technical Systems
+- **Description**: Exercises for course on Data Science for Socio-Technical Systems
+- **Author**: Tim Fraser, PhD
+
 
 ## Cheat Sheets
+
+### Cheat Sheets Summary Table
+
+| Package   | Purpose         | Cheatsheet Link | Source |
+| `dplyr`   | Data Wrangling  |                 | [Posit](https://rstudio.github.io/cheatsheets/data-transformation.pdf) 
+| `ggplot2` |                 |                 | [Posit](https://rstudio.github.io/cheatsheets/data-visualization.pdf) 
+| `lubridate` | Dates |                 | [Posit](https://rstudio.github.io/cheatsheets/lubridate.pdf) 
+| `sf`        | Spatial Data |         | [Posit](https://rstudio.github.io/cheatsheets/sf.pdf)
+
+### `lubridate` package
+![`lubridate` package](docs/cheatsheets_lubridate.png)
 
 ### Using Databases in R
 
@@ -88,10 +101,6 @@ class local,secure_local, type4;
 class server,secure_server, type5;
 
 ```
-
-### `lubridate` package
-
-<embed src="https://rstudio.github.io/cheatsheets/lubridate.pdf" type="application/pdf" width="100%" height="600px" />
 
 
 
