@@ -7,14 +7,23 @@
 
 ### Cheat Sheets Summary Table
 
-| Package   | Purpose         | Cheatsheet Link | Source |
-| `dplyr`   | Data Wrangling  |                 | [Posit](https://rstudio.github.io/cheatsheets/data-transformation.pdf) 
-| `ggplot2` |                 |                 | [Posit](https://rstudio.github.io/cheatsheets/data-visualization.pdf) 
-| `lubridate` | Dates |                 | [Posit](https://rstudio.github.io/cheatsheets/lubridate.pdf) 
-| `sf`        | Spatial Data |         | [Posit](https://rstudio.github.io/cheatsheets/sf.pdf)
+Our course relies on these main R packages. Running into questions? Check out the package documentation, which often have many helpful examples. Or, for a quick check, use the cheatsheet provided!
 
-### `lubridate` package
-![`lubridate` package](docs/cheatsheets_lubridate.png)
+| Package     | Purpose            | Cheatsheet                                                | Documentation                                            |
+|-------------|--------------------|-------------|-------------|
+| DBI         | database interface | [Cheatsheet](https://github.com/timothyfraser/sts?tab=readme-ov-file#using-databases-in-r)                                            | [Documentation](https://dbi.r-dbi.org/articles/spec.html) |
+| rstudio     | rstudio interface  | [Cheatsheet](https://rstudio.github.io/cheatsheets/html/rstudio-ide.html) | [Cheatsheet](https://rstudio.github.io/cheatsheets/rstudio-ide.pdf) |
+| dplyr       | data wrangling     | [Cheatsheet](https://rstudio.github.io/cheatsheets/data-transformation.pdf) | [Documentation](https://dplyr.tidyverse.org/)             |
+| ggplot2     | data viz           | [Cheatsheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf) | [Documentation](https://ggplot2.tidyverse.org/)           |
+| viridis     | color palettes     | -                                                         | [Documentation](https://sjmgarnier.github.io/viridis/)    |
+| broom       | tidying models     | [Cheatsheet](https://pop.princeton.edu/sites/g/files/toruqf496/files/documents/2018May_Broom_0.pdf) | [Documentation](https://broom.tidymodels.org/)            |
+| stringr     | string searching   | [Cheatsheet](https://rstudio.github.io/cheatsheets/strings.pdf) | [Documentation](https://stringr.tidyverse.org/)           |
+| lubridate   | dates              | [Cheatsheet](https://rstudio.github.io/cheatsheets/lubridate.pdf) | [Documentation](https://lubridate.tidyverse.org/)         |
+| shiny       | dashboards         | [Cheatsheet](https://rstudio.github.io/cheatsheets/shiny.pdf) | [Documentation](https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/index.html) |
+| bslib       | user interfaces for apps | -                                                         | [Documentation](https://rstudio.github.io/bslib/)         |
+| sf          | spatial data       | [Cheatsheet](https://rstudio.github.io/cheatsheets/sf.pdf) | [Documentation](https://r-spatial.github.io/sf/)          |
+| tidygraph   | tidying networks   | -                                                         | [Documentation](https://tidygraph.data-imaginist.com/)    |
+
 
 ### Using Databases in R
 
@@ -102,5 +111,37 @@ class server,secure_server, type5;
 
 ```
 
+### cheatsheet: `RStudio` Interface
 
+![`rstudio` interface](docs/cheatsheets_rstudio_1.png)
+![`rstudio` interface](docs/cheatsheets_rstudio_2.png)
 
+### cheatsheet: `dplyr` package
+
+![`dplyr` package](docs/cheatsheets_dplyr_1.png)
+![`dplyr` package](docs/cheatsheets_dplyr_2.png)
+
+### cheatsheet: `ggplot2` package
+
+![`ggplot` package](docs/cheatsheets_ggplot_1.png)
+![`ggplot` package](docs/cheatsheets_ggplot_2.png)
+
+### cheatsheet: `stringr` package
+
+![`stringr` package](docs/cheatsheets_stringr_1.png)
+![`stringr` package](docs/cheatsheets_stringr_2.png)
+
+### cheatsheet: `lubridate` package
+
+![`lubridate` package](docs/cheatsheets_lubridate_1.png)
+![`lubridate` package](docs/cheatsheets_lubridate_2.png)
+
+### cheatsheet: `shiny` package
+
+![`shiny` package](docs/cheatsheets_shiny_1.png)
+![`shiny` package](docs/cheatsheets_shiny_2.png)
+
+### cheatsheet: `sf` package
+
+![`sf` package](docs/cheatsheets_sf_1.png)
+![`sf` package](docs/cheatsheets_sf_2.png)
