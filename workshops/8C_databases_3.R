@@ -45,7 +45,53 @@ dbListTables(db)
 dbDisconnect(db)
 
 
-# 2. Your First Table ###############################################################
+# 2a. Your First Table - Simple ########################################
+
+library(DBI)
+library(RSQLite)
+library(dplyr)
+library(readr)
+
+# Import your data - a dataset where each row describes a city-year.
+# (good convention to name tables after what 1 row means.)
+cityyears = read_csv("data/jp_solar.csv")
+
+# Let's view our dataset
+cityyears %>% glimpse()
+
+# Connect to database, using DBI's dbConnect() function, with SQLite()
+db = dbConnect(drv = RSQLite::SQLite(), "data/jp_solar.sqlite")
+
+# Let's write our table to file.
+dbWriteTable(conn = db, name = "cityyears", value = units)
+
+# List tables in database
+dbListTables(db)
+
+# Make a query, but don't collect() yet - means this is just a snapshot.
+q = db %>% tbl("cityyears") %>%
+  filter(year == 2019) %>%
+  filter(muni_code == "02204")
+
+# View the query
+q
+
+# Collect and process the query, returning a table of data
+data = q %>% collect()
+
+# View the data
+data
+
+# Let's remove the table
+dbRemoveTable(conn = db, name = "cityyears")
+
+# Disconnect from the database
+dbDisconnect(db)
+
+# Clear environment
+rm(list = ls())
+
+# 2b. Your First Table - Extended ###############################################################
 
 # Import your data - a dataset where each row describes a city-year.
 # (good convention to name tables after what 1 row means.)
