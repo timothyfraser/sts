@@ -6,7 +6,6 @@ Exercises for course on Data Science for Socio-Technical Systems
 ### Using Databases in R
 
 ```mermaid
-
 flowchart TD
 
 local[["<b>Local</b><br><i>data stored locally</i>"]]
@@ -76,11 +75,11 @@ use_neo4j --- server
 local --- secure_local
 server --- secure_server
 
-classDef type1 fill:#ea9999,stroke:#333,stroke-width:2px;
-classDef type2 fill:#c9d6a5,stroke:#333,stroke-width:2px;
-classDef type3 fill:#89cce2,stroke:#333,stroke-width:2px;
-classDef type4 fill:#d9d9d9,stroke:#333,stroke-width:2px;
-classDef type5 fill:#d9d9d9,stroke:#333,stroke-width:2px;
+classDef type1 fill:#ea9999,stroke:#333,stroke-width:2px,color:#373737;
+classDef type2 fill:#c9d6a5,stroke:#333,stroke-width:2px,color:#373737;
+classDef type3 fill:#89cce2,stroke:#333,stroke-width:2px,color:#373737;
+classDef type4 fill:#d9d9d9,stroke:#333,stroke-width:2px,color:#373737;
+classDef type5 fill:#d9d9d9,stroke:#333,stroke-width:2px,color:#373737;
 
 class sql,mysql,mariadb,postgres,sqlite,read_mysql,read_mariadb,read_postgres,use_mysql,use_mariadb,use_postgres,read_sqlite,use_sqlite, type1;
 class nosql,mongodb,neo4j,read_mongodb,use_mongodb,read_neo4j,use_neo4j type2;
