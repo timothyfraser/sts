@@ -1,3 +1,4 @@
+# 8C_databases_3.R
 # Topic: Make Your First Database!
 
 # In this script, we're going to build your first database!
@@ -21,9 +22,16 @@ unlink("data/jp_solar.sqlite")
 
 # 1. Your First Database ###########################################################
 
-# Connect to database, using DBI's dbConnect() function, with SQLite() driver.
-# SQLite doesn't have any passwords or extra settings - it's just a file.
-# When no SQLITE database yet exists, dbConnect() will create it.
+
+library(DBI) # for database connections
+library(RSQLite) # for using SQLite
+
+# Connect to database, 
+# using DBI's dbConnect() function, with SQLite() driver.
+# SQLite doesn't have any passwords or extra settings - 
+# it's just a file.
+# When no SQLITE database yet exists, 
+# dbConnect() will create it.
 db = dbConnect(drv = RSQLite::SQLite(), "data/jp_solar.sqlite")
 
 # View the connection object
@@ -32,7 +40,8 @@ db
 # Get vector of any tables in database (should be empty)
 dbListTables(db)
 
-# Disconnect from the database - ALWAYS disconnect when done - otherwise it uses up computer memory.
+# Disconnect from the database - ALWAYS disconnect when done - 
+# otherwise it uses up computer resources.
 dbDisconnect(db)
 
 
