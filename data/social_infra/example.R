@@ -152,6 +152,28 @@ read_sf("data/social_infra/sites.geojson") %>%
 # Here are some great ways this data can be used...
 
 
+# Use Case 0: Describe Cities ############################
+
+bg = read_rds("data/social_infra/bg_data.rds") %>%
+  # Grab just variables of interest
+  select(name, year, geoid, median_household_income) %>%
+  # Brief data cleaning....
+  mutate(across(.cols = median_household_income, .fns = ~case_when(.x == "-666666666" ~ NA, TRUE ~ .x))) %>%
+  # For each city and year...
+  group_by(name, year) %>%
+  # get average median household income 
+  summarize(mean = mean(median_household_income, na.rm = TRUE))
+
+ggplot() +
+  geom_line(
+    data = bg, 
+    mapping = aes(x = factor(year), y = mean, group = name),
+    color = "grey") +
+  theme_classic() +
+  labs(y = "Median Household Income [USD] in an Average Block Group",
+       x = "Year")
+
+
 # Use Case 1: Visualize Social Infrastructure Rates! ############################## 
 
 library(dplyr)
@@ -274,3 +296,4 @@ ggplot() +
   
 
 rm(list = ls())
+

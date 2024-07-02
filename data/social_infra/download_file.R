@@ -332,4 +332,12 @@ get_bg(.year = 2013) %>%
 
 plan("sequential")
 
+
+# Perform some brief data cleaning - some meaningless values
+read_rds("data/social_infra/bg_data.rds") %>%
+  # Brief data cleaning....
+  mutate(across(.cols = pop:unemployment, .fns = ~case_when(.x == "-666666666" ~ NA, TRUE ~ .x))) %>%
+  saveRDS("data/social_infra/bg_data.rds")
+
+
 rm(list = ls()); gc()
