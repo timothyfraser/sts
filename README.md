@@ -88,3 +88,10 @@ class local,secure_local, type4;
 class server,secure_server, type5;
 
 ```
+
+### `lubridate` package
+
+<embed src="https://rstudio.github.io/cheatsheets/lubridate.pdf" type="application/pdf" width="100%" height="600px" />
+
+
+
