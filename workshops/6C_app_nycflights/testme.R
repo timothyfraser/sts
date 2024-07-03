@@ -19,3 +19,5 @@ shiny::runApp("app5.R")
 
 shiny::runApp("app6.R")
 
+# Let's try using the bslib themer on our app
+bslib::run_with_themer("app6.R")

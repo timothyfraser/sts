@@ -7,22 +7,25 @@
 #' The `plotly` package lets you convert directly from ggplot into `plotly` interactive visuals.
 #' We'll just need to update a few things:
 #' 
-#' - add `library(plotly)` to `global()`
-#' - Wherever we make a ggplot, make it into plotly with `plotly::ggplotly()`
-#' - use `tooltip = c("var1", "var2")` to select which variable names from the visual to show in tooltip
-#' - update all `renderPlot({ })` chunks to be `renderPlotly({})`
-#' - update all `plotOutput({ })` chunks to be `plotlyOutput({ })`
+#' - EDIT 1: add `library(plotly)` to start
+#' - EDIT 2: Wherever we make a ggplot, make it into plotly with `plotly::ggplotly()`
+#' - EDIT 3: use `tooltip = c("var1", "var2")` to select which variable names from the visual to show in tooltip
+#' - EDIT 4: update all `renderPlot({ })` chunks to be `renderPlotly({})`
+#' - EDIT 5: update all `plotOutput({ })` chunks to be `plotlyOutput({ })`
 
-global = function(){   
-  
-  library(dplyr) # data wrangling
-  library(readr) # reading data
-  library(ggplot2) # data vizualization
-  
-  library(shiny) # main shiny app package
-  library(bslib) # easier html construction
-  library(plotly) # interactive visuals
-}
+
+# Best to run your packages at startup
+library(dplyr) # data wrangling
+library(readr) # reading data
+library(ggplot2) # data vizualization
+
+library(shiny) # main shiny app package
+library(bslib) # easier html construction
+## **EDIT 1** #################################################
+library(plotly) # interactive visuals
+
+# We don't have anything in particular to put in our global function at the minute
+global = function(){    }
 
 
 ui = function(){   
@@ -59,6 +62,8 @@ ui = function(){
   
   # PLOT CARD ##########################
   c3 = bslib::layout_column_wrap(
+    ## **EDIT 5** #############################################
+    # update plotOutput() to be plotlyOutput()
     card(plotlyOutput(outputId = "plot_one_month")),
     card(plotlyOutput(outputId = "plot_one_carrier")),
     width = 0.5
@@ -141,6 +146,8 @@ server = function(input, output, session){
   
   ## plot_one_month #########################################
   
+  ## **EDIT 4a** #############################################
+  # Swap renderPlot() to be renderPlotly()
   # Render a plot to the output 'plot_one_month'
   output$plot_one_month = renderPlotly({
     # View the results for all carriers, for just one month.
@@ -155,7 +162,9 @@ server = function(input, output, session){
         mapping = aes(x = name, y = mean)) +
       coord_flip() +
       labs(x = "Airline", y = "Mean Arrival Delay (minutes)")
-
+    
+    ## **EDIT 2a-3a** ###############################################
+    # Add tooltip and convert to plotly
     # Make it plotly
     pp_one_month = plotly::ggplotly(gg_one_month, tooltip = c("name", "mean"))
     # return the visualization
@@ -166,6 +175,8 @@ server = function(input, output, session){
   
   ## plot_one_carrier #########################################
   
+  ## **EDIT 4b** #############################################
+  # Swap renderPlot() to be renderPlotly()
   # Render a plot to the output 'plot_one_carrier'
   output$plot_one_carrier = renderPlotly({
     # Let's view the results for just that one carrier, over time
@@ -189,12 +200,14 @@ server = function(input, output, session){
       # you can ditch the legend for color or fill like this
       guides(color = "none")
     
+    ## **EDIT 2b-3b** ###############################################
+    # Add tooltip and convert to plotly
     # Make it plotly
     pp_one_carrier = plotly::ggplotly(gg_one_carrier, tooltip = c("mean"))
     # return the visualization
     pp_one_carrier
     
-
+    
     # Trigger this plot to re-render when input$carrier changes
   }) %>% bindEvent({ stat(); input$carrier  })
   

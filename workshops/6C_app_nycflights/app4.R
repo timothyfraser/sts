@@ -9,28 +9,33 @@
 #' 
 #' 
 #' Let's make our data `stat` contingent on airport of `origin`, 
-#' First, to do this, we'll need to add a `shiny::selectInput()` for `origin`,
-#' and then add in `origin` into the grouping and joining for `stat`
 #' 
-#' Second, we'll turn the `stat` data.frame into a `reactive()` object `stat()`, contingent on `input$origin`
+#' - EDIT 1: First, to do this, we'll need to add a `shiny::selectInput()` for `origin`
 #' 
-#' Third, everywhere we wrote `stat` before, we'll now write `stat()`.
+#' - EDIT 2: Then, we need to add in `origin` into the grouping and joining for `stat`, 
+#'           so we can filter by origin == input$origin later.
 #' 
-#' Fourth, in any function where `stat()` gets called, add a `bindEvent` condition for `stat()`
+#' - EDIT 3: We'll turn the `stat` data.frame into a `reactive()` object `stat()`, contingent on `input$origin`
 #' 
-#' Fifth, to make our lives easier later, we're also going to turn `stat_highlight` into a reactive `stat_highlight()`.
+#' - EDIT 4: Everywhere we wrote `stat` before, we'll now write `stat()`.
+#' 
+#' - EDIT 5: In any function where `stat()` gets called, add a `bindEvent` condition for `stat()`
+#' 
+#' - EDIT 6: To make our lives easier later, we're also going to turn `stat_highlight` into a reactive `stat_highlight()`.
 
 
-global = function(){   
-  
-  library(dplyr) # data wrangling
-  library(readr) # reading data
-  library(ggplot2) # data vizualization
-  
-  library(shiny) # main shiny app package
-  library(bslib) # easier html construction
-  
-}
+
+# Best to run your packages at startup
+library(dplyr) # data wrangling
+library(readr) # reading data
+library(ggplot2) # data vizualization
+
+library(shiny) # main shiny app package
+library(bslib) # easier html construction
+
+# We don't have anything in particular to put in our global function at the minute
+global = function(){    }
+
 
 
 ui = function(){   
@@ -59,6 +64,8 @@ ui = function(){
     card_header(     card_title("FILTER FLIGHTS")  ),
     # Make a card body section
     card_body(
+      # **EDIT 1** ########################################
+      # add selectInput() for "origin" to get a input$origin
       selectInput(inputId = "origin", label = "ORIGIN", choices = choices_origins, selected = "JFK"),
       selectInput(inputId = "month", label = "MONTH", choices = choices_month, selected = 1),
       selectInput(inputId = "carrier", label = "AIRLINE", choices = choices_airlines, selected = "AA")
@@ -77,7 +84,7 @@ ui = function(){
     bslib::card_header("Spotlight", class = "bg-dark"),
     bslib::card_footer(textOutput("text_highlight"))
   )
-
+  
   # Or add a sidebar-main split layout like this...  
   bslib::page(
     title = "NYC Flights", 
@@ -116,10 +123,14 @@ server = function(input, output, session){
   # stat() #######################################
   # Wherever possible, do just 1 calculation, as few times as you can.
   
+  ## **EDIT 3** ###################################################
+  # Turn stat into reactive object stat()
   # Generate stat() reactively.
   stat = reactive({
     # Let's start overall.
     flights %>%
+      ## **EDIT 2** #################################################
+      ## add input$origin as a filter and origin as a grouping variable
       # Filter to just flights that started at these airports
       filter(origin %in% input$origin) %>%
       # For each carrier, month, and origin...
@@ -151,6 +162,8 @@ server = function(input, output, session){
   
   # Render a plot to the output 'plot_one_month'
   output$plot_one_month = renderPlot({
+    ## **EDIT 4a** ###########################
+    # rename stat --> stat()
     # View the results for all carriers, for just one month.
     stat_one_month = stat() %>%
       # filter by selected month
@@ -166,6 +179,8 @@ server = function(input, output, session){
     # Return the visualization
     gg_one_month
     
+    ## **EDIT 5a** ###########################
+    # add stat() to bindEvent(), so it will re-render whenever stat() updates
     # Trigger this plot to rerender when input$month changes
   }) %>% bindEvent({ stat(); input$month })
   
@@ -174,6 +189,9 @@ server = function(input, output, session){
   
   # Render a plot to the output 'plot_one_carrier'
   output$plot_one_carrier = renderPlot({
+    
+    ## **EDIT 4c** ###########################
+    # rename stat --> stat()
     # Let's view the results for just that one carrier, over time
     stat_one_carrier = stat() %>%
       # Filter by selected carrier
@@ -197,25 +215,35 @@ server = function(input, output, session){
     
     # Return the plot
     gg_one_carrier
+    
+    ## **EDIT 5b** ###########################
+    # add stat() to bindEvent(), so it will re-render whenever stat() updates
     # Trigger this plot to re-render when input$carrier changes
   }) %>% bindEvent({ stat(); input$carrier  })
   
   
   # stat_highlight() ##########################################
   
+  ## **EDIT 6a** ######################################
   # Create reactive data.frame as 'stat_highlight()'
   stat_highlight = reactive({
+    
+    ## **EDIT 4c** ###########################
+    # rename stat --> stat()
     # Let's get some highlight stats for your carrier at one specific time
     stat() %>%
-    filter(carrier == input$carrier, month == input$month) %>%
-    # Format a number for highlighting
-    mutate(highlight = scales::number(mean, accuracy = 0.1) ) %>%
-    # Summarize a label
-    mutate(label = paste0(
-      "In ", month_name, ", ",
-      name, " flights to ", origin_name, " in NYC had an average arrival delay of ", 
-      highlight, " minutes."
-    ))
+      filter(carrier == input$carrier, month == input$month) %>%
+      # Format a number for highlighting
+      mutate(highlight = scales::number(mean, accuracy = 0.1) ) %>%
+      # Summarize a label
+      mutate(label = paste0(
+        "In ", month_name, ", ",
+        name, " flights to ", origin_name, " in NYC had an average arrival delay of ", 
+        highlight, " minutes."
+      ))
+    
+    ## **EDIT 5c** ###########################
+    # add stat() to bindEvent(), so it will re-render whenever stat() updates
     # When EITHER stat() or carrier or month changes, update this text.
   }) %>% bindEvent({ stat(); input$carrier; input$month })
   
@@ -223,8 +251,15 @@ server = function(input, output, session){
   
   ## Render to text output 'text_highlight'
   output$text_highlight = renderText({
+    
+    ## **EDIT 6b** ######################################
+    # use reactive data.frame stat_highlight() to get label
+    
     # Output a single text blob value. Must have just length 1.
     stat_highlight()$label
+    
+    ## **EDIT 6c** ######################################
+    # add stat_highlight() to bindEvent(), so it will re-render whenever stat_highlight() updates
     # Trigger whenever stat_highlight() changes
   }) %>% bindEvent({ stat_highlight() })
   

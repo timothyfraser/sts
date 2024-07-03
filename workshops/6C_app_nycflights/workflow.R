@@ -26,6 +26,9 @@
 # Set folder to overall project
 setwd(rstudioapi::getActiveProject())
 
+library(dplyr)
+library(readr)
+
 # Read and write data to your app's folder
 read_csv("data/airlines.csv") %>% 
   write_csv("workshops/6C_app_nycflights/airlines.csv")
@@ -43,20 +46,30 @@ tibble(month = 1:12, month_abb = month.abb, month_name = month.name) %>%
   write_csv("workshops/6C_app_nycflights/months.csv")
 
 
+
+
+
+
+
 # APP SETUP ########################
 
 # Set your working directory to your app's folder
 setwd(paste0(rstudioapi::getActiveProject(), "/workshops/6C_app_nycflights"))
+getwd() # get my current working directory
+
 
 ## Load packages #################
 library(dplyr) # data wrangling
 library(readr) # reading data
-library(ggplot2) # data vizualization
+library(ggplot2) # data visualization
 
 ## Read in data ###############
 airlines = read_csv("airlines.csv")
 flights = read_csv("flights_sample.csv")
 months = read_csv("months.csv")
+
+# View our data
+flights %>% glimpse()
 
 ## Inputs #####################
 # Make an 'input' list, just like in your app
@@ -64,13 +77,23 @@ input = list(month = 12, carrier = "AA", origin = c("JFK", "LGA", "EWR"))
 
 # View it
 input
+# Access the value for your input "XXXXX"
+input$month
+input$carrier
+input$origin
+
+
+
+
 
 ## Stats ######################
 # Wherever possible, do just 1 calculation, as few times as you can.
 # Let's start overall.
-stat = flights %>%
+stat1 = flights %>%
   # Filter to just flights that started at these airports
-  filter(origin %in% c("JFK", "LGA", "EWR")) %>%
+  filter(origin %in% input$origin)
+
+stat2 = stat1 %>%
   # For each carrier...
   group_by(month, carrier) %>%
   # Let's get the mean, stdev, and confidence intervals
@@ -79,19 +102,53 @@ stat = flights %>%
     sd = sd(arr_delay, na.rm = TRUE),
     n = n(),
     se = sd / sqrt(n),
+    # Get a 95% confidence interval
     lower = mean + se*qnorm(0.025),
     upper = mean + se*qnorm(0.975)
   ) %>%
   # Ungroup
-  ungroup() %>%
+  ungroup()
+
+stat2
+
+stat3 = stat2 %>%
   # Join in the carrier names
   left_join(by = "carrier", y = airlines) %>%
   # Join in month name data
   left_join(by = "month", y = months)
-  # What can we do with this information?
+
+stat = stat3
+remove(stat1,stat2,stat3)
+
+# Our processed data
+stat
+
+# stat = flights %>%
+#   # Filter to just flights that started at these airports
+#   filter(origin %in% c("JFK", "LGA", "EWR")) %>%
+#   # For each carrier...
+#   group_by(month, carrier) %>%
+#   # Let's get the mean, stdev, and confidence intervals
+#   summarize(
+#     mean = mean(arr_delay, na.rm = TRUE),
+#     sd = sd(arr_delay, na.rm = TRUE),
+#     n = n(),
+#     se = sd / sqrt(n),
+#     lower = mean + se*qnorm(0.025),
+#     upper = mean + se*qnorm(0.975)
+#   ) %>%
+#   # Ungroup
+#   ungroup() %>%
+#   # Join in the carrier names
+#   left_join(by = "carrier", y = airlines) %>%
+#   # Join in month name data
+#   left_join(by = "month", y = months)
+# What can we do with this information?
 
 # View it
 stat 
+
+
 
 # REACTIVE STATS ########################
 
@@ -132,12 +189,15 @@ gg_one_carrier = ggplot() +
   geom_ribbon(
     data = stat_one_carrier,
     # Show month_abb as label, but order by month
-    mapping = aes(x = reorder(month_abb, month), ymin = lower, ymax = upper, group = carrier, fill = name),
+    mapping = aes(x = reorder(month_abb, month),
+                  ymin = lower, ymax = upper, 
+                  group = carrier, fill = name),
     alpha = 0.5 # transparency is helpful
   ) +
   geom_line(
     data = stat_one_carrier,
-    mapping = aes(x = reorder(month_abb, month), y = mean, group = carrier, color = carrier)
+    mapping = aes(x = reorder(month_abb, month), 
+                  y = mean, group = carrier, color = carrier)
   ) +
   labs(x = "Month", y = "Mean Arrival Delay (minutes)\n[with 95% Confidence Intervals]",
        fill = "Airline", title = "How Late is Your Airline?") +

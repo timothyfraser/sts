@@ -1,22 +1,25 @@
-#' @name app6.R
+#' @name app7.R
 #' @author Tim Fraser
-#' @title nycflights app V6
+#' @title nycflights app V7
 #' @description 
 #' 
-#' What about other formats of displaying our information? Let's try a few.
-#' - `shiny::textOutput()` and `shiny::renderText({ })` - takes a character value as input
-#' - `shiny::tableOutput()` and `shiny::renderTable({ })` - takes a data.frame as input.
-#' - `shiny::plotOutput()` and `shiny::renderPlot({ })` - takes a ggplot as input
-#' - `plotly::plotlyOutput()` and `plotly::renderPlotly({ })` - takes a plotly as input
-#' - `shiny::uiOutput()` and `shiny::renderUI({ })` - takes html text as input
+#' That plotly interactive visual is really cool - can we make it cleaner?
+#' Definitely. We're going to define a new variable in our dataset called 'hoverlabel'
+#' and we will use this to customize one of our plots - plot_one_carrier.
 #' 
-#' Let's try some creative applications.
-#' - EDIT 1: a value box showing the mean
-#' - EDIT 2: a value box showing the standard deviation
-#' - EDIT 3: a value box showing the sample size
-#' - EDIT 4: a table showing one month, many carriers
-#' - EDIT 5: a navigation menu for viewing plots vs. table
-#' - EDIT 6: improved theming for our ggplots.
+#' Improving hover labels in plotly involves 3 short steps:
+#' 
+#' - EDIT 1: write a new variable in your dataset, optionally called 'hoverlabel'.
+#'         It can optionally include some basic HTML tags to add text formatting,
+#'         like linebreaks, bolding, italicizing, etc.
+#' - EDIT 2: set aes(text = hoverlabel) in your ggplot's aesthetics
+#' - EDIT 3: tell plotly to assign the 'text' aesthetic to the tooltip
+#' - EDIT 4: optionally customize the plotly layout() and config().
+#' 
+#' Use the table of contents to find the section headers 
+#' for EDIT 1, EDIT 2, EDIT 3, and EDIT 4.
+#' Observe how we just lightly adjust the code 
+#' in these ways to make cleaner interactive visuals.
 
 
 # Best to run your packages at startup
@@ -79,26 +82,21 @@ ui = function(){
   
   
   # VALUE BOXES CARD ##########################
-  ## **EDIT 1a** ################################
   box1 = bslib::value_box(
     title = "Mean Delay", value = textOutput("text_mean"), "minutes",
     class = "bg-primary text-light",
     # add a fontawesome icon to showcase
     showcase = shiny::icon("clock"))
-  ## **EDIT 2a** ################################
   box2 = bslib::value_box(
     title = "Average Error (SE)", value = textOutput("text_se"), "minutes",
     class = "bg-warning text-light",
     # add a fontawesome icon to showcase
     showcase = shiny::icon("hashtag"))
-  ## **EDIT 3a** ################################
   box3 = bslib::value_box(
     title = "Sample Size", value = textOutput("text_n"), "flights",
     class = "bg-dark text-light", 
     # add a fontawesome icon to showcase
     showcase = shiny::icon("plane"))
-  
-  ## **EDITS 1a-3a** ################################
   # Bundle them together with a header
   c5 = card(
     # Add a header describing the Selections you made
@@ -110,20 +108,7 @@ ui = function(){
   )
   
   # TABLE CARD ################################
-  ## **EDIT 4a** ################################
-  # Make a table showing one month only
   c6 = card( tableOutput("table_one_month") )
-  
-  ## **EDIT 5** #########################################  
-  # Make a series of panels we can click between for plots vs. tables
-  c7 = bslib::navset_card_pill(
-    selected = "plots", # opens plots by default at startup
-    # Open plots
-    bslib::nav_panel(title = "VISUALS", value = "plots", c3), # plots
-    # Or Open table
-    bslib::nav_panel(title = "TABLE", value = "tables", c6), # table
-  )
-  
   
   
   # Or add a sidebar-main split layout like this...  
@@ -138,11 +123,16 @@ ui = function(){
       # Sidebar...
       sidebar = bslib::sidebar(c2), 
       # main panel
-      ## **EDITS 1-5** ###############################
-      # Stack these cards in this order 
-      c5, # value boxes
-      c7, # cards with navigation menus
-      c4 # highlight text 
+      c5,
+      # Make a series of panels we can click between
+      bslib::navset_card_pill(
+        selected = "plots",
+        # Open plots
+        bslib::nav_panel(title = "VISUALS", value = "plots", c3), # plots
+        # Or Open table
+        bslib::nav_panel(title = "TABLE", value = "tables", c6), # table
+      ),
+      c4 # text 
     )
     
   )
@@ -219,6 +209,8 @@ server = function(input, output, session){
     
     # Make it plotly
     pp_one_month = plotly::ggplotly(gg_one_month, tooltip = c("name", "mean"))
+    
+    
     # return the visualization
     pp_one_month
     # Trigger this plot to rerender when input$month changes
@@ -232,8 +224,21 @@ server = function(input, output, session){
     # Let's view the results for just that one carrier, over time
     stat_one_carrier = stat() %>%
       # Filter by selected carrier
-      filter(carrier == input$carrier)
-    
+      filter(carrier == input$carrier) %>%
+      # **EDIT 1** #############################################
+      # To make a prettier hover label in plotly, let's make a hoverlabel variable.
+      mutate(hoverlabel = paste0(
+        # You can use basic html tags here if you want - just <br>, <b>, <i>, <sup>, and <sub>
+        "<b>Airline</b>: ", name, 
+        "<br>", # line break
+        "<b>Mean Arrival Delay</b>: ", scales::number(mean, accuracy = 0.1), " (minutes)",
+        "<br>", # line break
+        "<b>95% Confidence Interval</b>: ", scales::number(lower, accuracy = 0.1), " to ", scales::number(upper, accuracy = 0.1),
+        "<br>", # line break
+        "<b>Sample Size</b>: ", n, " flights"
+      ))
+      
+      
     # Visualize just one carrier over time.
     gg_one_carrier = ggplot() +
       geom_ribbon(
@@ -243,21 +248,48 @@ server = function(input, output, session){
       ) +
       geom_line(
         data = stat_one_carrier,
-        mapping = aes(x = reorder(month_name, month), y = mean, group = carrier, color = carrier)
+        mapping = aes(x = reorder(month_name, month), y = mean, 
+                      # **EDIT 2** ########################
+                      # If we set the aesthetic 'text' in ggplot (which doesn't normally do anything),
+                      # we can pipe it in with plotly to the tooltip, giving us cleaner tooltips.
+                      text = hoverlabel,
+                      group = carrier, color = carrier)
       ) +
       labs(x = "Month", y = "Mean Arrival Delay (minutes)\n[with 95% Confidence Intervals]",
            fill = "Airline", title = "How Late is Your Airline?") +
       # you can ditch the legend for color or fill like this
       guides(color = "none") +
-      ## **EDIT 6** ################################
-    guides(fill = "none") +
+      # Extra formatting
+      guides(fill = "none") +
       theme_bw() + 
       scale_x_discrete(breaks = c("January", "April", "July", "October"))
     
+    # **EDIT 3** ##########################################    
     # Make it plotly
-    pp_one_carrier = plotly::ggplotly(gg_one_carrier, tooltip = c("mean"))
+    # If we set the aesthetic 'text' in ggplot (which doesn't normally do anything),
+    # we can pipe it in with plotly to the tooltip, giving us cleaner tooltips.
+    pp_one_carrier = plotly::ggplotly(gg_one_carrier, tooltip = c("text")) %>%
+      # **EDIT 4** ##########################################    
+    # Let's also customize the layout of the plotly object
+      plotly::layout(
+        showlegend = FALSE, # don't show the legend
+        hoverlabel = list(
+          align = "left", # left-justify the text in the hover label 
+          font = list(color = "white"), # make the font white
+          bordercolor = "#373737", # Make the border color dark grey
+          bgcolor = "black" # Make the background color black
+        )
+      ) %>%
+      # Let's also customize the plotly option buttons available
+      plotly::config(
+        displaylogo = FALSE, # Get rid of the logo
+        modeBarButtons = list(list("toImage")) # keep the download image button
+      )
+    
+    
     # return the visualization
     pp_one_carrier
+    
     
     
     # Trigger this plot to re-render when input$carrier changes
@@ -292,16 +324,12 @@ server = function(input, output, session){
   }) %>% bindEvent({ stat_highlight() })
   
   # Value Box Text ########################################
-  ## **EDITS 1b-3b** ############################################## 
-  # Render text for value boxes
   output$text_mean = renderText({ stat_highlight()$highlight }) %>% bindEvent({ stat_highlight() })  
   output$text_se = renderText({ stat_highlight()$se %>% round(1) %>% paste0() }) %>% bindEvent({ stat_highlight()  }) # make into text with paste0()
   output$text_n = renderText({ stat_highlight()$n %>% paste0() }) %>% bindEvent({ stat_highlight() })
   output$text_selection = renderText({ paste0( stat_highlight()$name, " at ", stat_highlight()$origin_abb, " in ", stat_highlight()$month_name) })
   
   # table_one_month ############################################  
-  ## **EDIT 4b** ####################################################  
-  # Render new table
   output$table_one_month = renderTable({ 
     stat() %>%
       filter(month == input$month)  %>%
@@ -313,7 +341,6 @@ server = function(input, output, session){
   }, 
   # Extra table settings
   striped = TRUE, hover = TRUE, width = "100%"
-  # Update the table whenever stat() changes, or whenever the input month changes.
   ) %>% bindEvent({ stat(); input$month })
 }
 

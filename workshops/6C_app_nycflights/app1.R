@@ -35,7 +35,7 @@ global = function(){
   library(dplyr) # data wrangling
   library(readr) # reading data
   library(ggplot2) # data vizualization
-  
+  library(scales) # for rescaling values
   library(shiny) # main shiny app package
   
 }
@@ -55,6 +55,8 @@ ui = function(){
     title = "NYC Flights", 
     # selectors #########################################
     # Create menu for changing inputs
+    # Example
+    # selectInput(inputId = "month", label = "MONTH", choices = c("January" = 1, "February" = 2), selected = 1)
     selectInput(inputId = "month", label = "MONTH", choices = choices_month, selected = 1),
     selectInput(inputId = "carrier", label = "AIRLINE", choices = choices_airlines, selected = "AA"),
     # plotters ###########################################
@@ -67,6 +69,8 @@ ui = function(){
   
   
 }
+
+# ui()
 
 
 server = function(input, output, session){  
@@ -81,6 +85,9 @@ server = function(input, output, session){
     # And get the main variables we care about here
     select(month, day, carrier, origin, 
            arr_delay, arr_time, sched_arr_time)
+  
+  # Example inputs - don't actually run these live.
+  # input = list(month = 1, carrier = "AA")
   
   # stats #######################################
   # Wherever possible, do just 1 calculation, as few times as you can.
@@ -107,7 +114,7 @@ server = function(input, output, session){
     left_join(by = "month", y = months)
   # What can we do with this information?
   
-  
+  # stat
   
   # plots ##########################################
   
@@ -132,7 +139,10 @@ server = function(input, output, session){
     
     # Trigger this plot to rerender when input$month changes
   }) %>% bindEvent({ input$month })
-
+  
+  
+  
+  
   
   ## plot_one_carrier #########################################
   
@@ -187,7 +197,7 @@ server = function(input, output, session){
   }) %>% bindEvent({ input$carrier; input$month })
   
   
-
+  
 }
 
 # Run app

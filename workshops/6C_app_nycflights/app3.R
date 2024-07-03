@@ -13,7 +13,6 @@
 #' - `bslib::card_header()`
 #' - `bslib::card_footer()`
 #' - `bslib::card_body()`
-#' - `bslib::card_footer()`
 #' - `bslib::sidebar_layout()`
 #' - `bslib::sidebar()`
 
@@ -45,8 +44,11 @@ ui = function(){
     # Make a card header whose background is the primary color (class = bg-primary)
     card_header(class = "bg-primary",
                 # Add this title                
-      card_title("NYC Flights Database (2013)"))
+                card_title("NYC Flights Database (2013)"))
   )
+  
+  # card(card_header(class = "bg-primary", card_title("Stuff")))
+  
   
   # SELECTOR CARD #################################
   c2 = bslib::card(
@@ -71,11 +73,11 @@ ui = function(){
     bslib::card_header("Spotlight", class = "bg-dark"),
     bslib::card_footer(textOutput("text_highlight"))
   )
-
-
+  
+  
   # Try viewing it!
   #c1
-
+  
   # You could setup the page simply like this....
   # bslib::page(
   #   title = "NYC Flights", 
@@ -85,7 +87,7 @@ ui = function(){
   #   c1, c2, c3, c4
   # )
   
-
+  
   # Or add a sidebar-main split layout like this...  
   bslib::page(
     title = "NYC Flights", 
