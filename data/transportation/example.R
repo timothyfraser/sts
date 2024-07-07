@@ -47,3 +47,6 @@ ggplot() +
   geom_col(data = data, mapping = aes(x = geoid, y = emissions)) +
   coord_flip()
 
+
+
+
