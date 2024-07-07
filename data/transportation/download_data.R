@@ -37,21 +37,25 @@ db %>% tbl("metrics") %>%
 db %>% 
   tbl("projections") %>%
   filter(str_sub(geoid, 1,2) == "36") %>%
+  collect() %>%
   saveRDS("data/transportation/projections.rds")
 
 db %>% 
   tbl("types") %>%
+  collect() %>%
   saveRDS("data/transportation/types.rds")
 
 db %>% 
   tbl("pollutants") %>%
+  collect() %>%
   saveRDS("data/transportation/pollutants.rds")
 
 db %>% 
   tbl("bys") %>%
+  collect() %>%
   saveRDS("data/transportation/bys.rds")
 
-dbDisconect(db); remove(db)
+dbDisconnect(db); remove(db)
 
 # Download emissions data
 db = dbConnect(

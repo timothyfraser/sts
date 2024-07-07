@@ -1,9 +1,59 @@
-#' @name evacuation/example.rds
+#' @name evacuation/example.R
 #' @title Evacuation Dataset for Hurricane Dorian
 #' @description
 #' Sourced from Fraser 2022 in Sustainability Science
 #' Edges represent Facebook users going from City A to City B
 
+# Key Files:
+# example.R - (this script) an explainer for the dataset, with lots of examples.
+# edges.rds - city-to-city pairs, every 8 hours, right before and after the disaster.
+# nodes.rds - data.frame of cities, with demographic traits
+# dorian.rds - spatial network object. Has geography column in it for nodes and edges.
+#              Skip this for temporal analysis.
+
+# Here's a basic codebook about the evacuation data.
+
+# edges.rds
+# - from_geoid: census county subdivision id for the source municipality
+# - to_edges: census county subdivision id for the destination municipality.
+# - date_time: date and time in 8 hour chunks, 
+#              lasting a few days prior to Hurricane Dorian hitting land
+#              and stretching for a week or two after. 
+#              See lower parts of this example.R script on GitHub for examples 
+#              of ways you could optionally aggregate this data if desired.
+# - evacuation: how many additional Facebook users moved between 
+#               these two county subdivisions (municipalities) 
+#               in the 8 hour period, compared to average levels 
+#               before the crisis. 
+#               Positive flow indicates evacuation. 
+#               Negative flow indicates sheltering in place.
+# - km: distance between from_geoid and to_geoid municipalities.
+
+
+# nodes:
+# - geoid: census county subdivision id for that municipality 
+# - pop - population in 2018
+# - pop_women - share of women
+# - pop_black - share of black residents
+# - pop_white - share of white residents 
+# - pop_hisplat - share of Hispanic / Latino residents
+# - median_income - Median Household Income
+# - some_college - percentage of residents with some college education or more.
+# - social_capital - a social capital index score from 0-1, approximating strength of social ties. From Fraser, Page-Tan, and Aldrich 2022. (We'll read this paper later for class as a measurement example.)
+
+# Good rule of thumb: ignore variables that are unfamiliar and undefined. 
+# Always better to use variables you know. 
+# I just recommend using the evacuation, km, and demographic variables. 
+# I will formally define a few relevant demographic variables for this dataset. 
+# Please ignore the others - they are holdovers from a past project.
+
+
+# Note: every census county subdivision's geoid 
+# is related to every county and state geoid. 
+# The first 2 digits of a geoid shows the state.
+# The first 5 digits show the fully county geoid, called the fips code. 
+# If you want to know the name of a county, 
+# ChatGPT knows the names and fips codes of counties, in my experience.
 
 
 # Getting Tabular Data #################################################
