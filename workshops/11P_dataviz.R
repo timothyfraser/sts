@@ -41,15 +41,15 @@ library(ggspatial)
 
 # Import data
 # Get social infrastructure sites (points)
-mypoints <- read_sf("workshops/12C_databases_4/boston_social_infra.geojson")
+mypoints <- read_sf("data/boston_social_infra/boston_social_infra.geojson")
 # Get grid cells in Central Boston (polygons)
-myshapes <- read_sf("workshops/12C_databases_4/boston_grid.geojson")
+myshapes <- read_sf("data/boston_social_infra/boston_grid.geojson")
 # Get T metro lines (lines)
-mylines <- read_sf("workshops/12C_databases_4/boston_train_lines.geojson")
+mylines <- read_sf("data/boston_social_infra/boston_train_lines.geojson")
 # Get average census traits for grid cells (data.frame)
-mydata <- read_csv("workshops/12C_databases_4/boston_census_data.csv")
+mydata <- read_csv("data/boston_social_infra/boston_census_data.csv")
 # Get census block groups (polygons)
-mybg <- read_sf("workshops/12C_databases_4/boston_block_groups.geojson")
+mybg <- read_sf("data/boston_social_infra/boston_block_groups.geojson")
 
 
 

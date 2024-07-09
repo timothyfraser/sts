@@ -1,4 +1,5 @@
-# 
+# 13P_analytics.R
+# Practice: Mapping Nearest Polling Places in Boston
 
 
 # How close is your nearest polling place? 
@@ -9,8 +10,6 @@
 # in Boston precincts to demonstrate how to 
 # identify your distance from your nearest polling place, 
 # focusing on the sf and dplyr packages in R.
-
-
 
 
 # 0. Import Data ############################
@@ -263,59 +262,5 @@ mydist %>%
 mydist %>% write_sf("data/boston_voting/mydistances.geojson")
 
 
-
-# EXTRA #######################################
-
-# How did we get this geospatial data? See below.
-
-## Precincts ###########################
-
-# Next, let’s gather our precinct polygon data, 
-# straight from source on Boston’s open data platform.
-
-# We will save most files in this tutorial as .rds files,
-# because it’s a convenient way to compress and work 
-# with geospatial data in R, without having to reproject
-# each time we load in the data.
-# However, you could just as easily save them as .kml files, 
-# which we will do at the end of this tutorial, 
-# using the sf package’s write_sf() function.
-
-# Load in a kml file straight from source.
-# You could replace this with your kml file name
-# data = read_sf("https://bostonopendata-boston.opendata.arcgis.com/datasets/2bc185ec9b0b478d8c2f7e720d116863_0.kml?outSR=%7B%22latestWkid%22%3A2249%2C%22wkid%22%3A102686%7D") %>%
-#   # grab (and rename) just relevant files
-#   select(ward_precinct = WARD_PRECINCT, geometry) %>%
-#   # transform to an Equal Area projection
-#   st_transform(crs = aea) %>%
-#   # save as a .rds file for easy access
-#   saveRDS("data/boston_voting/precincts.rds")
-
-## Polling Places ########################
-
-
-# Download Polling Places in Boston as Points
-# read_sf("https://bostonopendata-boston.opendata.arcgis.com/datasets/f7c6dc9eb6b14463a3dd87451beba13f_5.kml?outSR=%7B%22latestWkid%22%3A2249%2C%22wkid%22%3A102686%7D") %>%
-#   # Convert to Equal Area Projection
-#   st_transform(crs = aea) %>%
-#   # Turn our numeric Ward and Precinct codes into 2-digit codes
-#   mutate(Ward = str_pad(Ward, width = 2, side = "left", pad = "0"),
-#          Precinct = str_pad(Precinct, width = 2, side = "left", pad = "0"),
-#          # And then bind them together into a ward-precinct identier
-#          ward_precinct = paste(Ward, Precinct, sep = "")) %>%
-#   # keep (and rename) just columns we need and get rid of extraneous data
-#   select(id = OBJECTID, ward_precinct, geometry) %>%
-#   # Save to file
-#   saveRDS("data/boston_voting/polling_places.rds")
-
-
-# Train Lines ##########################
-
-# Finally, I downloaded and converted the shape files 
-# for the Boston T (metro/subway system here). 
-# You can download them yourself from MassGIS, 
-# or import my processed version, 
-# saved as train_lines_boston.rds 
-# and train_stops_boston.rds.
 
 
