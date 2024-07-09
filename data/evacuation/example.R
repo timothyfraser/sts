@@ -1,60 +1,13 @@
-#' @name evacuation/example.R
+#' @name evacuation/example.rds
 #' @title Evacuation Dataset for Hurricane Dorian
 #' @description
 #' Sourced from Fraser 2022 in Sustainability Science
 #' Edges represent Facebook users going from City A to City B
 
-# Key Files:
-# example.R - (this script) an explainer for the dataset, with lots of examples.
-# edges.rds - city-to-city pairs, every 8 hours, right before and after the disaster.
-# nodes.rds - data.frame of cities, with demographic traits
-# dorian.rds - spatial network object. Has geography column in it for nodes and edges.
-#              Skip this for temporal analysis.
-
-# Here's a basic codebook about the evacuation data.
-
-# edges.rds
-# - from_geoid: census county subdivision id for the source municipality
-# - to_edges: census county subdivision id for the destination municipality.
-# - date_time: date and time in 8 hour chunks, 
-#              lasting a few days prior to Hurricane Dorian hitting land
-#              and stretching for a week or two after. 
-#              See lower parts of this example.R script on GitHub for examples 
-#              of ways you could optionally aggregate this data if desired.
-# - evacuation: how many additional Facebook users moved between 
-#               these two county subdivisions (municipalities) 
-#               in the 8 hour period, compared to average levels 
-#               before the crisis. 
-#               Positive flow indicates evacuation. 
-#               Negative flow indicates sheltering in place.
-# - km: distance between from_geoid and to_geoid municipalities.
-
-
-# nodes:
-# - geoid: census county subdivision id for that municipality 
-# - pop - population in 2018
-# - pop_women - share of women
-# - pop_black - share of black residents
-# - pop_white - share of white residents 
-# - pop_hisplat - share of Hispanic / Latino residents
-# - median_income - Median Household Income
-# - some_college - percentage of residents with some college education or more.
-# - social_capital - a social capital index score from 0-1, approximating strength of social ties. From Fraser, Page-Tan, and Aldrich 2022. (We'll read this paper later for class as a measurement example.)
-
-# Good rule of thumb: ignore variables that are unfamiliar and undefined. 
-# Always better to use variables you know. 
-# I just recommend using the evacuation, km, and demographic variables. 
-# I will formally define a few relevant demographic variables for this dataset. 
-# Please ignore the others - they are holdovers from a past project.
-
-
-# Note: every census county subdivision's geoid 
-# is related to every county and state geoid. 
-# The first 2 digits of a geoid shows the state.
-# The first 5 digits show the fully county geoid, called the fips code. 
-# If you want to know the name of a county, 
-# ChatGPT knows the names and fips codes of counties, in my experience.
-
+# Defining the edges dataset
+# evacuation = # of people moving compared to the baseline amount of movement pre-crisis.
+# weight = positive --> more movement than usual
+# weight = negative --> less movement than usual
 
 # Getting Tabular Data #################################################
 library(dplyr)
@@ -111,9 +64,15 @@ library(lubridate)
 
 
 # How much does distance affect number of evacuees?
+edges = read_rds("data/evacuation/edges.rds")
+# county subdivision = cities/municipalities
+
 
 edges = read_rds("data/evacuation/edges.rds") %>%
   sample_n(size = 20000)
+
+# 1 row = 1 city-pair
+
 
 # date_time is a date-time formatted variable.
 # This means the lubridate package can help us convert it
@@ -126,17 +85,53 @@ edges %>%
   mutate(month = lubridate::month(date_time)) %>%
   # Get the hour
   mutate(hour = lubridate::hour(date_time)) 
-  # Get hours since min time
+# Get hours since min time
 
 # Get average evacuation over period at 8 AM, 4 PM, and 12 Midnight
 edges %>%
   mutate(hour = lubridate::hour(date_time)) %>%
-  group_by(from_geoid, to_geoid, hour) %>%
+  group_by(hour) %>%
   summarize(evacuation = mean(evacuation, na.rm = TRUE))
 
 # Etc.
 
 rm(list = ls())
+
+
+# Iteration #########################################
+
+read_rds("data/evacuation/edges.rds") %>%
+  sample_n(size = 20000) %>%
+  lm(formula = evacuation ~ date_time + km)
+
+
+read_rds("data/evacuation/edges.rds") %>%
+  sample_n(size = 20000) %>%
+  group_by(date_time) %>%
+  reframe(lm(formula = evacuation ~ km) %>% broom::tidy()) %>%
+  filter(term == "km") %>%
+  ggplot(mapping = aes(x = date_time, y = estimate)) +
+  geom_col()
+
+# Might want to consider filtering your edges in a meaningful way first.
+# When was Hurricane Dorian?
+# How many days do you want to analyze?
+# Which cities do you want to analyze?
+# Which cities do you not want to analyze?
+
+read_rds("data/evacuation/nodes.rds") %>%
+  glimpse()
+# geoid = census code
+# pop = population
+# pop_women = % women
+# pop_black = % black residents
+# pop_hisplat = % hispanic / latino residents
+# rainfall_14days = average or total rainfall during that period
+# median_income
+
+
+
+
 
 # Spatial Network Visualization #######################################
 library(dplyr)
@@ -181,3 +176,8 @@ ggplot() +
 rm(list = ls())
 
 
+# from | to | weight
+#   A  | B  |   1
+#   A  | C  |   0
+#   A  | B  |   1000
+#   A  | C  |   -50

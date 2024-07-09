@@ -67,6 +67,7 @@ library(ggplot2) # data visualization
 airlines = read_csv("airlines.csv")
 flights = read_csv("flights_sample.csv")
 months = read_csv("months.csv")
+origins = read_csv("origins.csv")
 
 # View our data
 flights %>% glimpse()
@@ -172,6 +173,12 @@ gg_one_month = ggplot() +
 
 # View it
 gg_one_month
+
+
+plotly::ggplotly(gg_one_month, tooltip = c("x"))
+
+
+
 
 
 ## stat_one_carrier #################################
