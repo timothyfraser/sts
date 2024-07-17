@@ -61,9 +61,13 @@ counties = read_sf("data/transportation/counties.geojson") %>%
   # Join in dta by county
   left_join(by = "geoid", y = data)
 
+counties
+
 # Get US states surrounding NY
 states = read_sf("data/transportation/states.geojson")  %>%
   filter(state %in% c("NY", "PA", "NJ", "VT", "NH", "CT", "MA"))
+
+states
 
 # We've even got roads in New York state, by county
 # (pretty big file)
