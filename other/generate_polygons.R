@@ -10,9 +10,10 @@ library(tigris)
 wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 
 # EMISSIONS ########################################
+unlink("data/transportation/states.geojson")
 
 ## states ############################
-shapes = tigris::states(year = 2020, cb = TRUE, resolution = "20m") %>%
+tigris::states(year = 2020, cb = TRUE, resolution = "20m") %>%
   st_as_sf() %>%
   setNames(names(.) %>% tolower()) %>%
   select(geoid, state = stusps, name, area_land = aland, area_water = awater, geometry) %>%
