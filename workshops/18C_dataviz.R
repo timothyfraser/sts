@@ -17,6 +17,7 @@ library(viridis) # for color palettes
 library(sf) # for mapping 
 library(ggspatial) # for map annotations
 library(ggpubr) # for combining visuals
+library(plotly) # for interactive visuals
 
 ## 0.2 Data ############################
 
@@ -142,7 +143,7 @@ gg1
 # 2. Color Palette ###################################
 
 # Let's choose our color palette
-# We're showing the rate of cars per capita.
+# We're showing the rate of cars per million residents
 
 # We could do a few different color palettes.
 
@@ -271,7 +272,7 @@ gg2 = gg1 +
     # Specify a discrete colorbar (steps)
     guide = guide_colorsteps(barheight = 10, show.limits = TRUE),
     # And add a name
-    name = "Passenger Car\nEmissions\nper capita",
+    name = "Passenger Car\nEmissions\nper million\nresidents",
   )
 
 gg2
@@ -293,7 +294,7 @@ counties %>% as_tibble() %>%
 
 gg3 = gg2 + 
   labs(title = "Expected Sulfur Dioxide Emissions per Capita",
-       subtitle = "in New York Counties in 2025",
+       subtitle = "in New York Counties (n = 62) in 2025",
        caption = paste0(
          "Your Name Here, Affiliation",
          "\n", # linebreak
@@ -409,11 +410,381 @@ gg4 +
           mapping = aes(color = "Neighbors")) +
   geom_sf(data = poly_max, fill = NA, linewidth = 1.25,
           mapping = aes(color = "Highest Rate")) +
+  # Clarify outline colors
   scale_color_manual(values = c("black", "darkgrey")) +
+  # ditch the name of the legend; don't really need it.
+  labs(color = NULL) +
   coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
 
 
 
+# 11. Buffer Zone ####################################
+
+# Although, it would be nice to be able to show instead, 
+# here's the general range we think might be affected.
+
+# the coordinate reference system appears 
+# to be in LENGTHUNIT = "meters" 
+# So we'll write the distance for our buffer radius in meters
+st_crs(poly_max)
+
+# Create a buffer of 100 km around the centroid of the max polygon
+poly_buffer = poly_max %>%
+  # Get centroid of polygon
+  summarize(geometry = st_centroid(geometry)) %>%
+  # Turn centroid into polygon buffer of 100 km (100 m * 1000)
+  summarize(geometry = st_buffer(geometry, dist = 100*1000))
+
+# Draw a buffer,
+# and let's use the color aesthetic as a trick 
+# to add a label to the legend.
+gg4 +
+  geom_sf(data = poly_max, fill = NA, linewidth = 1.25,
+          mapping = aes(color = "Highest Rate")) +
+  geom_sf(data = poly_buffer, fill = "pink", alpha = 0.25,
+          mapping = aes(color = "100 km Zone\nof Influence")) +
+  scale_color_manual(values = c("pink", "black")) +
+  labs(color = NULL) +
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
+# We're implying with the buffer that the surrounding polygons
+# are influenced by the max polygon.
+
+
+# 12. Bounding Box ###################################
+
+# Alternatively, we could make a bounding box to focus everyone's attention.
+
+# Find our polygon with the max
+poly_max = counties %>%
+  filter(rate_cars == max(rate_cars))
+
+# Get the neighbors
+poly_neighbors = counties %>%
+  select(geoid, geometry) %>%
+  st_join(y = poly_max %>% select(geometry),
+          join = st_touches, left = FALSE)
+
+# Get the bounding box around the neighboring polygons
+poly_nbox = poly_neighbors %>%
+  st_bbox() %>%
+  st_as_sfc() %>%
+  tibble(geometry = .) %>%
+  st_as_sf(crs = 4326)
+
+# Visualize the bounding box as a study region
+gg4 +
+  geom_sf(data = poly_nbox, fill = NA,  linewidth = 1,
+          mapping = aes(color = "Study Region")) + 
+  # Make the box black, with no legend title
+  scale_color_manual(values = "black") +
+  labs(color = NULL) +
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
+
+
+# 13. Magnify ###################################
+
+# Alternatively, we could magnify a section of the map,
+# using a bounding box. Let's try it, narrowing into NYC counties.
+
+# Suppose we want to see New York City up close.
+poly_nyc = counties %>%
+  # Filter by county name to the 5 NYC boroughs
+  filter(name %in% c("Queens County", "Kings County", 
+                     "Bronx County", "New York County",
+                     "Richmond County"))
+# Get bounding box coordinates around nyc
+bb = poly_nyc %>%
+  st_bbox() 
+# Get a magnification box from those coordinates
+poly_magnify = bb %>%
+  st_as_sfc() %>%
+  tibble(geometry = .) %>%
+  st_as_sf(crs = 4326)
+
+# Let's make a box around it!
+gg5a = gg4 + 
+  geom_sf(data = poly_magnify, fill = NA, color = "black", linetype = 1.5) +
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
+
+gg5a
 
 
 
+
+# Now, make the magnified version
+gg5b = gg4 + 
+  # Plot the box...
+  geom_sf(data = poly_magnify, fill = NA, color = "black", 
+          # Increase linewidth, since you'll be zoomed in
+          linewidth = 2) +
+  # Crop the plot to the bounding box extend
+  coord_sf(
+    xlim = c(bb$xmin, bb$xmax), ylim = c(bb$ymin, bb$ymax), 
+    # say expand = FALSE to crop EXACTLY to the bounding box, with no wiggle room.
+    expand = FALSE)  +
+  # Overwrite the labels, to better fit the new content
+  labs(title = "New York City Counties (n = 5)",
+       caption = NULL, subtitle = NULL) +
+  # Drop the legend
+  guides(fill = "none")
+
+gg5b
+# Okay, this is more boring than I expected,
+# but still a fine proof of concept
+
+gg5 = ggarrange(
+  plotlist = list(gg5a, gg5b), 
+  ncol = 2, nrow = 1,
+  # Size the plot widths as 2-to-1
+  widths = c(2,1),
+  # Size the plot heights as 2-to-1
+  heights = c(2,1))
+
+# Save it to file.
+# play around with the height and width in ggsave()
+# until you get it right.
+ggsave(gg5, filename = "workshops/18C_visual_gg5.png", dpi = 300, width = 10, height = 6)
+
+# View it
+browseURL("workshops/18C_visual_gg5.png")
+
+
+# Note: ggarrange outputs can't become plotly objects
+# Try it - it won't work.
+ggplotly(gg5)
+
+
+
+# 14. Annotation #####################
+
+# How can we annotate our maps?
+# Well, fortunately, all ggplot objects are a bunch of x,y coordinates.
+# So as long as we make a data.frame of annotations with x,y coordinates,
+# we can pipe those into geom_text() or geom_label()
+
+# Look at the bounding box
+st_bbox(counties)
+
+# Let's make a test note
+note0 = tibble(
+  x = -79,
+  y = 44,
+  label = "Stuff"
+)
+
+# Here the text!
+gg4 +
+  geom_text(data = note0, mapping = aes(x = x, y = y, label = label))
+
+# Or if we want a border, here's another way to do it.
+gg4 +
+  geom_label(data = note0, mapping = aes(x = x, y = y, label = label))
+
+
+# Let's try a more meaningful annotation.
+poly_max %>%
+  select(name, cars, rate_cars, pop)
+
+# Hamilton County has the highest rate of emissions from cars
+# 0.1 tons, 22.9, with ~4000 residents
+
+note1 = poly_max %>%
+  select(name, cars, rate_cars, pop) %>%
+  as_tibble() %>%
+  summarize(
+    label = paste0(
+      "Highest Emissions Rate ",
+      "\n     ", 
+      name,
+      "\n     ",
+      round(rate_cars, 1), " tons of SO2 per 1M residents"
+    ))
+
+
+gg6 = gg4 +
+  # label the highlight polygon
+  geom_sf(data = poly_max, fill = NA, color = "black", linewidth = 1) +
+  # Add some text
+  geom_text(data = note1,
+            # Customize the x and y directly
+            mapping = aes(x = -79.5, y = 44.7, label = label),
+            # Format the text
+            # left-justify the text, bold it, make it black
+            hjust = 0, fontface = "bold", color = "darkgrey") + 
+  # Recrop, since we edited feature locations
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
+
+gg6
+
+
+# 15. Lines #######################################
+
+# How do we know that Hamilton County refers to the black outlined county?
+# We can draw an arrow from the annotation to the feature
+
+# Might help to look at the coordinates of that polygon's bounding box
+poly_max %>%
+  st_bbox()
+
+gg7a = gg6 +
+  geom_segment(
+    mapping = aes(
+      # Tweak the original text point location
+      x = -78, y = 44.3,
+      # Guestimate the edge of the polygon
+      xend = -74.86, yend = 43.5),
+    color = "darkgrey", linewidth = 0.75
+  ) +
+  # Recrop, since we edited feature locations
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45), expand = FALSE) 
+
+
+gg7a
+
+# Need a curve instead? Try geom_curve()
+gg7b = gg6 +
+  geom_curve(
+    mapping = aes(
+      x = -78, y = 44.3,
+      xend = -74.86, yend = 43.5),
+    color = "darkgrey", linewidth = 0.75, 
+    # Adjust curvature
+    # Negative values make left-handed curve;
+    # Positive values make right-handed curve;
+    # Zero makes a straight line
+    curvature = 0.25
+  ) +
+  # Recrop, since we edited feature locations
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45), expand = FALSE) 
+
+# View it
+gg7b
+
+
+
+# 16. Arrow + Scale #######################################
+
+# Always clarify north and scale in your map,
+# using ggspatial's functions
+
+gg7b +
+  # Add north arrow to top right
+  ggspatial::annotation_north_arrow(location = "tr") +
+  # Add scale to bottom left
+  ggspatial::annotation_scale(location = "bl")
+
+
+# 17. Interactivity ######################################
+
+# Plotly can handle geom_segment(), but not geom_curve()
+# It will also transplant your geom_text()
+ggplotly(gg7a)
+
+# Might need to adjust label position.
+# Honestly, if you're making a plotly,
+# it makes more sense to just put your annotations into hoverlabels.
+
+
+# 18. Final Visual #####################################
+
+# Here's a final visual, all in one swoop.
+
+
+poly_ny = states %>% filter(state == "NY")
+
+poly_max = counties %>%
+  filter(rate_cars == max(rate_cars))
+
+note1 = poly_max %>%
+  select(name, cars, rate_cars, pop) %>%
+  as_tibble() %>%
+  summarize(
+    label = paste0(
+      "Highest Emissions Rate ",
+      "\n     ", 
+      name,
+      "\n     ",
+      round(rate_cars, 1), " tons of SO2 per 1M residents"
+    ))
+
+
+gg = ggplot() +
+  # Blank background
+  theme_void(base_size = 14) + 
+  # Very bland, light background of states
+  geom_sf(data = states, fill = "lightgrey", 
+          color = "white", linewidth = 1.25) +
+  # Highlight new york state over it, but not too much
+  # Add a thick linewidth - that'll help later.
+  geom_sf(data = poly_ny, fill = NA, color = "grey", linewidth = 3) +
+  # Map the main trend - chloropleth heatmap
+  geom_sf(data = counties, mapping = aes(fill = rate_cars),
+          # Do ourselves a favor and make the outlines white and thin
+          color = "white", linewidth = 0.5) +
+  # Color Palette
+  scale_fill_gradient2(
+    low = "#648FFF", high = "#DC267F", 
+    mid = "white", midpoint = log(6.975),
+    trans = "log", na.value = "grey",
+    labels = scales::label_number(accuracy = 1),
+    # Add breaks that capture variation on a natural log scale okay
+    breaks = c(1, 2, 4, 7, 14, 21),
+    # Specify a discrete colorbar (steps)
+    guide = guide_colorsteps(barheight = 10, show.limits = TRUE),
+    # And add a name
+    name = "Passenger Car\nEmissions\nper million\nresidents"
+  ) +
+  # Labelling
+  labs(title = "Expected Sulfur Dioxide Emissions per Capita",
+       subtitle = "in New York Counties (n = 62) in 2025",
+       caption = paste0(
+         "Your Name Here, Affiliation",
+         "\n", # linebreak
+         "Predicted using EPA MOVES 3.1 software.")) +
+  # Center the plot title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+  # Center the plot subtitle
+  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
+  # Move the caption
+  theme(plot.caption = element_text(hjust = 0))  +
+  
+  geom_curve(
+    mapping = aes(
+      x = -78, y = 44.3,
+      xend = -74.86, yend = 43.5),
+    color = "darkgrey", linewidth = 0.75, 
+    # Adjust curvature
+    # Negative values make left-handed curve;
+    # Positive values make right-handed curve;
+    # Zero makes a straight line
+    curvature = 0.25
+  ) +
+  # label the highlight polygon
+  geom_sf(data = poly_max, fill = NA, color = "black", linewidth = 1) +
+  # Add some text
+  geom_text(data = note1,
+            # Customize the x and y directly
+            mapping = aes(x = -79.5, y = 44.7, label = label),
+            # Format the text
+            # left-justify the text, bold it, make it black
+            hjust = 0, fontface = "bold", color = "darkgrey") +
+  # Add north arrow to top right
+  ggspatial::annotation_north_arrow(location = "tr") +
+  # Add scale to bottom left
+  ggspatial::annotation_scale(location = "bl") +
+  # Crop the plot
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45), expand = FALSE) 
+
+
+ggsave(gg, filename = "workshops/18c_visual_gg.png",
+       dpi = 300, width = 8, height = 6)
+
+browseURL("workshops/18C_visual_gg.png")
+
+
+
+# Phew! That was a lot of layers!
+
+# Good work!
+# Let's clean up.
+rm(list = ls())
