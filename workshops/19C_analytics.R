@@ -10,10 +10,9 @@
 ## 0.1 Packages ###########################
 library(dplyr)
 library(readr)
-library(sf)
 library(ggplot2)
 library(viridis)
-library(gstat)
+library(sf)
 library(broom)
 
 ## 0.2 Data ################################
@@ -41,13 +40,17 @@ data = grid %>%
   # Calculate rate of sites by population density
   mutate(rate = sites / pop_density * 1000) %>%
   # Fix NAs.
-  mutate(rate = if_else(is.infinite(rate), NA, rate))  %>%
+  mutate(rate = if_else(is.infinite(rate), true = NA, false = rate))  %>%
   # While we're at it, let's also grab the x and y coordinates of each centroid
   mutate(geometry %>% st_centroid() %>% 
            st_coordinates() %>%
            as_tibble() %>% select(x = 1, y = 2)) %>%
   # Finally, let's drop NAs in our key variables
   filter(rate != "NA", median_income != "NA")
+
+data #view it
+
+
 
 # We're going to keep it as a tibble;
 # if we ever need to make it back into a spatial data.frame, 
@@ -63,6 +66,12 @@ data$y %>% summary()
 
 # Clear excess data
 remove(bg, census, grid, sites)
+
+
+
+
+
+
 
 # 1. Evaluating Autocorrelation ############################################
 
@@ -84,6 +93,8 @@ data$rate %>% log() %>% hist() # does logging it make it more normal? (yes!)
 # We can make a linear model 'm1'
 m1 = data %>% lm(formula = log(rate) ~ median_income) 
 
+m1
+
 # View its model fit - pretty small; understandable.
 broom::glance(m1)
 
@@ -99,15 +110,21 @@ m1
 stat = m1 %>% broom::augment() 
 # We can use this to find out a lot of important information.
 
+
+
+
+
 # Let's look at the residuals - the error in your predictions
 # Residuals (.resid) = Observed Value (y) - Predicted Value (.fitted)
 stat %>%
   select(y = `log(rate)`, .fitted, .resid, .std.resid)
+
 # This includes:
 # - y = observed value (log-rate)
 # - .fitted = predicted value (predicted log-rate)
 # - .resid = residual/error (error in predicted log-rate)
 # - .std.resid = standardized residual/error (standardized error in predicted log-rate, mean-centered at 0)
+
 
 # Linear models (and most models) assume that 
 # the error in model predictions 
@@ -124,12 +141,13 @@ stat %>%
 # - histogram of standardized residuals
 # - scatterplot of residuals and predicted values
 
+
+
 ## 1.2 Histogram of Residuals #########################
 
 # That's a tad skewed
 stat$.std.resid %>% hist()
 
-#
 
 # Let's build a normal curve real quick
 example = tibble(
@@ -137,6 +155,7 @@ example = tibble(
   density = dnorm(x, mean = 0, sd = 1),
   count = nrow(stat) * density # estimate the count for your sample size
 ) 
+
 
 # How do our observed residuals compare to a normal distribution?
 ggplot() +
@@ -154,6 +173,8 @@ ggplot() +
 # Pretty funky. Not perfect.
 
 remove(example)
+
+
 
 ## 1.3 Scatterplot of Residuals and Fitted Values ##################
 
@@ -177,11 +198,15 @@ ggplot() +
   geom_smooth(data = stat, mapping = aes(x = .fitted, y = .resid), 
               method = "loess", se = FALSE)
 
+
+
 # Okay, this suggests to me that something is definitely up.
 # Certain levels of predictions do tend to have similar levels of error.
 # That is autocorrelation.
 
 # How are we going to handle this?
+
+
 
 
 # 2. Spatial Autocorrelation ######################################
@@ -196,6 +221,9 @@ s = data %>%
   # Make it into a spatial data.frame, with wgs projection (4326)
   st_as_sf(crs = 4326)
 
+
+
+
 # Let's map our predictions and residuals
 # First, do our predictions tend to cluster spatially?
 # Eg. do nearby cells have similar predictions??
@@ -203,11 +231,16 @@ ggplot() +
   geom_sf(data = s, mapping = aes(fill = .fitted)) +
   scale_fill_viridis(option = "plasma")
 
+
+
+
 # Second, do our residuals tend to cluster spatially?
 # Eg. do nearby cells have similar levels of error??
 ggplot() +
   geom_sf(data = s, mapping = aes(fill = .std.resid)) +
   scale_fill_viridis(option = "plasma")
+
+
 
 
 # Quite!!
@@ -217,7 +250,9 @@ ggplot() +
 # Can we measure the degree of spatial autocorrelation?
 
 
-# 3. Accounting for Spatial Autocorrelation
+
+
+# 3. Accounting for Spatial Autocorrelation #################################
 
 ## 3.1 Neighborhood Effects ###########################################
 
@@ -227,6 +262,7 @@ ggplot() +
 # the neighborhood accounts for the difference.
 # Control for the neighborhood in your model.
 
+data %>% glimpse()
 m2 = data %>% lm(formula = log(rate) ~ median_income + factor(neighborhood))
 
 stat2 = m2 %>% augment()
@@ -242,11 +278,10 @@ ggplot() +
 
 
 
+
+
+
 ## 3.2 Measure Autocorrelation as a Variable #########################################
-
-# install.packages("spdep")
-library(spdep)
-
 
 s = data %>%
   st_as_sf(crs = 4326)
@@ -262,11 +297,8 @@ adjacency = s %>%
   group_by(cell) %>%
   summarize(
     # Get mean of adjacent values
-    adj_mean = mean(log(adjrate), na.rm = TRUE),
-    # Get standard deviation of adjacent values
-    adj_sd = sd(log(adjrate), na.rm = TRUE),
-    # Fix NAs
-    adj_sd = if_else(is.na(adj_sd), 0, adj_sd))
+    adj_mean = mean(log(adjrate), na.rm = TRUE)
+    )
 
 
 ## 3.3 Control for Autocorrelation in Models ##############################
@@ -277,7 +309,7 @@ adjacency = s %>%
 # by controlling for the mean of adjacent logged rates
 m3 = data %>% 
   left_join(by = "cell", y = adjacency) %>%
-  lm(formula = log(rate) ~ median_income + adj_mean)
+  lm(formula = log(rate) ~ median_income + adj_mean + neighborhood)
 
 # Our predictive power sure does increase!
 m3 %>% broom::glance()
@@ -286,6 +318,9 @@ m3 %>% broom::glance()
 m3$residuals %>% scale() %>% hist()
 # Better.
 
+
+
+
 ### Differencing #############################
 
 # We could try to control for adjacent values
@@ -293,7 +328,8 @@ m3$residuals %>% scale() %>% hist()
 
 m4 = data %>%
   left_join(by = "cell", y = adjacency) %>%
-  lm(formula = log(rate) - adj_mean ~ median_income)
+  lm(formula = log(rate) - adj_mean ~ median_income + neighborhood)
+
 
 # Our predictive power should fall significantly,
 # because we're now predicting the DIFFERENCE in log-rates, a different concept
@@ -304,29 +340,77 @@ m4$residuals %>% scale() %>% hist()
 # A little funky, but in a new way!
 
 
+
+
+
 ### Correlation Structure ###########################
 
 # We could use advanced regression techniques.
 # We can add a spatial correlation 
 
+library(sdep)
 # The MASS::glmmPQL() function lets us do penalized 
 # https://stats.oarc.ucla.edu/r/faq/how-do-i-model-a-spatially-autocorrelated-outcome/
 
+# nlme helps with random effects models,
+# and it can also support correlation structures.
+# Linear Mixed Effects model
 library(nlme)
 
 # Add a dummy variable, that's just a constant
 data$constant = 1
 
+
+# You could do a standard model like so
+data %>%
+  lm(formula = log(rate) ~ median_income)
+
+
+
+# You could do it as a mixed effect model with no mixed effects like so
+nlme::lme(
+  fixed = log(rate) ~ median_income, 
+  data = data, 
+  random = ~ 1 | constant
+)
+
+
+
+# Notice how the median_income beta coefficient remains the same?
+
+# It's about to change, once we add a spatial correlation structure.
+
 # We can specify a spatial correlation structure like this:
 
 # If you expect a 'standard' spatial correlation, try corGaus() 
-nlme::lme(fixed = log(rate) ~ median_income, data = data, random = ~ 1 | constant, 
-          correlation = corGaus(1, form = ~ x + y))
 
-# If you have reason to believe there's an exponential change in your value over distance,
-# use corExp()
-nlme::lme(fixed = log(rate) ~ median_income, data = data, random = ~ 1 | constant, 
-          correlation = corExp(1, form = ~ x + y))
+mm1 = nlme::lme(
+  fixed = log(rate) ~ median_income, 
+  data = data, 
+  random = ~ 1 | constant, 
+  correlation = corSpatial(form = ~ x + y, type = "gaussian")
+)
+mm1
+
+# If you have reason to believe there's an exponential change in your value over distance
+mm2 = nlme::lme(
+  fixed = log(rate) ~ median_income, 
+  data = data, 
+  random = ~ 1 | constant, 
+  correlation = corSpatial(form = ~ x + y, type = "exponential")
+)
+
+mm2
+
+mm3 = nlme::lme(
+  fixed = log(rate) ~ median_income, 
+  data = data, 
+  random = ~ 1 | constant, 
+  correlation = corSpatial(form = ~ x + y, type = "linear")
+)
+
+mm3
+
 
 # However, you can see that this method is kind of like taking a shot in the dark.
 # You probably should do a likelihood ratio test to compare,
@@ -337,4 +421,40 @@ nlme::lme(fixed = log(rate) ~ median_income, data = data, random = ~ 1 | constan
 # Not great for data communication.
 # Hard to implement for iterative big data subsets.
 
+### Likelihood ratio test ###############################
+
+# Model Likelihood
+
+# Does model 2 significantly improve on the model fit (loglikelihood)
+# compared to model one?
+# How different is the model loglikelihood from m2 compared to model 1?
+# Chisq = evaluates how different is (0 to infinity)
+# Pr(>Chisq) = p-value - statistical significance
+# How likely is that difference due to chance?
+lmtest::lrtest(mm1,mm2)
+
+
+# Let's compare a bunch in a row
+lmtest::lrtest(mm1,mm2,mm3)
+
+
+
+# Let's compare a bunch in a row
+lmtest::lrtest(mm1,mm3,mm2)
+
+
+# Can we output this as a tibble?
+lmtest::lrtest(mm1,mm3,mm2) %>%
+  broom::tidy()
+
+
+# Can we output this as a tibble?
+lmtest::lrtest(mm1,mm3,mm2) %>%
+  broom::tidy() %>%
+  mutate(model = c("Gaussian", "Linear", "Exponential")) %>%
+  select(model, loglik = LogLik, statistic, p.value)
+
+
+
+rm(list = ls())
 
