@@ -72,7 +72,7 @@ states
 
 # We've even got roads in New York state, by county
 # (pretty big file)
-roads = read_rds("data/transportation/roads.rds")
+# roads = read_rds("data/transportation/roads.rds")
 
 
 
@@ -88,6 +88,8 @@ ggplot() +
           # Do ourselves a favor and make the outlines white and thin
           color = "white", linewidth = 0.5)
   
+
+
 
 # 2. Sense of Space ########################################
 
@@ -106,11 +108,15 @@ gg0 = ggplot() +
 
 gg0
 
+
+
 # Let's add NY on top of that
 gg0 = gg0 +
   # Highlight new york state over it, but not too much
   # Add a thick linewidth - that'll help later.
   geom_sf(data = poly_ny, fill = NA, color = "grey", linewidth = 3)
+
+
 gg0
 
 
@@ -122,6 +128,8 @@ gg0 = gg0 +
           color = "white", linewidth = 0.5)
 
 gg0
+
+
 
 # 3. Cropping ###################################
 
@@ -140,7 +148,7 @@ gg1 = gg0 +
 gg1
 
 
-# 2. Color Palette ###################################
+# 4. Color Palette ###################################
 
 # Let's choose our color palette
 # We're showing the rate of cars per million residents
@@ -175,7 +183,9 @@ gg1 +
 
 
 
-# 3. Transformations ##################################
+# 5. Transformations ##################################
+
+data$rate_cars %>% hist()
 
 # It would be better if our color palette
 # followed a log scale
@@ -192,7 +202,7 @@ gg1 +
 
 
 
-# 4. Scale Labels ###########################################
+# 6. Scale Labels ###########################################
 
 # Can we make the labels for our breaks nicer?
 # We can use scales::label_number()
@@ -222,7 +232,7 @@ gg1 +
 
 
 
-# 5. Scale Breaks ###########################################
+# 7. Scale Breaks ###########################################
 
 # These breaks feel a little arbitrary. Can we get something that
 # will feel more normal to the reader?
@@ -247,7 +257,7 @@ gg1 +
   )
 
 
-# 6. Color steps ################################
+# 8. Color steps ################################
 
 # We can also customize the color bar 
 # to be an interval vs. discrete categories,
@@ -272,24 +282,29 @@ gg2 = gg1 +
     # Specify a discrete colorbar (steps)
     guide = guide_colorsteps(barheight = 10, show.limits = TRUE),
     # And add a name
-    name = "Passenger Car\nEmissions\nper million\nresidents",
+    name = "Passenger Car\nEmissions\nper million\nresidents"
   )
 
 gg2
 
-# 7. Labelling ######################################
+
+
+# 9. Labelling ######################################
 
 # Let's do some basic storytelling using the labels.
 
 # How many counties? 
 counties %>% as_tibble() %>% 
   select(geoid) %>% distinct() %>% summarize(count = n())
+
 # How many years 
 counties %>% as_tibble() %>% 
   select(year) %>% distinct() %>% summarize(count = n())
+
 # What year? - 2025
 counties %>% as_tibble() %>% 
   select(year) %>% distinct()
+
 # Data source? - EPA MOVES software
 
 gg3 = gg2 + 
@@ -303,7 +318,10 @@ gg3 = gg2 +
 # Good clear labelling
 gg3
 
-# 8. Theming #############################################
+
+
+
+# 10. Theming #############################################
 
 # Can we move around some things?
 gg4 = gg3 +
@@ -315,6 +333,10 @@ gg4 = gg3 +
   theme(plot.caption = element_text(hjust = 0)) 
 
 gg4
+
+
+
+
 
 
 # Can we actually move the legend a little, 
@@ -333,7 +355,7 @@ gg4
 # You can add a background color
 gg4 +
   theme(legend.position = c(0.95, 0.6)) +
-  theme(legend.background = element_rect(fill = "grey", color = NA))
+  theme(legend.background = element_rect(fill = "dodgerblue", color = NA))
 
 
 # You can make it transparent, if you add 2 digits to the hexadecimal code 
@@ -346,7 +368,13 @@ gg4 +
 
 
 
-# 9. Highlighting #######################################
+gg4
+
+
+
+
+
+# 11. Highlighting #######################################
 
 # Let's start highlighting locations,
 # to do some storytelling.
@@ -354,9 +382,11 @@ gg4 +
 # Find me the polygon with the max 
 poly_max = counties %>%
   filter(rate_cars == max(rate_cars))
+
 # The polygon with the min
 poly_min = counties %>% 
   filter(rate_cars == min(rate_cars))
+
 # And the polygon nearest the median
 poly_med = counties %>%
   arrange(rate_cars) %>%
@@ -388,7 +418,7 @@ gg4 +
 
 
 
-# 10. Neighbors ###########################################################
+# 12. Neighbors ###########################################################
 
 # Maybe we might want to highlight a pattern of diffusion
 # Eg. where Albany (max) has high emissions, 
@@ -418,7 +448,9 @@ gg4 +
 
 
 
-# 11. Buffer Zone ####################################
+
+
+# 13. Buffer Zone ####################################
 
 # Although, it would be nice to be able to show instead, 
 # here's the general range we think might be affected.
@@ -428,12 +460,16 @@ gg4 +
 # So we'll write the distance for our buffer radius in meters
 st_crs(poly_max)
 
+
+
 # Create a buffer of 100 km around the centroid of the max polygon
 poly_buffer = poly_max %>%
   # Get centroid of polygon
   summarize(geometry = st_centroid(geometry)) %>%
   # Turn centroid into polygon buffer of 100 km (100 m * 1000)
   summarize(geometry = st_buffer(geometry, dist = 100*1000))
+
+
 
 # Draw a buffer,
 # and let's use the color aesthetic as a trick 
@@ -450,7 +486,9 @@ gg4 +
 # are influenced by the max polygon.
 
 
-# 12. Bounding Box ###################################
+
+
+# 14. Bounding Box ###################################
 
 # Alternatively, we could make a bounding box to focus everyone's attention.
 
@@ -471,6 +509,7 @@ poly_nbox = poly_neighbors %>%
   tibble(geometry = .) %>%
   st_as_sf(crs = 4326)
 
+
 # Visualize the bounding box as a study region
 gg4 +
   geom_sf(data = poly_nbox, fill = NA,  linewidth = 1,
@@ -481,7 +520,11 @@ gg4 +
   coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
 
 
-# 13. Magnify ###################################
+
+
+
+
+# 15. Magnify ###################################
 
 # Alternatively, we could magnify a section of the map,
 # using a bounding box. Let's try it, narrowing into NYC counties.
@@ -492,14 +535,26 @@ poly_nyc = counties %>%
   filter(name %in% c("Queens County", "Kings County", 
                      "Bronx County", "New York County",
                      "Richmond County"))
+
+
 # Get bounding box coordinates around nyc
 bb = poly_nyc %>%
   st_bbox() 
+
+bb$xmin
+bb$xmax
+
+
 # Get a magnification box from those coordinates
 poly_magnify = bb %>%
   st_as_sfc() %>%
   tibble(geometry = .) %>%
   st_as_sf(crs = 4326)
+
+
+
+
+
 
 # Let's make a box around it!
 gg5a = gg4 + 
@@ -519,7 +574,7 @@ gg5b = gg4 +
           linewidth = 2) +
   # Crop the plot to the bounding box extend
   coord_sf(
-    xlim = c(bb$xmin, bb$xmax), ylim = c(bb$ymin, bb$ymax), 
+    xlim = c(bb$xmin, bb$xmax), ylim = c(bb$ymin, bb$ymax),
     # say expand = FALSE to crop EXACTLY to the bounding box, with no wiggle room.
     expand = FALSE)  +
   # Overwrite the labels, to better fit the new content
@@ -532,6 +587,7 @@ gg5b
 # Okay, this is more boring than I expected,
 # but still a fine proof of concept
 
+library(ggpubr)
 gg5 = ggarrange(
   plotlist = list(gg5a, gg5b), 
   ncol = 2, nrow = 1,
@@ -543,19 +599,24 @@ gg5 = ggarrange(
 # Save it to file.
 # play around with the height and width in ggsave()
 # until you get it right.
-ggsave(gg5, filename = "workshops/18C_visual_gg5.png", dpi = 300, width = 10, height = 6)
+ggsave(gg5, filename = "workshops/18C_visual_gg5.png", 
+       dpi = 300, width = 10, height = 6)
 
 # View it
 browseURL("workshops/18C_visual_gg5.png")
 
 
+
 # Note: ggarrange outputs can't become plotly objects
 # Try it - it won't work.
+library(plotly)
 ggplotly(gg5)
 
 
 
-# 14. Annotation #####################
+
+
+# 16. Annotation #####################
 
 # How can we annotate our maps?
 # Well, fortunately, all ggplot objects are a bunch of x,y coordinates.
@@ -564,6 +625,9 @@ ggplotly(gg5)
 
 # Look at the bounding box
 st_bbox(counties)
+
+gg4 +
+  theme_bw()
 
 # Let's make a test note
 note0 = tibble(
@@ -574,23 +638,27 @@ note0 = tibble(
 
 # Here the text!
 gg4 +
+  theme_bw() +
   geom_text(data = note0, mapping = aes(x = x, y = y, label = label))
 
 # Or if we want a border, here's another way to do it.
 gg4 +
   geom_label(data = note0, mapping = aes(x = x, y = y, label = label))
 
+# shadowtext::geom_shadowtext
 
 # Let's try a more meaningful annotation.
 poly_max %>%
+  as_tibble() %>%
   select(name, cars, rate_cars, pop)
 
 # Hamilton County has the highest rate of emissions from cars
-# 0.1 tons, 22.9, with ~4000 residents
+# 0.1 tons, 22.9, with ~4000 residents (!?!?)
+
 
 note1 = poly_max %>%
-  select(name, cars, rate_cars, pop) %>%
   as_tibble() %>%
+  select(name, cars, rate_cars, pop) %>%
   summarize(
     label = paste0(
       "Highest Emissions Rate ",
@@ -600,7 +668,7 @@ note1 = poly_max %>%
       round(rate_cars, 1), " tons of SO2 per 1M residents"
     ))
 
-
+# Add text directly...
 gg6 = gg4 +
   # label the highlight polygon
   geom_sf(data = poly_max, fill = NA, color = "black", linewidth = 1) +
@@ -609,15 +677,26 @@ gg6 = gg4 +
             # Customize the x and y directly
             mapping = aes(x = -79.5, y = 44.7, label = label),
             # Format the text
-            # left-justify the text, bold it, make it black
+            # left-justify the text, bold it, make it grey
             hjust = 0, fontface = "bold", color = "darkgrey") + 
   # Recrop, since we edited feature locations
   coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
 
 gg6
 
+# Or use geom_label() instead, with transparency
+gg4 +
+  geom_sf(data = poly_max, fill = NA, color = "black", linewidth = 1) +
+  geom_label(data = note1,
+             mapping = aes(x = -79.5, y = 44.7, label = label),
+             hjust = 0, fontface = "bold", color = "darkgrey",
+             alpha = 0.5) + 
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45)) 
 
-# 15. Lines #######################################
+
+
+
+# 17. Lines #######################################
 
 # How do we know that Hamilton County refers to the black outlined county?
 # We can draw an arrow from the annotation to the feature
@@ -627,6 +706,7 @@ poly_max %>%
   st_bbox()
 
 gg7a = gg6 +
+  #theme_bw() +
   geom_segment(
     mapping = aes(
       # Tweak the original text point location
@@ -662,7 +742,7 @@ gg7b
 
 
 
-# 16. Arrow + Scale #######################################
+# 18. Arrow + Scale #######################################
 
 # Always clarify north and scale in your map,
 # using ggspatial's functions
@@ -674,18 +754,58 @@ gg7b +
   ggspatial::annotation_scale(location = "bl")
 
 
-# 17. Interactivity ######################################
-
-# Plotly can handle geom_segment(), but not geom_curve()
-# It will also transplant your geom_text()
-ggplotly(gg7a)
-
-# Might need to adjust label position.
-# Honestly, if you're making a plotly,
-# it makes more sense to just put your annotations into hoverlabels.
 
 
-# 18. Final Visual #####################################
+## Options for Scale #######################
+gg7b +
+  ggspatial::annotation_north_arrow(location = "tr") +
+  ggspatial::annotation_scale(location = "bl", style = 'bar')
+
+gg7b +
+  ggspatial::annotation_north_arrow(location = "tr") +
+  ggspatial::annotation_scale(location = "bl", style = 'ticks')
+
+
+## Options for Arrow ##########################
+
+gg7b +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(
+    location = "tr", 
+    style = north_arrow_orienteering())
+
+gg7b +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(
+    location = "tr", 
+    style = north_arrow_minimal())
+
+gg7b +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(
+    location = "tr", 
+    style = north_arrow_nautical())
+
+
+gg7b +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(
+    location = "tr", 
+    style = north_arrow_fancy_orienteering())
+
+gg7b +
+  ggspatial::annotation_scale(location = "bl") +
+  ggspatial::annotation_north_arrow(
+    location = "tr", 
+    style = north_arrow_fancy_orienteering(
+      fill = c("white", "darkgrey"), 
+      line_col = "white"))
+
+
+
+
+
+# 19. Final Visual #####################################
 
 # Here's a final visual, all in one swoop.
 
@@ -780,6 +900,170 @@ ggsave(gg, filename = "workshops/18c_visual_gg.png",
        dpi = 300, width = 8, height = 6)
 
 browseURL("workshops/18C_visual_gg.png")
+
+
+
+
+# 20. Interactivity ######################################
+
+# Plotly can handle geom_segment(), but not geom_curve()
+# It will also transplant your geom_text()
+library(plotly)
+
+
+# Might need to adjust label position.
+# Honestly, if you're making a plotly,
+# it makes more sense to just put your annotations into hoverlabels.
+
+
+poly_ny = states %>% filter(state == "NY")
+
+poly_max = counties %>%
+  filter(rate_cars == max(rate_cars))
+
+note1 = poly_max %>%
+  select(name, cars, rate_cars, pop) %>%
+  as_tibble() %>%
+  summarize(
+    label = paste0(
+      "Highest Emissions Rate ",
+      "\n     ", 
+      name,
+      "\n     ",
+      round(rate_cars, 1), " tons of SO2 per 1M residents"
+    ))
+
+
+pp = ggplot() +
+  # Blank background
+  theme_void(base_size = 14) + 
+  # Very bland, light background of states
+  geom_sf(data = states, fill = "lightgrey", 
+          color = "white", linewidth = 1.25) +
+  # Highlight new york state over it, but not too much
+  # Add a thick linewidth - that'll help later.
+  geom_sf(data = poly_ny, fill = NA, color = "grey", linewidth = 3) +
+  # Map the main trend - chloropleth heatmap
+  geom_sf(data = counties, mapping = aes(fill = rate_cars),
+          # Do ourselves a favor and make the outlines white and thin
+          color = "white", linewidth = 0.5)
+# This works...
+plotly::ggplotly(pp)
+
+
+
+
+pp = pp +
+  # Color Palette
+  scale_fill_gradient2(
+    low = "#648FFF", high = "#DC267F", 
+    mid = "white", midpoint = log(6.975),
+    trans = "log", na.value = "grey",
+    labels = scales::label_number(accuracy = 1),
+    # Add breaks that capture variation on a natural log scale okay
+    breaks = c(1, 2, 4, 7, 14, 21),
+    # Specify a discrete colorbar (steps)
+    #guide = guide_colorsteps(barheight = 10, show.limits = TRUE),
+    # And add a name
+    name = "Passenger Car\nEmissions\nper million\nresidents"
+  ) 
+
+# This works, but you can't customize the guide_colorsteps();
+plotly::ggplotly(pp)
+  
+# Can we add labels and theme?
+pp = pp +
+  # Labelling
+  labs(title = "Expected Sulfur Dioxide Emissions per Capita",
+       subtitle = "in New York Counties (n = 62) in 2025",
+       caption = paste0(
+         "Your Name Here, Affiliation",
+         "\n", # linebreak
+         "Predicted using EPA MOVES 3.1 software."))  +
+  # Center the plot title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+  # Center the plot subtitle
+  theme(plot.subtitle = element_text(hjust = 0.5, face = "italic")) +
+  # Move the caption
+  theme(plot.caption = element_text(hjust = 0)) 
+
+# This works
+# but no such thing as a subtitle in plotly!
+plotly::ggplotly(pp)
+
+
+
+# Do curves work?
+pp1 = pp +
+  geom_curve(
+    mapping = aes(
+      x = -78, y = 44.3,
+      xend = -74.86, yend = 43.5),
+    color = "darkgrey", linewidth = 0.75, 
+    # Adjust curvature
+    # Negative values make left-handed curve;
+    # Positive values make right-handed curve;
+    # Zero makes a straight line
+    curvature = 0.25
+  ) 
+# This doesn't work! Can't use geom_curve()
+plotly::ggplotly(pp1)
+
+
+
+
+
+# Does geom_segment() work?
+pp2 = pp +
+  geom_segment(
+    mapping = aes(
+      x = -78, y = 44.3,
+      xend = -74.86, yend = 43.5),
+    color = "darkgrey", linewidth = 0.75) 
+
+
+# Yes, this works.
+plotly::ggplotly(pp2)
+
+
+
+# Does geom_text() work?
+pp3 = pp2 +
+  # label the highlight polygon
+  geom_sf(data = poly_max, fill = NA, color = "black", linewidth = 1) +
+  # Add some text
+  geom_text(data = note1,
+            # Customize the x and y directly
+            mapping = aes(x = -79.5, y = 44.7, label = label),
+            # Format the text
+            # left-justify the text, bold it, make it black
+            hjust = 0, fontface = "bold", color = "darkgrey")
+
+
+
+# Yes, this works okay.
+plotly::ggplotly(pp3)
+
+
+# Do ggspatial annotations work?
+pp4 = pp3 +
+  # Add north arrow to top right
+  ggspatial::annotation_north_arrow(location = "tr") +
+  # Add scale to bottom left
+  ggspatial::annotation_scale(location = "bl")
+
+# No, these do not work.
+plotly::ggplotly(pp4)
+
+
+# Does cropping work?
+pp5 = pp3 +
+  # Crop the plot
+  coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45), expand = FALSE) 
+
+# Yes! this works!
+plotly::ggplotly(pp5)
+
 
 
 
