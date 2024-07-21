@@ -1,637 +1,696 @@
 #' @name 21C_databases.R
 #' @author Tim Fraser
-#' @description 
-#' 
-#' 
+#' @title Network Joins with Micromobility Networks
 
-#' Networks are everywhere in Social Systems.
-#' 
-#' Transit networks, mobility networks, social networks, 
-#' food networks, distribution networks, electrical networks,
-#' political networks, financial networks - you name it.
-#' 
-#' Any data that can be encoded as nodes and edges connecting those nodes is a network.
-#' 
-#' The problem is, networks are very large by definition,
-#' and so storing and computing attributes about them
-#' can be computationally intensive.
-#' 
-#' Each network is, essentially, an adjacency matrix
-#' of n rows x n columns for n nodes,
-#' where the values of each cell encode the edge weights.
-#' 
-#' This means, when working with big data and databases,
-#' you will always be trying to figure out: 
-#' - How do I work *efficiently** with network data?
-#' - How do I take a meaningful sample of a network?
-#' - How do I measure a meaningful quantity about my sample of the network?
-#' - What am I missing about the network because I looked at just a sample?
-#' 
-#' Today, we're going to learn some tools for handling network data in R.
+
+
+# 0. Background ##############################
+
+# We're going to use this SQLite database to access 
+# a refined version of our data. SQLite is really handy because 
+# we can ask it to do lots of number-crunching 
+# without loading all the millions of rows into our R environment, 
+# which would normally cause it to crash. 
+# Instead, we can feed SQLite basic dplyr functions, 
+# like ```select()```, ```mutate()```, ```filter()```, 
+# ```group_by()```, and ```summarize()```, 
+# and then ask the SQLite database to ```collect()``` 
+# the resulting data and give it to us in R. 
+# This output (should) be much, much, much smaller, 
+# at a size R can handle.
+
+# Our data is saved in `data/bluebikes`
+
+
+## Unzip ##########################
+
+# First, remember to unzip the bluebikes dataset,
+# using the code shared in setup_bluebikes.R, reproduced below.
+# unzip("data/bluebikes/bluebikes.zip", junkpaths = TRUE, exdir = "data/bluebikes")
+
+
+# Here's our data:
+
+## Datasets ############################
+
+# - `data/bluebikes/bluebikes.sqlite`: a HUGE compendium of datasets.
+# These files are a little too big to access on their own, 
+# so we will access them via the SQLite database. Contains:
+
+# --- `tally_rush_edges` (in `bluebikes.sqlite`): a dataset tallying 
+# number of rides each day during morning and evening rushhour.
+
+# --- `tally_rush` (in `bluebikes.sqlite`): a dataset tallying number 
+# of rides each day during morning and evening rushhour, for EACH START AND END STATION. That's a LOT!
+
+#  - `data/bluebikes/stationbg_dataset.rds`: an `sf` dataset of 
+# geolocated points for all bluebike stations present in our data. Contains the `geoid` of the census block group each station is located in. Also contains all the traits of that block group!
+
+
+#  Others You might run into, but don't need to think about as much.
+
+# - `data/bluebikes/dates.rds`: a dataset of dates and days of the week
+# for the past 10 years. Useful for filtering, but not strictly necessary.
+
+# - `data/bluebikes/bgdataset.rds`: an `sf` dataset of all census block group
+# polygons in Boston. Contains all the traits of each block group.
+
+
+## Codebook ##########################
+
+# Here's a quick summary of all variable names you will run into.
+
+# - `code`: unique ID for each bluebikes station.
+# 
+# - `geoid`: unique ID for each census block group.
+# 
+# - `count`: total rides occuring during that time, between those places.
+# 
+# Example Demographics Variable Set:
+#   
+#   - `pop_density_2020`: population density per square kilometer in 2020. Some places are missing data.
+# 
+# - `pop_density_2020_smooth5`: population density, with missing data filled in by taking the median of their 5 nearest neighboring census block groups.
+# 
+# - `pop_density_2020_smooth10`: population density, with missing data filled in by taking the median of their 10 nearest neighboring census block groups. Either is fine to use.
+
+
+### Demographics ###############################
+#
+# - `pop_white_2020`: % of white residents (you can make pop_nonwhite_2020 by taking 1 - pop_white_2020)
+#
+# - `pop_black_2020`: % of Black residents
+#
+# - `pop_hisplat_2020`: % of Hispanic/Laitno residents
+# 
+# - `pop_asian_2020`: % of Asian residents
+# 
+# - `pop_natam_2020`: % of Native American residents
+# 
+# 
+
+### Socioeconomics ################################
+# 
+# - `pop_0_40000_2019`: % of families earning 0-40K a year.
+# 
+# - `pop_40001_60000_2019`: % of families earning 40-60K a year.
+# 
+# - `pop_60001_100000_2019`: % of families earning 60-100K a year.
+# 
+# - `pop_100000_plus_2019`: % of families earning 100K+ a year.
+# 
+# - `pop_some_college`: % of residents with some college education or more.
+# 
+# - `pop_employed_2019`: % of residents employed, out of total population.
+
+
+# I generated many other variables too, 
+# saved in `data/bluebikes/stationbg_dataset.rds.`
+# Let's look at them real quick.
+read_rds("data/bluebikes/stationbg_dataset.rds") %>% 
+  select(-contains("smooth")) %>%
+  names()
+
 
 # 0. Setup #################################
 
 ## 0.1 Load Packages ##################################
 
-# Let's load our packages 
-library(dplyr) # data wrangling
+library(dpylr) # data wrangling
 library(readr) # reading data
 library(ggplot2) # visualizing data
-library(igraph) # working with graphs
-library(tidygraph) # dplyr functions with graphs
-library(ggraph) # for network layouts
-library(purrr) # for iterative actions
+library(DBI) # for databases
+library(dbplyr) # data wrangling for databases
+library(RSQLite) # for SQLite
+library(stringr) # for string manipulation
 
-## 0.2 Data #############################################
+## 0.2 Loading bluebikes ##############################
+
+# Let's investigate our data.
+
+# Tell R to hire a 'SQL translator' object, which we'll name 'db',
+# sourced from our bluebikes data
+db <- dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+
+# What tables are in our database?
+db %>% dbListTables()
+
+# Let's investigate them.
+
+### stationbg_dataset ######################################
+
+# stationbg_dataset is a table of bluebikes stations 
+# and the traits of the block group they are located in.
+db %>% tbl("stationbg_dataset")
+
+# code - bluebikes station unique ID
+# geoid - census block group unique ID, in which bluebikes station is located
+# x - longitude of station in WGS projection
+# y - latitute of station in WGS projection
+# pop_2020 - population in 2020
+# pop_density_2020 - population density per square kilometer in 2020.
+# pop_white_2020 - % White residents in 2020
+# pop_black_2020 - % Black residents in 2020
+# pop_asian_2020 - % Asian residents in 2020
+# pop_natam_2020 - % Native American residents in 2020
+# pop_hisplat_2020 - % Hispanic/Latino residents in 2020
+# pop_women_2019 - % women in 2019
+# pop_over_65_2019 - % residents over age 65 in 2019
+# pop_some_college - % residents with some college education in 2019
+# pop_0_40000_2019 - % households earning 0-40K in 2019
+# pop_40001_60000 - % households earning 40-60K in 2019
+# pop_60001_100000_2019 - % households earning 60-100K in 2019
+# pop_100000_plus - % households earning >100K in 2019
+db %>% tbl("stationbg_dataset") %>%
+  glimpse()
+
+### tally_rush_edges ##############################
+
+# `tally_rush_edges` is a table tallying the number of riders 
+# traveling between bluebikes stations
+# during a specific day and rush hour period (AM or PM)
+db %>% tbl("tally_rush_edges")
+
+# start_code - unique ID of bluebikes station where the ride started
+# end_code - unique ID of bluebikes station where the ride ended
+# day - day of ride
+# rush - AM or PM rush hour
+# count - total riders
 
 
-# Today, we'll work with the Japanese Disaster Recovery Committees Dataset.
+### tally_rush #####################################
 
-# This is a committee membership list, 
-# for many committees set up to rebuild Japanese towns and cities 
-# after the 3.11 (2011) tsunami, earthquake, and nuclear crisis.
+# `tally_rush` is a table tallying the number of bluebikes riders (count)
+# during AM or PM rush hour (rush) per day (day)
+db %>% tbl("tally_rush")
 
-# Membership lists are a common form of big data that make networks.
-
-# eg. bank - account relationships
-# eg. funder - contracter relationships
-# eg. platform - user relationships
-
-# These are all bipartite networks - 2 part networks.
-# They involve nodes of 2 types.
-# In a bipartite network, 
-# you only have edges than link nodes of type A to nodes of type B.
-
-# In our network, 
-# type A - is committees.
-# type B - is members.
-
-# Let's load in their data.
-
-# Read in committee traits
-co = read_csv("data/committees/committees.csv") 
-# Read in member traits
-mem = read_csv("data/committees/members.csv")
-
-# Read in the membership list - called the edge-list.
-edges = read_csv("data/committees/edgelist.csv")
+# It is an aggregation of `tally_rush_edges`
 
 
-## 0.3 Making a tidygraph ###############################
 
-# Bundle the nodes together
-# make sure they share the same name for their unique ID column and type column
-# distinguishing the committees as committees and the members as members
-nodes = bind_rows(co, mem)
+### dates ##########################################
 
-# Let's make a tidygraph object out of this.
-g = tbl_graph(nodes = nodes, edges = edges, directed = FALSE, node_key = "name")
-
-# Let's save this tidygraph object as a compressed .rds file
-g %>% write_rds("data/committees/graph_bipartite.rds", compress = "gz")
+# `dates` is a table of helper data corresponding to each date, 
+# including year and weekday.
+db %>% tbl("dates")
 
 
-# Cleanup
+
+## 0.3 Example Query #####################
+
+db %>%
+  # Tell R to look in the tally_rush dataset in our SQLite database
+  # It will return the first 1000 rows
+  tbl("tally_rush") %>%
+  # Grab first 6 rows
+  head()
+
+## 0.4 Collecting Data #####################
+
+mine <- db %>%
+  # Tell R to look in the tally_rush dataset in our SQLite database
+  # It will return the first 1000 rows
+  tbl("tally_rush") %>%
+  # Grab first 6 rows
+  head() %>%
+  # extract those five rows to be used
+  collect()
+
+# Check it out!
+mine
+
+## 0.6 Handling Dates ####################################
+
+### Using ```str_sub()``` ####################
+
+# `str_sub()`, also known as string-sub, 
+# is an amazing function loaded within the `stringr` package. 
+# It allows you to extract part of your entry, 
+# based on the number of characters.
+# It's great for extracting the year, month, day, census code, etc. 
+# out of structured text. 
+
+# Here's a quick example.
+
+# Let's make an example dataset
+mydates <- data.frame(day = c("2020-10-11", "2021-05-02", "2021-02-03"))
+
+mydates
+
+
+# We can extract the first four letters
+# by setting `start = 1` and `end = 4`.
+
+mydates$day %>% str_sub(start = 1, end = 4)
+# Though you could also write it like this
+# str_sub(mydates$day, start = 1, end = 4)
+
+# You could also write it like this, 
+# within `mutate()`.
+
+mydates %>%
+  mutate(day = str_sub(day, start = 1, end = 4))
+
+# Finally, you could systematize a bunch of info 
+# in multiple columns!
+
+mydates %>%
+  mutate(
+    # let's get the year
+    y = str_sub(day, start = 1, end = 4),
+    # then the month
+    m = str_sub(day, start = 6, end = 7),
+    # then the day!
+    d = str_sub(day, start = 9, end = 10))
+
+#Handy, right?
+
+### Summarizing Data with Dates ########################
+db %>%
+  tbl("tally_rush") %>%
+  # Zoom into October, using the 6th and 7th characters in the day vector
+  filter(str_sub(day, start = 6, end = 7) == "10")  %>%
+  # Zoom into just am rush hour traffic
+  filter(rush == "am") %>%
+  # Count how many rows (days) is in that?
+  summarize(count = n()) %>%
+  # collect response - 243 days!
+  collect()
+
+
+### Visualize Collected Data by Date ##################
+myviz <- db %>%
+  tbl("tally_rush") %>%
+  # Zoom into October, using the 6th and 7th characters in the day vector
+  filter(str_sub(day, start = 6, end = 7) == "10")  %>%
+  # Zoom into just am rush hour traffic
+  filter(rush == "am") %>%
+  # collect response - 243 days!
+  collect() %>%
+  # If you ever work with date data, 
+  # you WILL have to transform it from character into date format
+  mutate(day = as.Date(day))
+
+
+
+myviz %>% 
+  ggplot(mapping = aes(x = day, y = count)) +
+  geom_jitter(size = 3, color = "purple", alpha = 0.5) +
+  labs(subtitle = "Yay October!")
+
+dbDisconnect(db)
+
+
+# 1. Querying Network Data ############################
+
+## 1.1 Querying Edges #################################
+
+# The big one we need to worry about file size for
+# with is `tally_rush_edges`. 
+# It's also the coolest!
+
+# Connect to db
+db = dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+
+
+### Build your Query ###############
+
+# When working with REALLY BIG DATASETS,
+# it's a good idea to wait until you've finalized
+# your query before using collect() to collect the data.
+
+# Step by step, construct your query of a table, but don't collect it yet.
+
+db %>%
+  tbl("tally_rush_edges") %>%
+  # zoom into just 2021
+  filter(str_sub(day, 1,4) == "2021") %>%
+  # zoom into just morning
+  filter(rush == "am")
+
+### Check Query Size ###########################################
+
+# It's much easier to summarize data and collect a small number of rows 
+# than to collect a ton of rows at once.
+# Even easier is to summarize data and preview the results, without collecting
+
+# This means that it's very easy to check sample size.
+
+# How many edges in this dataset?
+db %>%
+  tbl("tally_rush_edges") %>%
+  summarize(count = n())
+# >5 million!!!
+
+# How many edges in 2021?
+db %>%
+  tbl("tally_rush_edges") %>%
+  filter(str_sub(day, 1,4) == "2021")  %>%
+  summarize(count = n())
+# >400,000!!!
+
+# How many edges in 2021 am rush hour periods?
+db %>%
+  tbl("tally_rush_edges") %>%
+  filter(str_sub(day, 1,4) == "2021")  %>%
+  filter(rush == "am") %>%
+  summarize(count = n())
+# >27,000!!!
+
+
+# It's just ~20K rows, so let's collect it. I'd avoid going above 50K.
+edges = db %>%
+  tbl("tally_rush_edges") %>%
+  # zoom into just 2021
+  filter(str_sub(day, 1,4) == "2021") %>%
+  # zoom into just morning
+  filter(rush == "am") %>%
+  collect() 
+
+### Time Benchmarking ##################
+
+# How long will your query take?
+
+# Might be worth checking if you're doing this query for a dashboard.
+# Look at the 'elapsed' cell
+system.time({
+  db %>%
+    tbl("tally_rush_edges") %>%
+    # zoom into just 2021
+    filter(str_sub(day, 1,4) == "2021") %>%
+    # zoom into just morning
+    filter(rush == "am") %>%
+    collect() 
+})
+# On my computer, it's about 1.14 seconds. How about on your computer?
+# This will depend on your computer's / posit.cloud project's RAM.
+
+
+# Disconnect
+dbDisconnect(db)
+
+
+
+# That's a lot of data! Let's look at just a few rows.
+edges %>% head()
+
+# `start_code` - we've got the unique identifier
+#               for each bluebikes station 
+#               that a person checked a bike out from. 
+# - `end_code` shows the station they returned 
+#            the bike to afterwards. 
+# - `day` shows that date it all occurred during. 
+# - `rush indicates whether it happened during rush hour in the ```"am"``` or ```"pm"```. 
+# - `count` is the number of rides (roughly = people).
+
+# Great! We've got the edges in this network, weighted by number of rides.
+
+
+## 1.2 Querying Node Data ###############################
+
+# Next, we're going to gather the nodes in this network.
+# These nodes are bluebikes stations, each located in a geoid.
+
+db = dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+
+# Check variables available
+db %>%
+  tbl("stationbg_dataset") %>%
+  glimpse()
+
+# Let's get the block group population of African American residents where each station is.
+# Compare two versions of our variable - here, we have a lot of missing data,
+# so we used spatial interpolation from the 5 neighboring block groups 
+# to estimate each block group's percentage. 
+# (See! Our spatial smoothing from last week does matter!)
+# This is called pop_black_2020_smooth5.
+
+### Build test query #########################################
+
+# Check how many nodes - okay that's a doable size, no sampling needed
+db %>% tbl("stationbg_dataset") %>% summarize(count = n())
+
+# Build a test query, where we will create a binary classifier 
+# for each station
+db %>%
+  tbl("stationbg_dataset") %>%
+  select(code, geoid, pop_black_2020_smooth5) %>%
+  # And let's classify it as 
+  # above 50% or below 50%
+  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, "yes", "no")) 
+
+### Collect Query ######################
+
+# Complete the query and download the nodes
+nodes = db %>%
+  tbl("stationbg_dataset") %>%
+  select(code, geoid, pop_black_2020_smooth5) %>%
+  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, "yes", "no")) %>%
+  collect()
+
+# Disconnect
+dbDisconnect(db)
+
+# 2. Network Joins ########################################
+
+# Okay, so we've got edge and node data...
+# but it only will help us if we can combine it in ways useful to us.
+
+# All edges have a 'from' node, a 'to' node, and a 'weight'.
+# In this case, our network is temporal.
+# -- our 'from' node is the 'start_code'
+# -- our 'to' node is the 'end_code'
+# -- our weight is 'count'
+# -- each 'day'-'rush' pair forms its own network.
+
+edges %>% head()
+
+## Single Node Join #####################################
+
+# We can join in the traits of our nodes to our edge dataset,
+# using the traits of our source/from/start node.
+# To do so, we need to specifically state
+# the name of the ID variable in edges ("start_code")
+# and the name of the ID variable in nodes ("code")
+# which we will join by.
+# These don't have to be the same; we can link them by saying
+# by = c("start_code" = "code")
+
+edges %>%
+  left_join(by = c("start_code" = "code"), y = nodes)
+
+# Now we have a LOT of information!
+
+# In fact, it's probably a better idea to do as small a join as possible.
+
+# Join in using the node 'code' JUST the variable `maj_black`
+edges %>%
+  left_join(
+    by = c("start_code" = "code"),
+    y = nodes %>% select(code, maj_black))
+
+# It probably will help us to actually rename 
+# our node variables before joining them in,
+# so that it's clear that this is actually 
+# the variable maj_black pertaining to the start_code.
+
+edges %>%
+  left_join(
+    by = c("start_code" = "code"),
+    # Select and rename variables...
+    y = nodes %>% select(code, start_black = maj_black))
+
+# What can we do with that information?
+
+
+# How many rides started from a station
+# in a majority Black neighborhood (block group)?
+edges %>%
+  left_join(by = c("start_code" = "code"), 
+            y = nodes %>% select(code, start_black = maj_black)) %>%
+  group_by(start_black) %>%
+  summarize(count = n())
+
+# I'm seeing 256 rides in this year (2011) started in majority Black neighborhoods.
+
+# Handy side benefit: if start_black or end_black == NA,
+# that means the start_code station or end_code station 
+# are not in boston proper (eg. maybe in Cambridge or beyond.) 
+# I'd like to zoom into Boston, for the time being.
+
+
+
+
+
+
+
+## Double-Node Joins ########################################
+
+# Next, let's try joining in node data BOTH for
+# traits of the starting station neighborhood and
+# traits of the ending station neighborhood
+
+# It becomes REALLY important to rename variables here;
+# we'll call our varibles 
+# start_black - % Black in 2020 in start station block group
+# end_black - % Black in 2020 in end station block group
+
+# Build a query object
+data = edges %>%
+  # Join in start node traits
+  left_join(
+    by = c("start_code" = "code"),
+    y = nodes %>% select(code, start_black = maj_black)) %>%
+  # Join in end node traits
+  left_join(
+    by = c("end_code" = "code"),
+    y = nodes %>% select(code, end_black = maj_black)) 
+
+# View a few rows
+data %>% head()
+
+
+
+
+## Join BEFORE Collecting #################################
+
+# Finally, it might be more efficient for you to actually perform your join
+# BEFORE collecting data.
+# This is only possible if both tables being joined are from the same database.
+
+# Let's try it.
+
+# Connect
+db = dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+
+# Build an edges query - but don't collect it!
+q_edges = db %>%
+  tbl("tally_rush_edges") %>%
+  # zoom into just 2021
+  filter(str_sub(day, 1,4) == "2021") %>%
+  # zoom into just morning
+  filter(rush == "am")
+
+# Build a nodes query - but don't collect it!
+q_nodes = db %>%
+  tbl("stationbg_dataset") %>%
+  # Narrow columns
+  select(code, geoid, pop_black_2020_smooth5) %>%
+  # Classify it as above 50% or below 50%
+  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, "yes", "no"))  %>%
+  # Select ONLY final variables you need for joining
+  select(code, maj_black)
+
+
+# Build the joining query, using q_edges and q_nodes as if they were real tables
+q_data = q_edges %>%
+  # Join in start node traits
+  left_join(
+    by = c("start_code" = "code"),
+    y = q_nodes %>% select(code, start_black = maj_black)) %>%
+  # Join in end node traits
+  left_join(
+    by = c("end_code" = "code"),
+    y = q_nodes %>% select(code, end_black = maj_black)) %>%
+  # Remove rows where start_black == NA or end_black == NA
+  filter(start_black != "NA" & end_black != "NA")
+
+
+# Time Benchmark the Query
+system.time({
+  q_data %>% collect()
+})
+
+# Collect the query!
+data = q_data %>% collect()
+
+# View it
+data  %>% head()
+
+
+
+
+## Join & Aggregate BEFORE Collecting ###########################
+
+# Finally, what if we want to do some aggregation?
+# We could optionally have our database do the aggregation before collecting,
+# which would reduce the amount of data that has to get sent.
+
+# For example, suppose we were measuring frequency:
+# How often do people bike between 
+# predominantly Black neighborhoods?
+# Let's find out, using ```group_by()``` and ```summarize()```. 
+# Let's add up the total trips (stored in ```count```) 
+# for each subgroup.
+
+# Let's use our q_data query we made before;
+# we'll made a new q_stat query 
+q_stat = q_data %>%
+  group_by(start_black, end_black) %>%
+  summarize(trips = sum(count, na.rm = TRUE)) 
+
+# We can preview the result 
+q_stat
+
+# And we can test how long would it take to process the entire request?
+system.time({
+  q_stat %>% collect()
+})
+
+# And we could collect it like so
+stat = q_stat %>% collect()
+
+# View it!
+stat
+
+# Suppose we have some extra formatting to do.
+# This is a good task to have R do after collect()-ing the data.
+stat %>%
+  ungroup() %>%
+  mutate(total = sum(trips),
+         percent = trips / total) %>%
+  # Clean up the percentages
+  mutate(percent = round(percent*100, digits = 1))
+
+
+# Disconnect
+dbDisconnect(db)
+
+# Clean up
 rm(list = ls())
 
 
+# 3. Learning Checks #####################################
 
-## 0.4 Functions ########################################
 
-# I've made some custom helper functions for us,
-# that will simplify the process of working with tidygraph iteratively.
-# You can run the code and load the functions in locally,
-# using the source() command.
+### LC 1 ###########################################
 
-source("functions/coaffiliate.R")
-source("functions/bind_graphs_list.R")
-source("functions/graph_join_list.R")
+# How many rides during PM rush hour in 2017 started from a station in a majority Hispanic/Latino block group?
+# Use your skills developed in Single Node Join to test it out.
+# Hint: use pop_hisplat_2020_smooth5.
 
-# Check your environment. You should now have several custom functions loaded.
+# See solutions in 21S_databases.R.
 
 
-# 1. Using Tidygraph ######################################
 
-## 0.1 Read in a tidygraph ######################
 
-# Let's read in our tidygraph object
-g = read_rds("data/committees/graph_bipartite.rds")
+### LC 2 ###############################################
 
-# The whole value added of tidygraph is to create a way to interact
-# with graph objects made in 'igraph' - a common shared package in R and Python
-# in a tidy, dplyr friendly way.
+# During PM Rush Hour in 2017, 
+# how many trips went from a majority Hispanic/Latino neighborhood 
+# to a majority Non-Hispanic/Non-Latino neighborhood?
 
-# Let's view our tidygraph
-g
 
-## 0.2 Activate() a tidygraph ######################
+# See solutions in 21S_databases.R.
 
-# It recognizes itself as a **bipartite** graph with:
-# **nodes**
-# and 
-# **edges**
+### LC 3 ####################################################
 
-# If we activate() the nodes,
-# we can do dplyr functions to them
-g %>%
-  activate("nodes") %>%
-  # Filter to committees in Iwate OR members
-  filter(geography == "iwate" | type == "member" )
+# Get the total number of trips during PM rush hour in 2017.
+# Using system.time({}), find out how long it takes to collect() that query.
+# Compare this against getting the total number of trips during PM rush hour between 2017 and 2021.
 
-# Notice how the number of edges has decreased too!
 
-# If we activate() the edges,
-# we can do dplyr functions to them
-g %>%
-  activate("edges") %>%
-  # Filter to just committee 9
-  filter(from == 9)
-
-## 0.3 Querying a Tidygraph #################################
-
-# Wouldn't it be much more helpful
-# if we could filter edges based on the traits of nodes?
-
-g %>%
-  activate("edges") %>%
-  mutate(from_geo = .E()$weight )
-
-g %>%
-  activate("nodes") %>%
-  mutate(from_geo = .N()$type ) %>%
-  select(name, type, from_geo)
-
-# Create a new variable in the edges dataset, called 'from_geo'
-# where we will get the geography variable from the nodes .N()
-# but only for the nodes which are listed in the edges .E()$from
-
-g %>%
-  activate("edges") %>%
-  mutate(from_geo =  .N()$geography[ .E()$from   ] ) 
-
-## 0.4 as_tibble() for Quantities of Interest ###########################
-
-# We could then use as_tibble() to turn the nodes or edges into a data.frame...
-# and then data wrangle some quantities of interest
-
-g %>%
-  activate("edges") %>%
-  mutate(from_geo =  .N()$geography[ .E()$from   ] )  %>%
-  as_tibble() %>%
-  group_by(from_geo) %>%
-  summarize(
-    # Count up total memberships
-    memberships = sum(weight),
-    # Count up the unique members  
-    people = to %>% unique() %>% length())
-
-
-# What about the gender distribution of these committees?
-# Does geography make a difference?
-g %>%
-  activate("edges") %>%
-  mutate(from_geo =  .N()$geography[ .E()$from   ],
-         to_gender = .N()$gender[ .E()$to ])  %>%
-  as_tibble() %>% 
-  # For each committee geography and each member gender category...
-  group_by(from_geo, to_gender) %>%
-  # Count up quantities of interest
-  summarize(
-    memberships = sum(weight),
-    people = to %>% unique() %>% length()) 
-
-# 2. Graph Transformations #############################
-
-
-# tidygraph is full of transformer functions
-# that take a graph as input and do various processes to it,
-# helping you get a new derivative graph from it.
-
-# These are typically called to_split, to_components, to_local_neighborhood, etc.
-
-# We're going to learn how to use them below.
-
-
-## 2.1 to_split() #######################################
-
-# to_split() splits a graph into multiple graphs,
-# specifically, into a list() of graph objects.
-
-# It splits them using a variable, either from the nodes or edges data.frame.
-
-### split by nodes #########################################
-
-# Let's use the existing 'geography' variable from the nodes data.frame
-# we'll split into one subgraph per level of geography
-x = g %>%
-  morph(to_split, geography, split_by = "nodes")
-
-class(x) # it's a list
-names(x) # it has these items
-x$`geography: iwate` # you can query them like so
-x %>% with(`geography: iwate`) # equivalent to $ sign
-
-# cleanup
-remove(x)
-
-
-
-
-### split by edges #############################
-
-# Split the graph into multiple graphs, using the `from_geo` edges variable
-x = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  morph(to_split, from_geo, split_by = "edges")
-
-class(x) # it's a list
-names(x) # see the names of the list items
-x$`from_geo: iwate` # query one
-x %>% with(`from_geo: iwate`)   # this is equivalent to the $ sign
-
-# cleanup
-remove(x)
-
-## 2.2 to_subcomponent() #############################################
-
-# Narrow into the subcomponent of the graph which contains a specific node ID
-# A subcomponent is a chunk of the graph with all its nodes and edges,
-# having filtered out any nodes and edges
-# that do not connect to nodes in that subcomponent.
-
-x = g %>%
-  morph(to_subcomponent, node = which(.N()$name == "committee_23" ))
-
-class(x) # still a list
-names(x) # see the name of its list item
-x$subgraph
-x %>% with(subgraph)   # this is equivalent to the $ sign
-
-
-## 2.3 to_local_neighborhood() ################################
-
-# Suppose we want to know,
-# Hey, for committee 23,
-# how many nodes are connected to it?
-# We can use morph() with to_local_neighborhood()
-
-### first-degree ties ##############################
-
-# Filter the graph to edges
-# of first degree ties to your committee
-x = g %>%
-  morph(
-    to_local_neighborhood, # function 
-    node = which(.N()$name == "committee_23"),  # which node ids?
-    order = 1, # how many degrees of distance?
-    mode = "all" # in-ward edges, out-ward edges, or all edges?
-  )
-
-names(x) # View names
-x$neighborhood # access it
-x %>% with(neighborhood) # access it
-
-# Quick plot it
-x %>% with(neighborhood) %>% plot()
-
-
-# We can then count up the number of neighbors 
-x %>% 
-  with(neighborhood) %>%
-  activate("edges") %>%
-  as_tibble() %>% #   # Transform to tibble
-  summarize(persons = to %>% unique() %>% length()) # count up total edges to neighbors
-
-
-### 2nd-degree ties ###############################
-
-# What if I want to know, 
-# not who is connected to node X,
-# but who is connected to the nodes that are connected to node X?
-# Eg. second-order / second-degree contacts / neighbors
-
-# We can still use to_local_neighborhood to do this.
-x = g %>%
-  morph(to_local_neighborhood, node = which(.N()$name == "committee_23"), mode = "all",
-    order = 2 # 2 degrees of separation
-  )
-
-x %>% with(neighborhood) 
-
-# Quick plot!
-x %>% with(neighborhood)  %>% plot()
-
-
-# Quantities of Interest
-
-# How many different committees is committee 23 connected to?
-# these are second-degree ties, 
-# so just filter to committees, exclude committee 23, and count them up!
-x$neighborhood %>%
-  activate("nodes") %>%
-  as_tibble() %>%
-  filter(type == TRUE & name != "committee_23") %>%
-  summarize(count = n())
-
-# Or, how many committees from Miyagi Prefecture are linked to committee 23?
-x$neighborhood %>%
-  activate("nodes") %>%
-  as_tibble() %>%
-  filter(type == TRUE & name != "committee_23") %>%
-  group_by(geography) %>%
-  summarize(count = n())
-
-
-### nth-degree ties ######################################
-
-# I'm working with a bipartite network,
-# so in a network where the origin is committee 23,
-# degree 1 ties will be members of committee 23
-# degree 2 ties will be committees
-# degree 3 ties will be members of degree-2 committees
-# degree 4 ties will be committees
-
-# We can still use to_local_neighborhood to do this.
-x = g %>%
-  morph(to_local_neighborhood, node = which(.N()$name == "committee_23"), mode = "all",
-        order = 4 # 2 degrees of separation
-  )
-
-x %>% with(neighborhood) 
-
-# Quick plot!
-x %>% with(neighborhood)  %>% plot()
-
-
-# These are the first-and-second degree member contacts of committee 23.
-# How many are there?
-x %>% 
-  with(neighborhood) %>%
-  activate("nodes") %>%
-  filter(type == FALSE & name != "committee_23") %>%
-  as_tibble() %>%
-  group_by(gender) %>%
-  summarize(count = n())
-
-
-remove(x)
-
-## 2.4 to_shortest_path() #########################################
-
-# Often, we want to know the shortest path between 2 nodes.
-# In mobility networks, it can help with routing problems.
-# In social networks, it can tell us which nodes are major bridging agents.
-
-x = g %>%
-  morph(
-    to_shortest_path, 
-    from = which( .N()$name == "committee_23" ), 
-    to = which( .N()$name == "committee_37"), 
-    mode = "out", # edges going outward from the first node 
-    weights = .E()$weight
-  ) 
-
-class(x) # it's a list
-names(x) # names
-x$shortest_path # query it
-x %>% with(shortest_path) # this works too
-
-# View it!
-plot(x$shortest_path)
-
-
-# Quantities of Interest 
-
-# How many steps does it take
-# to get from node A to B?
-x %>% 
-  with(shortest_path) %>%
-  activate("edges") %>%
-  as_tibble() %>%
-  summarize(count = n())
-
-
-# How many commmittees are on-route from A to B?
-x$shortest_path %>%
-  activate("nodes") %>%
-  as_tibble() %>%
-  # Filter to committees
-  filter(type == TRUE) %>%
-  # Filter out start/end nodes
-  filter(!name %in% c("committee_23", "committee_37")) %>%
-  summarize(count = n())
-
-
-# 2. Coaffiliation ###################################
-
-## 2.1 Coaffilation Networks ###################
-
-# We might want to make transformations to our graph,
-# transforming our graph from one form into another,
-# and then keep working with tidygraph.
-# 
-# For example, what if we want to make a coaffiliation graph?
-# Eg. instead of committee - member edges,
-# a graph of committee-committee edges, where edges = # of members in common
-# or
-# a graph of member-member edges, where edges = # of committees in common
-
-# Load coaffiliation function
-source("functions/coaffiliate.R")
-
-# Let's get a coaffiliation graph of committees
-gco = coaffiliate(graph = g, type = FALSE, names = TRUE, weight = "weight", diag = FALSE)
-
-# Let's quickly plot our coaffiliation network...
-plot(gco)
-
-
-
-## 2.2 Isolates ########################################
-
-# Our biggest challenge is always graph size - 
-# so we want to reduce our graph size as quickly as possible.
-
-# Nodes that have no edges are called 'isolates'.
-# We can remove the nodes using some custom filter functions from tidygraph.
-
-# Narrow into just nodes that are isolated
-gco %>%
-  filter(node_is_isolated())
-
-# This is equivalent to saying
-# Narrow into just nodes with a weighted degree centrality of zero
-gco %>%
-  activate("nodes") %>%
-  mutate(degree = centrality_degree(weights = .E()$weight )) %>%
-  filter(degree == 0)
-
-
-
-
-# 3. Quantities of Interest #######################################
-
-
-# What are our main quantities of interest?
-
-## 3.1 Distance To ###########################################
-
-# How far apart are nodes from Node X?
-
-# How far is each Committee from Committee 23?
-gco %>% 
-  mutate(steps = node_distance_to(nodes = which(.N()$name == "committee_23") )) %>%
-  as_tibble()
-
-# If weighted, use this one.
-# gco %>% mutate(steps = node_distance_to(nodes = 1, weights = .E()$weight))
-
-
-## 3.2 Centrality ###############################################
-
-# How central is this node?
-# How central is Committee 23?
-
-### degree centrality - undirected #####################
-# total edges going in or out of that node
-gco %>%
-  mutate(deg = centrality_degree(mode = "all"))
-
-### weighted degree centrality - undirected #######################
-# sum of edges (weights) going in or out of that node
-gco %>%
-  mutate(deg = centrality_degree(mode = "all", weights = .E()$weight ))
-
-### betweenness centrality - undirected ##################
-# number of shortest paths through graph that cross that node
-# higher = more bridging capacity
-# lower = lower bridging capacity
-gco %>%
-  mutate(betw = centrality_betweenness(directed = FALSE, weights = .E()$weight))
-
-# Get harder to calcualte on really big graphs
-
-
-## 3.3 Clustering ############################################
-
-# Do our points cluster together naturally?
-
-# Fast-greedy algorithm is one of the faster clustering strategies -
-# allows you to specify the number of groups, within limits
-gco %>%
-  mutate(community = group_fast_greedy(weights = .E()$weight, n_groups = 8))
-
-# There are dozens of others. 
-# Use a well established one, with clear justification,
-# or don't use one at all. 
-# A clustering algorithm without a clear justification is not useful.
-gco %>%
-  mutate(community = group_infomap() %>% factor() )
-
-
-# Eg. How many nodes are in each community?
-gco %>%
-  mutate(community = group_infomap() %>% factor() ) %>%
-  as_tibble() %>%
-  group_by(community) %>%
-  summarize(count = n())
-
-
-
-
-# 4. Iterating Tidygraphs ###############################
-
-# Suppose I have too much data.
-# Maybe it's not feasible to analyze the whole network at once.
-# I could create a variable to split up my edges...
-# Then split the graph up into several smaller graphs
-
-g2 = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  # Split the graph into multiple graphs, using the from_geo() edges variable
-  to_split(from_geo, split_by = "edges")
-
-# Our graph has become a list of multiple graphs
-g2 %>% names()
-g2$`from_geo: iwate`
-
-# To do iterative actions on non-data.frame data,
-# We can use the purrr package's map() function.
-# This says, hey, perform some function/process on each item of my list, 
-# and return a list of outputs.
-
-
-## 4.1 Iterative Random Sampling ###############################
-
-# Let's split the graph into a list of graphs,
-# then map a sampling function to each graph.
-
-glist = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  # Split the graph into multiple graphs, using the from_geo() edges variable
-  morph(to_split, from_geo, split_by = "edges") %>%
-  # For each graph, sample 30 edges randomly!
-  map(~.x %>% activate("edges") %>% sample_n(size = 30) )
-
-
-# Now bundle them back together into one cohesive graph
-# bind_graphs_list() will repeat the nodes,
-# and provide back every node variable.
-# Note: you will get duplicate nodes from this method.
-glist %>%
-  bind_graphs_list(.id = "group")
-
-# graph_join_list() will join every graph item together,
-# using as many variables as provided in `by`.
-# Note: you will only receive back the node variables in `by`.
-# Note: you will not get duplicate nodes from this method.
-glist %>%
-  graph_join_list(by = c("name"), .id = "group")
-
-
-## 4.2 Iterative Coaffiliation ##############################
-
-
-# Suppose I want to evaluate coaffiliation FOR MANY GROUPS.
-# Maybe I can't evaluate it once for the ENTIRE network,
-# but I could evaluate 'local' coaffiliation
-# by narrowing into one geography or another.
-# I could use our custom coaffiliate() function with purrr's map() function
-
-# Load coaffiliation function
-source("functions/coaffiliate.R")
-source("functions/graph_join_list.R")
-
-# Load graph
-g = read_rds("data/committees/graph_bipartite.rds")
-
-gmem = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  # Split the graph into multiple graphs, using the from_geo() edges variable
-  morph(to_split, from_geo, split_by = "edges") %>%
-  # For each subgraph, coaffiliate
-  map(~coaffiliate(graph = .x, type = TRUE, names = TRUE, weight = "weight", diag = FALSE)) %>%
-  # Join them all back together
-  graph_join_list(by = "name", .id = "geography")
-
-
-# Total committee-seats shared in common
-gmem %>%
-  activate("edges") %>%
-  as_tibble() %>%
-  summarize(total = sum(weight))
-
-
-# Let's compare that against a standard coaffiliation graph
-g %>%
-  coaffiliate(type = TRUE, names= TRUE, weight = "weight", diag = FALSE) %>%
-  activate("edges") %>%
-  as_tibble() %>%
-  summarize(total = sum(weight))
+# See solutions in 21S_databases.R.
 
 
 

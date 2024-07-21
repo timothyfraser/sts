@@ -1,5 +1,5 @@
-#' @name 23C_dataviz.R
-#' @title Lesson 23: Data Visualization for Networks with ggplot2
+#' @name 24C_dataviz.R
+#' @title Lesson: Data Visualization for Networks with ggplot2
 #' @author Tim Fraser
 
 # Following up on our work with the Disaster Recovery Committees dataset,
