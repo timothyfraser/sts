@@ -1,4 +1,4 @@
-#' @name 24C_dataviz.R
+#' @name 25C_dataviz.R
 #' @title Lesson: Data Visualization for Networks with ggplot2
 #' @author Tim Fraser
 

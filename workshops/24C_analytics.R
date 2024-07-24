@@ -1,4 +1,4 @@
-#' @name 23C_analytics.R
+#' @name 24C_analytics.R
 #' @title Lesson: Network Centrality with Big Datasets
 #' @author Tim Fraser
 #' @description
