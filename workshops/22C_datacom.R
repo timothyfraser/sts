@@ -27,6 +27,8 @@
 #' This lesson expands on the tools introduced in 21C_databases.R.
 #' I strongly recommend completing that lesson first.
 
+
+
 # Let's apply the new skills we developed for network joins,
 # and generate some visualizations.
 
@@ -50,7 +52,6 @@ library(readr) # reading data
 library(ggplot2) # visualizing data
 library(viridis) # for color palettes
 library(DBI) # for databases
-library(dbplyr) # data wrangling for databases
 library(RSQLite) # for SQLite
 library(stringr) # for string manipulation
 
@@ -77,7 +78,8 @@ q_edges = db %>%
 # is in a majority Black neighborhood ("yes" vs. "no")
 q_nodes = db %>%
   tbl("stationbg_dataset") %>%
-  mutate(majority = if_else(pop_black_2020_smooth5 > 0.5, true = "yes", false = "no")) %>%
+  mutate(majority = if_else(pop_black_2020_smooth5 > 0.5,
+                            true = "yes", false = "no")) %>%
   select(code, majority)
 
 # Get dataset
@@ -96,16 +98,20 @@ q_data = q_edges %>%
 # are not in Boston proper (eg. maybe in Cambridge or beyond.) 
 # I'd like to zoom into Boston, for the time being.
 
+q_data
+
 # Aggregate to get the source-by-destination trait tallies
-q_stat = q_data %>%
+stat = q_data %>%
   group_by(start_black, end_black) %>%
   summarize(trips = sum(count, na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(total = sum(trips, na.rm = TRUE)) %>%
   collect()
 
+stat
+
 # Now that we've collected, do extra formatting
-mytab = q_stat %>%
+mytab = stat %>%
   mutate(total = sum(trips, na.rm = TRUE),
          percent = trips / total) %>%
   # Clean up the percentages
@@ -113,6 +119,8 @@ mytab = q_stat %>%
   # Add a label
   mutate(type = paste(start_black, "->", end_black))
   
+
+mytab
 
 # So that's... disquieting. Yikes. 
 # I mean, it's an individual choice to ride or not, 
@@ -130,12 +138,26 @@ dbDisconnect(db)
 
 
 
+
+
 ## Visualize It! #######################################
 
 
 ### Bar Charts! ############################
 
 # It's bar-chart time! So many bar charts!
+mytab
+
+ggplot() +
+  geom_col(data = mytab, 
+           mapping = aes(x = start_black, y = trips, fill = end_black))
+
+
+ggplot() +
+  geom_col(data = mytab, 
+           mapping = aes(x = start_black, y = trips, fill = end_black),
+           position = "fill")
+
 
 ggplot() +
   geom_col(data = mytab, 
@@ -147,9 +169,19 @@ ggplot() +
        fill = "Ending Station\nin Majority\nBlack\nNeighborhood?")
 
 
+
+
 ### Filtered Bar Charts! #######################
 
 # Sometimes filtered bar charts are more intuitive to read.
+mytab
+
+ggplot() +
+  geom_col(data = mytab, mapping = aes(x = type, y = percent)) +
+  geom_text(data = mytab, 
+            mapping = aes(x = type, y = percent, label = percent),
+            vjust = 0, nudge_y = 2)
+  
 
 ggplot() +
   geom_col(data = mytab, mapping = aes(x = type, y = percent)) +
@@ -165,6 +197,30 @@ ggplot() +
 ### Heat Maps! #############################
 
 # Another great option is ```geom_tile()```, also known as heatmaps.
+
+
+
+ggplot() +
+  geom_tile(
+    data = mytab,        
+    mapping = aes(x = start_black, y = end_black, fill = percent),
+    color = "white")
+
+
+
+ggplot() +
+  geom_tile(
+    data = mytab,        
+    mapping = aes(x = start_black, y = end_black, fill = percent),
+    color = "white") +
+  geom_text(
+    data = mytab,        
+    mapping = aes(x = start_black, y = end_black, label = percent),
+    color = "white", size = 8)
+
+
+
+
 
 ggplot() +
   geom_tile(
@@ -222,7 +278,8 @@ q_edges # preview
 # is in a majority Black neighborhood ("yes" vs. "no")
 q_nodes = db %>%
   tbl("stationbg_dataset") %>%
-  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, true = "yes", false = "no")) %>%
+  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, 
+                             true = "yes", false = "no")) %>%
   select(code, maj_black)
 
 
@@ -243,6 +300,7 @@ q_data = q_edges %>%
 
 q_data # preview
 
+
 q_stat = q_data %>%
   # Get year
   mutate(year = str_sub(day, 1,4)) %>%
@@ -261,6 +319,8 @@ stat = q_stat %>% collect()
 dbDisconnect(db)
 
 
+
+
 # Format the stats locally
 mytab = stat %>%
   # Now for each year, calculate percentage
@@ -273,6 +333,10 @@ mytab = stat %>%
   mutate(type = paste0(start_black, " -> ", end_black))
 
 
+mytab
+
+
+
 
 # Let's finish up by visualizing some equity questions over time!
 
@@ -281,6 +345,13 @@ mytab = stat %>%
 # Get just a subset of interest
 subset = mytab %>%
   filter(start_black == "no", end_black == "no")
+
+
+ggplot() +
+  geom_point(data = subset, mapping = aes(x = year, y = percent), size = 5) +
+  geom_line(data = subset, mapping = aes(x = year, y = percent, group = type))
+  
+
 
 ggplot() +
   geom_point(data = subset, mapping = aes(x = year, y = percent), size = 5) +
@@ -291,13 +362,24 @@ ggplot() +
        subtitle = "Very tiny changes in Demographic Mobility\nin BlueBikes Program over Time")
 
 
+
+
 #### Bar Plot #######################################################
+
+ggplot() +
+  geom_col(data = mytab,
+           mapping = aes(x = year, y = trips, group = type, fill = type),
+           position = "fill")
 
 ggplot() +
   geom_col(data = mytab, 
            mapping = aes(x = year, y = percent, group = type, fill = type), 
            position = "fill")
 # Not a very exciting plot, I admit - but functional!
+
+
+
+
 
 
 ## Aggregate then Investigate #####################################
@@ -323,6 +405,7 @@ q_edges <- db %>%
   summarize(trips = sum(count, na.rm = TRUE)) %>%
   ungroup()
 
+
 # Now, we have an annual temporal network, with this many edges
 q_edges %>% summarize(count = n())
 
@@ -332,6 +415,7 @@ q_edges %>% head() # view it
 q_nodes = db %>%
   tbl("stationbg_dataset") %>%
   mutate(income_over_60K = pop_60001_100000_2019_smooth5 + pop_100000_plus_2019_smooth5) %>%
+  select(code, income_over_60K) %>%
   # Split up nodes into 4 quartiles,
   # where 1 has less than 25% earning over 60K
   # while 4 has over 75% earning over 60K
@@ -342,6 +426,8 @@ q_nodes = db %>%
     income_over_60K < 1 & income_over_60K >= 0.75 ~ 4
   ))
   
+
+q_nodes
 
 # Let's do some joining...
 
@@ -359,23 +445,37 @@ q_data = q_edges %>%
   summarize(trips = sum(trips, na.rm = TRUE)) %>%
   ungroup()
 
+
 # Collect it!
 data = q_data %>% collect()
 
+dbDisconnect(db)
 
 #### Tile Plot ##################################
 
+
+# One year
+ggplot() +
+  geom_tile(data = data %>% filter(year == 2021),
+            mapping = aes(x = end_income, y = start_income, fill = trips)) +
+  scale_fill_viridis(option = "plasma", trans = "log",
+                     labels = scales::label_number())
+
+
+# Many years
 gg = ggplot() +
   geom_tile(data = data,
             mapping = aes(x = end_income, y = start_income, 
                           fill = trips),
             color = "white") +
-  facet_wrap(~year) +
   scale_fill_viridis(option = "plasma", trans = "log",
                      labels = scales::label_number()) +
+  facet_wrap(~year) +
   labs(x = "Destination Neighborhood Wealth Quartile",
        y = "Source Neighborhood Wealth Quartile") +
   theme_bw()
+
+
 
 # Finishing touches
 gg +
@@ -394,6 +494,147 @@ gg +
   # Maybe get rid of the background grid
   theme(panel.grid = element_blank(),
         axis.ticks = element_blank()) 
+
+
+# 3. Map ##########################################
+
+# ONLY if relevant you might consider mapping the network.
+# And if so, filter those edges and/or aggregate them.
+# Otherwise, it's going to be way too many features to plot.
+# ~Try to keep <10,000 features (rows) on a plot.
+# It takes a long time to render otherwise.
+
+
+# Load Packages
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(stringr)
+library(RSQLite)
+library(DBI)
+
+# Tell R to hire a 'SQL translator' object, which we'll name 'mydat',
+# sourced from our bluebikes data
+db <- dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+
+q_edges <- db %>%
+  tbl("tally_rush_edges") %>%
+  # zoom into just morning
+  filter(rush == "am") %>%
+  # drop unnecessary variables, to keep this dataset as small as possible
+  select(-rush) %>%
+  mutate(year = str_sub(day, 1,4)) %>%
+  filter(start_code != "NA" & end_code != "NA") %>%
+  group_by(year, start_code, end_code) %>%
+  summarize(trips = sum(count, na.rm = TRUE)) %>%
+  ungroup()
+
+q_edges
+
+# Get nodes...
+# Classify each station by whether or not the station
+# is in a majority Black neighborhood ("yes" vs. "no")
+q_nodes = db %>%
+  tbl("stationbg_dataset") %>%
+  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, 
+                             true = "yes", false = "no")) %>%
+  select(code, maj_black, x, y)
+
+
+q_nodes # preview
+
+# Get dataset
+# We're going to join in demographics,
+# filter to valid cases, and get our percentages for every year.
+q_data = q_edges %>%
+  # join in source traits
+  left_join(by = c("start_code" = "code"), 
+            y = q_nodes %>% 
+              select(code, start_black = maj_black, 
+                     start_x = x, start_y = y)) %>% 
+  # join in destination traits,
+  left_join(by = c("end_code" = "code"), 
+            y = q_nodes %>% 
+              select(code, end_black = maj_black, 
+                     end_x = x, end_y = y)) %>%
+  # Filter to just edges with valid data
+  filter(start_black != "NA" & end_black != "NA")
+
+
+
+q_data %>% summarize(count = n())
+
+
+data = q_data %>%
+  filter(year == "2021") %>%
+  collect()
+
+data
+
+
+# Get some block group polygons
+bg = read_rds("data/bluebikes/bgdataset.rds") %>% 
+  select(geoid, geometry)
+
+# Visualize
+
+ggplot() +
+  # Plotted my edges
+  geom_segment(
+    data = data,
+    mapping = aes(x = start_x, y = start_y,
+                  xend = end_x, yend = end_y),
+    color = "lightgrey", alpha = 0.2
+    ) +
+  theme_void()
+
+
+
+ggplot() +
+  geom_sf(data = bg, fill = "black", color = "#373737", 
+          linewidth = 0.1) +
+  # Plotted my edges
+  geom_segment(
+    data = data,
+    mapping = aes(x = start_x, y = start_y,
+                  xend = end_x, yend = end_y),
+    color = "lightgrey", alpha = 0.05
+  ) +
+  theme_bw() +
+  coord_sf(xlim = c(-71.2, -71.0),
+           ylim = c(42.3, 42.4))
+
+
+
+subset = data %>%
+  filter(start_code == "A32000")
+
+
+
+
+ggplot() +
+  # Plot background
+  geom_sf(data = bg, fill = "black", color = "#373737", 
+          linewidth = 0.1) +
+  # Plotted my edges
+  geom_segment(
+    data = data,
+    mapping = aes(x = start_x, y = start_y,
+                  xend = end_x, yend = end_y),
+    color = "lightgrey", alpha = 0.05
+  ) +
+  # Plot subset
+  geom_segment(
+    data = subset,
+    mapping = aes(x = start_x, y = start_y,
+                  xend = end_x, yend = end_y),
+    color = "dodgerblue"
+  ) +
+  theme_bw() +
+  coord_sf(xlim = c(-71.2, -71.0),
+           ylim = c(42.3, 42.4))
+
+
 
 
 # Conclusion #######################
