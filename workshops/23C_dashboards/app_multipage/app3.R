@@ -1,10 +1,13 @@
-#' @name app.R
+#' @name app3.R
 #' 
-#' App using the gapminder package's gapminder dataset.
+#' Let's demo a multipage app,
+#' building off of our original app.R
 #' 
-#' App demonstrating the probblem of inputs that can overfilter
-#' Eg. If you filter continent to Asia, 
-#' you should not be able to filter country to Germany.
+#' We could make 2 pages as separate objects,
+#' then stack them atop each other as elements in a single page.
+#' 
+#' eg.
+#' page( page1, page2 )
 
 library(dplyr)
 library(readr)
@@ -16,17 +19,35 @@ library(gapminder)
 
 global = function(){  }
 
-# Make a simple user interface with 2 inputs and 1 plot output
+# See edits to user interface!
 ui = function(){
   
-  page(
-    
+  page1 = page(
+    card_header("First Page"),
     selectInput(inputId = "continent", label = "CHOOSE CONTINENT", 
                 choices = c("Asia", "Europe")),
     selectInput(inputId = "country", label = "CHOOSE COUNTRY", 
                 choices = c("Afghanistan", "Germany")),
     
     plotOutput(outputId = "chart")
+  )
+  
+  # Anything can go into this second page.
+  # Your inputs and outputs must be uniquely named,
+  page2 = page(
+    card_header("Second Page"),
+    # Make a new selector with a unique ID
+    selectInput(inputId = "continent2", label = "CHOOSE CONTINENT", 
+                choices = c("Asia", "Europe")),
+    plotOutput(outputId = "chart2")
+  )
+  
+  
+  # Bundle my two pages.
+  
+  page(
+    page1,
+    page2
   )
   
 }
@@ -43,9 +64,10 @@ server = function(input, output, session){
     subset = data %>%
       filter(continent == input$continent) %>%
       filter(country == input$country)
-    # Histogram of life expectancy
+    
     subset$lifeExp %>% hist()
   })  
+  
   
   
 }
