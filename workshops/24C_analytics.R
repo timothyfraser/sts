@@ -1,5 +1,5 @@
 #' @name 24C_analytics.R
-#' @title Lesson: Network Centrality with Big Datasets
+#' @title Lesson: Network Analytics with Big Datasets
 #' @author Tim Fraser
 #' @description
 #' 
@@ -28,6 +28,8 @@
 #' 
 #' Today, we're going to learn some tools for handling network data in R.
 
+
+
 # 0. Setup #################################
 
 ## 0.1 Load Packages ##################################
@@ -36,10 +38,14 @@
 library(dplyr) # data wrangling
 library(readr) # reading data
 library(ggplot2) # visualizing data
+
 library(igraph) # working with graphs
 library(tidygraph) # dplyr functions with graphs
 library(ggraph) # for network layouts
 library(purrr) # for iterative actions
+
+#install.packages(c("igraph", "tidygraph", "ggraph", "purrr"))
+
 
 ## 0.2 Data #############################################
 
@@ -76,6 +82,11 @@ mem = read_csv("data/committees/members.csv")
 edges = read_csv("data/committees/edgelist.csv")
 
 
+co
+mem
+
+edges
+
 ## 0.3 Making a tidygraph ###############################
 
 # Bundle the nodes together
@@ -83,8 +94,20 @@ edges = read_csv("data/committees/edgelist.csv")
 # distinguishing the committees as committees and the members as members
 nodes = bind_rows(co, mem)
 
+# must have name and type
+nodes
+# must be in order of from, to, weight
+edges
+
+
 # Let's make a tidygraph object out of this.
-g = tbl_graph(nodes = nodes, edges = edges, directed = FALSE, node_key = "name")
+g = tbl_graph(nodes = nodes, edges = edges, 
+              directed = FALSE, 
+              node_key = "name")
+
+
+g
+
 
 # Let's save this tidygraph object as a compressed .rds file
 g %>% write_rds("data/committees/graph_bipartite.rds", compress = "gz")
@@ -92,6 +115,8 @@ g %>% write_rds("data/committees/graph_bipartite.rds", compress = "gz")
 
 # Cleanup
 rm(list = ls())
+
+
 
 
 
@@ -116,6 +141,8 @@ source("functions/graph_join_list.R")
 # Let's read in our tidygraph object
 g = read_rds("data/committees/graph_bipartite.rds")
 
+
+
 # The whole value added of tidygraph is to create a way to interact
 # with graph objects made in 'igraph' - a common shared package in R and Python
 # in a tidy, dplyr friendly way.
@@ -123,7 +150,13 @@ g = read_rds("data/committees/graph_bipartite.rds")
 # Let's view our tidygraph
 g
 
+
+
 ## 0.2 Activate() a tidygraph ######################
+
+g %>% 
+  activate("edges") %>%
+   mutate(id = 1:n())
 
 # It recognizes itself as a **bipartite** graph with:
 # **nodes**
@@ -135,7 +168,7 @@ g
 g %>%
   activate("nodes") %>%
   # Filter to committees in Iwate OR members
-  filter(geography == "iwate" | type == "member" )
+  filter(geography == "iwate" | type == FALSE)
 
 # Notice how the number of edges has decreased too!
 
@@ -146,6 +179,16 @@ g %>%
   # Filter to just committee 9
   filter(from == 9)
 
+
+### view it ###########################
+
+g %>% plot()
+
+g %>% filter(geography == "iwate" | type == FALSE) %>% plot()
+
+g %>% activate("edges") %>% filter(from == 555) %>% plot()
+
+
 ## 0.3 Querying a Tidygraph #################################
 
 # Wouldn't it be much more helpful
@@ -153,12 +196,17 @@ g %>%
 
 g %>%
   activate("edges") %>%
-  mutate(from_geo = .E()$weight )
+  mutate(var = .E()$weight )
+
+
+
 
 g %>%
   activate("nodes") %>%
-  mutate(from_geo = .N()$type ) %>%
-  select(name, type, from_geo)
+  mutate(var = .N()$type ) %>%
+  select(name, type, var)
+
+
 
 # Create a new variable in the edges dataset, called 'from_geo'
 # where we will get the geography variable from the nodes .N()
@@ -167,6 +215,10 @@ g %>%
 g %>%
   activate("edges") %>%
   mutate(from_geo =  .N()$geography[ .E()$from   ] ) 
+
+
+
+
 
 ## 0.4 as_tibble() for Quantities of Interest ###########################
 
@@ -199,6 +251,9 @@ g %>%
     memberships = sum(weight),
     people = to %>% unique() %>% length()) 
 
+
+
+
 # 2. Graph Transformations #############################
 
 
@@ -216,7 +271,8 @@ g %>%
 # to_split() splits a graph into multiple graphs,
 # specifically, into a list() of graph objects.
 
-# It splits them using a variable, either from the nodes or edges data.frame.
+# It splits them using a variable,
+# either from the nodes or edges data.frame.
 
 ### split by nodes #########################################
 
@@ -225,10 +281,15 @@ g %>%
 x = g %>%
   morph(to_split, geography, split_by = "nodes")
 
+
+
+
 class(x) # it's a list
 names(x) # it has these items
 x$`geography: iwate` # you can query them like so
 x %>% with(`geography: iwate`) # equivalent to $ sign
+
+x$`geography: miyagi`
 
 # cleanup
 remove(x)
@@ -236,9 +297,12 @@ remove(x)
 
 
 
+
+
 ### split by edges #############################
 
-# Split the graph into multiple graphs, using the `from_geo` edges variable
+# Split the graph into multiple graphs, 
+# using the `from_geo` edges variable
 x = g %>%
   activate("edges") %>%
   mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
@@ -252,12 +316,18 @@ x %>% with(`from_geo: iwate`)   # this is equivalent to the $ sign
 # cleanup
 remove(x)
 
+
+
+
 ## 2.2 to_subcomponent() #############################################
 
 # Narrow into the subcomponent of the graph which contains a specific node ID
 # A subcomponent is a chunk of the graph with all its nodes and edges,
 # having filtered out any nodes and edges
 # that do not connect to nodes in that subcomponent.
+
+which(c("a", "b", "c") == "c")
+
 
 x = g %>%
   morph(to_subcomponent, node = which(.N()$name == "committee_23" ))
@@ -266,6 +336,10 @@ class(x) # still a list
 names(x) # see the name of its list item
 x$subgraph
 x %>% with(subgraph)   # this is equivalent to the $ sign
+
+
+remove(x)
+
 
 
 ## 2.3 to_local_neighborhood() ################################
@@ -287,6 +361,7 @@ x = g %>%
     mode = "all" # in-ward edges, out-ward edges, or all edges?
   )
 
+x$neighborhood
 names(x) # View names
 x$neighborhood # access it
 x %>% with(neighborhood) # access it
@@ -303,6 +378,8 @@ x %>%
   summarize(persons = to %>% unique() %>% length()) # count up total edges to neighbors
 
 
+
+
 ### 2nd-degree ties ###############################
 
 # What if I want to know, 
@@ -312,7 +389,8 @@ x %>%
 
 # We can still use to_local_neighborhood to do this.
 x = g %>%
-  morph(to_local_neighborhood, node = which(.N()$name == "committee_23"), mode = "all",
+  morph(to_local_neighborhood, 
+        node = which(.N()$name == "committee_23"), mode = "all",
         order = 2 # 2 degrees of separation
   )
 
@@ -376,6 +454,8 @@ x %>%
 
 remove(x)
 
+
+
 ## 2.4 to_shortest_path() #########################################
 
 # Often, we want to know the shortest path between 2 nodes.
@@ -422,213 +502,4 @@ x$shortest_path %>%
   summarize(count = n())
 
 
-# 2. Coaffiliation ###################################
-
-## 2.1 Coaffilation Networks ###################
-
-# We might want to make transformations to our graph,
-# transforming our graph from one form into another,
-# and then keep working with tidygraph.
-# 
-# For example, what if we want to make a coaffiliation graph?
-# Eg. instead of committee - member edges,
-# a graph of committee-committee edges, where edges = # of members in common
-# or
-# a graph of member-member edges, where edges = # of committees in common
-
-# Load coaffiliation function
-source("functions/coaffiliate.R")
-
-# Let's get a coaffiliation graph of committees
-gco = coaffiliate(graph = g, type = FALSE, names = TRUE, weight = "weight", diag = FALSE)
-
-# Let's quickly plot our coaffiliation network...
-plot(gco)
-
-
-
-## 2.2 Isolates ########################################
-
-# Our biggest challenge is always graph size - 
-# so we want to reduce our graph size as quickly as possible.
-
-# Nodes that have no edges are called 'isolates'.
-# We can remove the nodes using some custom filter functions from tidygraph.
-
-# Narrow into just nodes that are isolated
-gco %>%
-  filter(node_is_isolated())
-
-# This is equivalent to saying
-# Narrow into just nodes with a weighted degree centrality of zero
-gco %>%
-  activate("nodes") %>%
-  mutate(degree = centrality_degree(weights = .E()$weight )) %>%
-  filter(degree == 0)
-
-
-
-
-# 3. Quantities of Interest #######################################
-
-
-# What are our main quantities of interest?
-
-## 3.1 Distance To ###########################################
-
-# How far apart are nodes from Node X?
-
-# How far is each Committee from Committee 23?
-gco %>% 
-  mutate(steps = node_distance_to(nodes = which(.N()$name == "committee_23") )) %>%
-  as_tibble()
-
-# If weighted, use this one.
-# gco %>% mutate(steps = node_distance_to(nodes = 1, weights = .E()$weight))
-
-
-## 3.2 Centrality ###############################################
-
-# How central is this node?
-# How central is Committee 23?
-
-### degree centrality - undirected #####################
-# total edges going in or out of that node
-gco %>%
-  mutate(deg = centrality_degree(mode = "all"))
-
-### weighted degree centrality - undirected #######################
-# sum of edges (weights) going in or out of that node
-gco %>%
-  mutate(deg = centrality_degree(mode = "all", weights = .E()$weight ))
-
-### betweenness centrality - undirected ##################
-# number of shortest paths through graph that cross that node
-# higher = more bridging capacity
-# lower = lower bridging capacity
-gco %>%
-  mutate(betw = centrality_betweenness(directed = FALSE, weights = .E()$weight))
-
-# Get harder to calcualte on really big graphs
-
-
-## 3.3 Clustering ############################################
-
-# Do our points cluster together naturally?
-
-# Fast-greedy algorithm is one of the faster clustering strategies -
-# allows you to specify the number of groups, within limits
-gco %>%
-  mutate(community = group_fast_greedy(weights = .E()$weight, n_groups = 8))
-
-# There are dozens of others. 
-# Use a well established one, with clear justification,
-# or don't use one at all. 
-# A clustering algorithm without a clear justification is not useful.
-gco %>%
-  mutate(community = group_infomap() %>% factor() )
-
-
-# Eg. How many nodes are in each community?
-gco %>%
-  mutate(community = group_infomap() %>% factor() ) %>%
-  as_tibble() %>%
-  group_by(community) %>%
-  summarize(count = n())
-
-
-
-
-# 4. Iterating Tidygraphs ###############################
-
-# Suppose I have too much data.
-# Maybe it's not feasible to analyze the whole network at once.
-# I could create a variable to split up my edges...
-# Then split the graph up into several smaller graphs
-
-g2 = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  # Split the graph into multiple graphs, using the from_geo() edges variable
-  to_split(from_geo, split_by = "edges")
-
-# Our graph has become a list of multiple graphs
-g2 %>% names()
-g2$`from_geo: iwate`
-
-# To do iterative actions on non-data.frame data,
-# We can use the purrr package's map() function.
-# This says, hey, perform some function/process on each item of my list, 
-# and return a list of outputs.
-
-
-## 4.1 Iterative Random Sampling ###############################
-
-# Let's split the graph into a list of graphs,
-# then map a sampling function to each graph.
-
-glist = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  # Split the graph into multiple graphs, using the from_geo() edges variable
-  morph(to_split, from_geo, split_by = "edges") %>%
-  # For each graph, sample 30 edges randomly!
-  map(~.x %>% activate("edges") %>% sample_n(size = 30) )
-
-
-# Now bundle them back together into one cohesive graph
-# bind_graphs_list() will repeat the nodes,
-# and provide back every node variable.
-# Note: you will get duplicate nodes from this method.
-glist %>%
-  bind_graphs_list(.id = "group")
-
-# graph_join_list() will join every graph item together,
-# using as many variables as provided in `by`.
-# Note: you will only receive back the node variables in `by`.
-# Note: you will not get duplicate nodes from this method.
-glist %>%
-  graph_join_list(by = c("name"), .id = "group")
-
-
-## 4.2 Iterative Coaffiliation ##############################
-
-
-# Suppose I want to evaluate coaffiliation FOR MANY GROUPS.
-# Maybe I can't evaluate it once for the ENTIRE network,
-# but I could evaluate 'local' coaffiliation
-# by narrowing into one geography or another.
-# I could use our custom coaffiliate() function with purrr's map() function
-
-# Load coaffiliation function
-source("functions/coaffiliate.R")
-source("functions/graph_join_list.R")
-
-# Load graph
-g = read_rds("data/committees/graph_bipartite.rds")
-
-gmem = g %>%
-  activate("edges") %>%
-  mutate(from_geo = .N()$geography[ .E()$from  ]    ) %>%
-  # Split the graph into multiple graphs, using the from_geo() edges variable
-  morph(to_split, from_geo, split_by = "edges") %>%
-  # For each subgraph, coaffiliate
-  map(~coaffiliate(graph = .x, type = TRUE, names = TRUE, weight = "weight", diag = FALSE)) %>%
-  # Join them all back together
-  graph_join_list(by = "name", .id = "geography")
-
-
-# Total committee-seats shared in common
-gmem %>%
-  activate("edges") %>%
-  as_tibble() %>%
-  summarize(total = sum(weight))
-
-
-# Let's compare that against a standard coaffiliation graph
-g %>%
-  coaffiliate(type = TRUE, names= TRUE, weight = "weight", diag = FALSE) %>%
-  activate("edges") %>%
-  as_tibble() %>%
-  summarize(total = sum(weight))
 
