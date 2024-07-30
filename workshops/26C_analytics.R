@@ -41,15 +41,20 @@ g
 # View it
 plot(g)
 
+## 0.3 Viewing the Bipartite Graph #######################
+
 # What does a bipartite network look like?
+
+# We'd need to generate a graph layout - ggraph can help
 layout = ggraph(graph = g, layout = "fr") %>%
   with(data)  %>%
   mutate(id = 1:n()) %>%
+  # Return each node with its new x-y variables
   select(id, x, y, name, type)
 
 layout %>% head(3)
 
-
+# Extract edges, joining in coordinates from your layout.
 edges = g %>%
   activate("edges") %>%
   as_tibble() %>%
@@ -61,7 +66,7 @@ edges = g %>%
     y = layout %>% select(id, to_x = x, to_y = y)
   )
   
-
+# Plot edges with geom_segment() and nodes with geom_point()
 ggplot() +
   geom_segment(
     data = edges, 
