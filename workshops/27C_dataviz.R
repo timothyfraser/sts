@@ -757,7 +757,8 @@ gmem = gmem %>%
 gmem = gmem %>%
   activate("nodes") %>%
   # Try a 3 group classification...
-  mutate(group3 = group_fast_greedy(weights = .E()$weight, n_groups = 3)) 
+  mutate(group3 = group_fast_greedy(weights = .E()$weight, n_groups = 3) %>%
+           factor()) 
 
 # Extract nodes and edges for visualization
 nodes = gmem %>% activate("nodes") %>% filter(!node_is_isolated()) %>% as_tibble() %>%
@@ -781,7 +782,7 @@ gg = ggplot() +
   theme_void(base_size = 14) +
   scale_size_continuous(range = c(1,5))
 
-
+# With BIG visuals, often better to write it to file
 gg # view it 
 
 # Voila!
