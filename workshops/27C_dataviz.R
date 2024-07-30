@@ -700,7 +700,95 @@ gg # view it
 # Great work! Let's clean up.
 rm(list = ls())
 
-# 5. Conclusion ##################################
+
+# 5. Clustering Visuals ###########################
+
+
+# Finally, we might want to explore larger network visuals.
+# Large networks often need some devices for **showing** 
+# structure to the reader,
+# particularly structure that might not be immediately apparent.
+# Clustering can do a good job of this.
+
+# To make a pretty big network, let's grab
+# the coaffiliation network where nodes are MEMBERS.
+
+# Let's load some functions
+source("functions/add_layout.R") # get add_layout()
+source("functions/coaffiliate.R") # get coaffiliate()
+
+g = read_rds("data/committees/graph_bipartite.rds")
+
+# Let's get a coaffiliation graph of committees
+gmem = coaffiliate(graph = g, type = TRUE, names = TRUE, weight = "weight", diag = FALSE)
+
+remove(g)
+
+# Add a layout to your graph, using your graph's node id and a specific layout
+gmem = gmem %>% add_layout(by = "name", layout = "fr")
+
+# Quick plot...
+plot(gmem, vertex.label=NA, vertex.size = 5)
+
+
+# Looks like we might want to narrow into just the big subcomponent.
+
+# I happen to know that node 1 is really well connected,
+# so I'm going to narrow into the subcomponent that contains node 1.
+# This will get rid of our isolates.
+gmem = gmem %>%
+  morph(to_subcomponent, node = 1) %>%
+  with(subgraph)
+
+gmem
+
+# Try again... 
+plot(gmem, vertex.label=NA, vertex.size = 5)
+# yay! we see the main graph.
+
+# Let's try to describe this network a little.
+
+# Get degree for each node...
+gmem = gmem %>%
+  activate("nodes") %>%
+  mutate(deg = centrality_degree(weights = .E()$weight, mode = "all"))
+
+# Classify into groups
+gmem = gmem %>%
+  activate("nodes") %>%
+  # Try a 3 group classification...
+  mutate(group3 = group_fast_greedy(weights = .E()$weight, n_groups = 3)) 
+
+# Extract nodes and edges for visualization
+nodes = gmem %>% activate("nodes") %>% filter(!node_is_isolated()) %>% as_tibble() %>%
+  select(name, x,y,deg, group3)
+edges = gmem %>% activate("edges") %>% as_tibble() %>%
+  select(from, to, from_x, to_x,from_y, to_y)
+
+
+
+# Let's try a base plot!
+gg = ggplot() +
+  geom_segment(
+    data = edges, 
+    mapping = aes(x = from_x, y = from_y, xend = to_x, yend = to_y),
+    color = "lightgrey", alpha = 0.5) +
+  geom_point(
+    data = nodes,
+    mapping = aes(x = x, y = y, size = deg, fill = group3),
+    shape = 21, color = "white"
+  ) +
+  theme_void(base_size = 14) +
+  scale_size_continuous(range = c(1,5))
+
+
+gg # view it 
+
+# Voila!
+
+rm(list = ls())
+
+# 6. Conclusion ##################################
 
 # These are just some of the many excellent ways to visualize networks.
 # Lots of helper packages exists, with various tradeoffs.
