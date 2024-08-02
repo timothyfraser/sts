@@ -1,5 +1,5 @@
 #' @name 29C_databases.R
-#' @title Lesson 29: Sampling Big Networks
+#' @title Lesson 29: Sampling Networks
 #' @author Tim Fraser
 #' @description
 #' 
@@ -37,7 +37,7 @@ library(sf) # spatial data
 library(igraph) # networks
 library(tidygraph) # using dplyr functions on networks
 library(ggraph) # network layouts
-
+library(lubridate) # using as_datetime()
 
 ## 0.2 Data ##############################
 
@@ -72,6 +72,9 @@ remove(nodes, edges)
 
 
 
+
+
+
 # 1. Visualize It ##############################################
 
 
@@ -80,6 +83,7 @@ remove(nodes, edges)
 # First, what does our network look like, anyways?
 nodes = read_rds("data/evacuation/nodes.rds") %>%
   select(node, geoid, pop, median_income)
+
 edges = read_rds("data/evacuation/edges.rds") %>%
   select(from, to, date_time, evacuation) %>%
   # Filter just to evacuation
@@ -92,6 +96,9 @@ edges %>% head()
 
 # Create a graph object
 g = tbl_graph(nodes = nodes, edges = edges, directed = TRUE, node_key = "node") 
+
+g
+
 # View that graph quickly
 plot(g, vertex.label=NA, vertex.size = 5)
 
@@ -121,6 +128,8 @@ nodes = read_rds("data/evacuation/nodes.rds") %>%
   # Join in the x-y coordinates
   left_join(by = "geoid", y = points)
 
+nodes
+
 # Get the edges...
 edges = read_rds("data/evacuation/edges.rds") %>%
   select(from, to, date_time, evacuation) %>%
@@ -132,6 +141,8 @@ edges = read_rds("data/evacuation/edges.rds") %>%
   left_join(by = c("from" = "node"), y = nodes %>% select(node, from_x = x, from_y = y)) %>%
   left_join(by = c("to" = "node"), y = nodes %>% select(node, to_x = x, to_y = y))
 
+edges
+
 # Let's plot it.
 ggplot() +
   # plot the state boundaries
@@ -141,7 +152,7 @@ ggplot() +
                                            xend = to_x, yend = to_y),
                color = "dodgerblue", alpha = 0.5) +
   # plot the nodes
-  geom_point(data = nodes, mapping = aes(x = x, y = y), 
+  geom_point(data = nodes, mapping = aes(x = x, y = y),
              shape = 21, fill = "white", color = "dodgerblue") +
   # Apply a spatial coordinate reference system post-hoc
   coord_sf(crs = 4326)
@@ -170,6 +181,7 @@ stats = edges %>%
     n_nodes_linked = c(from, to) %>% unique() %>% length()
   )
 
+stats
 # Remember, these attributes are all non-normalized,
 # so they're not good for comparing against a network of a different size.
 
@@ -189,6 +201,8 @@ stats = stats %>%
 stats
 
 # We could also calculate any homophily measures, etc. for comparison.
+
+
 
 # 2. Comparing Temporal Samples ########################################
 
@@ -225,6 +239,8 @@ stats = read_rds("data/evacuation/edges.rds") %>%
 # where each row is a different network temporal slice
 stats
 
+
+
 ## 2.2 Temporal Variation #############################
 
 # Let's try and visualize some interesting trends
@@ -233,20 +249,26 @@ stats
 gg = ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = avg_edgeweight))
 
+gg
 # Interesting - this suggests that some of our networks 
 # capture more interesting variation than others.
 
-# We can use geom_rect() to highlight specific sections of the graph,
+
+
+# We can use geom_rect() 
+# to highlight specific sections of the graph,
 # as long as we have a xmin, xmax, ymin, and ymax
 
 # Here's a fairly homogenous - but not meaningful - section of the network over time.
 # This is evacuation levels a few weeks after the disaster.
 gg + 
-  geom_rect(mapping = aes(xmin = as_datetime("2019-09-10 00:00:00"),
-                          xmax = as_datetime("2019-10-30 00:00:00"),
-                          ymin = 0, ymax = 600),
-             fill = "grey", alpha = 0.5)
-# So, while very regular, not good at showing the variation in the sample.
+  geom_rect(mapping = aes(
+    xmin = as_datetime("2019-09-10 00:00:00"),
+    xmax = as_datetime("2019-10-30 00:00:00"),
+    ymin = 0, ymax = 600),
+    fill = "grey", alpha = 0.5)
+# So, while very regular, 
+# not good at showing the variation in the sample.
 
 
 ## 2.3 Filter by Time Randomly ####################################
@@ -256,21 +278,22 @@ gg +
 sample_rand = stats %>%
   sample_n(size = 20)
 
+
+
 # Let's view the points and overall line trend.
 gg +
   # Add the sampled points..
-  geom_point(data = sample_qual,
+  geom_point(data = sample_rand,
              mapping = aes(x = date_time, y = avg_edgeweight), 
              color = "dodgerblue") +
   # Add a line connecting the points
-  geom_line(data = sample_qual, 
+  geom_line(data = sample_rand, 
             mapping = aes(x = date_time, y = avg_edgeweight), 
             color = "dodgerblue")
 
 # So we show the range fairly well,
 # but we miss the detail of the actual disaster event in entirety!
 
-remove(afew)
 
 ## 2.4 Filtering by Time Qualitatively #################################
 
@@ -281,6 +304,8 @@ remove(afew)
 
 sample_qual = stats %>%
   filter(date_time <= "2019-09-10 00:00:00")
+
+sample_qual
 
 ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = avg_edgeweight)) +
@@ -295,7 +320,11 @@ ggplot() +
 
 
 
+
+
 # 3. Comparing Sampling Strategies ############################
+
+
 
 ## 3.1 Ego-Centric Samples ###########################
 
@@ -308,22 +337,30 @@ ggplot() +
 nodes = read_rds("data/evacuation/nodes.rds") %>%
   select(node, geoid, pop, median_income)
 
+nodes
+
 
 # Let's sample some nodes randomly...
 sampled_nodes = nodes %>%
   sample_n(size = 50)
 
+sampled_nodes
+
+
 # Then, let's use our edges to calculate some statistics per time slice.
-edges = read_rds("data/evacuation/edges.rds") %>%
+sampled_edges = read_rds("data/evacuation/edges.rds") %>%
   select(from, to, date_time, evacuation) %>%
   # Filter just to evacuation
   filter(evacuation > 0) %>%
   # Filter to JUST source nodes OR destination nodes that were sampled
   filter(from %in% sampled_nodes$node | to %in% sampled_nodes$node)
 
+
+
+
 # Produces a much smaller sample of edges.
 # Let's check our stats.
-sampled_stats = edges %>%
+sampled_stats = sampled_edges %>%
   # For each time slice...
   group_by(date_time) %>%
   # Calculate these outright and normalized statistics
@@ -339,6 +376,8 @@ sampled_stats = edges %>%
   )
 
 # Let's view the results:
+sampled_stats
+
 
 # Big chance in total edge weight - that makes sense.
 ggplot() +
@@ -351,15 +390,23 @@ ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = avg_edgeweight, color = "Population")) +
   geom_line(data = sampled_stats, mapping = aes(x = date_time, y = avg_edgeweight, color = "Ego-centric samples"))
 
+
 # Some gap in share of nodes linked - but probably not as much as if we hadn't ego-centric sampled.
 ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = pc_nodes_linked, color = "Population")) +
   geom_line(data = sampled_stats, mapping = aes(x = date_time, y = pc_nodes_linked, color = "Ego-centric samples"))
 
+
+
 # Reduced edge ratio, but probably not as much as if we hadn't ego-centric sampled
 ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = edge_ratio, color = "Population")) +
   geom_line(data = sampled_stats, mapping = aes(x = date_time, y = edge_ratio, color = "Ego-centric samples"))
+
+
+
+
+
 
 
 
@@ -374,7 +421,7 @@ nodes = read_rds("data/evacuation/nodes.rds") %>%
 
 
 # Grab a sample of edges
-edges = read_rds("data/evacuation/edges.rds") %>%
+sampled_edges2 = read_rds("data/evacuation/edges.rds") %>%
   select(from, to, date_time, evacuation) %>%
   # Filter just to evacuation
   filter(evacuation > 0) %>%
@@ -382,8 +429,10 @@ edges = read_rds("data/evacuation/edges.rds") %>%
   # about the number we got when we did an ego-centric sample
   sample_n(size = 25000)
 
+
+
 # Which nodes ended up being sampled? Let's find out.
-sampled_nodes2 = edges %>%
+sampled_nodes2 = sampled_edges2 %>%
   reframe(node = c(from, to) %>% unique()) %>%
   left_join(by = "node", y= nodes)
 
@@ -392,7 +441,7 @@ nrow(sampled_nodes) # ego-centric sampling
 nrow(sampled_nodes2) # edgewise sampling
 
 # Let's calculate 
-sampled_stats2 = edges %>%
+sampled_stats2 = sampled_edges2 %>%
   # For each time slice...
   group_by(date_time) %>%
   # Calculate these outright and normalized statistics
@@ -407,6 +456,8 @@ sampled_stats2 = edges %>%
     avg_edgeweight = edgeweight / n_nodes
   )
 
+sampled_stats2
+
 
 
 # Big change in total edge weight - that makes sense.
@@ -418,26 +469,263 @@ ggplot() +
 
 
 
-# Edgewise samples match population almost perfectly in mean edge weight. That makes sense - it is a literal random sample of rows.
+# Edgewise samples match population somewhat closely.
 ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = avg_edgeweight, color = "Population")) +
   geom_line(data = sampled_stats, mapping = aes(x = date_time, y = avg_edgeweight, color = "Ego-centric samples")) +
   geom_line(data = sampled_stats2, mapping = aes(x = date_time, y = avg_edgeweight, color = "Edgewise samples"))
 
 
-# Some gap in share of nodes linked - edgewise samples tend to match population more closely than ego-centric sample
+# Some gap in share of nodes linked
+# edgewise samples tend to match population more closely 
+# than ego-centric sample
 ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = pc_nodes_linked, color = "Population")) +
   geom_line(data = sampled_stats, mapping = aes(x = date_time, y = pc_nodes_linked, color = "Ego-centric samples")) +
   geom_line(data = sampled_stats2, mapping = aes(x = date_time, y = pc_nodes_linked, color = "Edgewise samples"))
 
 
-# Edgewise samples seems to deflate the edge ratio considerably, while ego-centric samples seem to inflate the edge rate.
+# Edgewise samples seems to deflate the edge ratio considerably,
+# while ego-centric samples seem to inflate the edge rate.
 ggplot() +
   geom_line(data = stats, mapping = aes(x = date_time, y = edge_ratio, color = "Population")) +
   geom_line(data = sampled_stats, mapping = aes(x = date_time, y = edge_ratio, color = "Ego-centric samples")) +
   geom_line(data = sampled_stats2, mapping = aes(x = date_time, y = edge_ratio, color = "Edgewise samples"))
 
+
+
+## 3.3 Visualizing Samples ###########################################
+
+# How different are the samples we end up creating?
+
+# egocentric
+sampled_edges 
+
+# edgewise sample
+sampled_edges2 
+
+
+# Let's load in our county subdivisions
+points = read_sf("data/evacuation/county_subdivisions.geojson") %>%
+  # Get centroid coordinates
+  mutate(geometry %>% st_centroid() %>% st_coordinates() %>% 
+           as_tibble() %>% select(x = 1, y = 2)) %>%
+  # Get just the coordinates, for joining
+  as_tibble() %>%
+  select(geoid, x,y)
+
+# Get state polygon
+polygons = read_sf("data/evacuation/states.geojson") %>%
+  # Narrow into florida
+  filter(state == "FL")
+
+# Get the nodes...
+nodes = read_rds("data/evacuation/nodes.rds") %>%
+  select(node, geoid, pop, median_income) %>%
+  # Join in the x-y coordinates
+  left_join(by = "geoid", y = points)
+
+# Update with coordinates
+sampled_nodes_geo = nodes %>%
+  filter(node %in% sampled_nodes$node)
+
+sampled_nodes2_geo = nodes %>%
+  filter(node %in% sampled_nodes2$node)
+
+
+# Join in the coordinates...
+sampled_edges_geo = sampled_edges %>%
+  left_join(by = c("from" = "node"), y = nodes %>% select(node, from_x = x, from_y = y)) %>%
+  left_join(by = c("to" = "node"), y = nodes %>% select(node, to_x = x, to_y = y)) %>%
+  # Aggregate over time
+  group_by(from, to, from_x, from_y, to_x, to_y) %>%
+  summarize(evacuation = sum(evacuation, na.rm = TRUE))
+
+# Join in the coordinates...
+sampled_edges2_geo = sampled_edges2 %>%
+  left_join(by = c("from" = "node"), y = nodes %>% select(node, from_x = x, from_y = y)) %>%
+  left_join(by = c("to" = "node"), y = nodes %>% select(node, to_x = x, to_y = y)) %>%
+  # Aggregate over time
+  group_by(from, to, from_x, from_y, to_x, to_y) %>%
+  summarize(evacuation = sum(evacuation, na.rm = TRUE))
+
+
+# Get the population network, aggregated.
+edges = read_rds("data/evacuation/edges.rds") %>%
+  filter(evacuation > 0) %>%
+  select(from, to, date_time, evacuation) %>%
+  left_join(by = c("from" = "node"), y = nodes %>% select(node, from_x = x, from_y = y)) %>%
+  left_join(by = c("to" = "node"), y = nodes %>% select(node, to_x = x, to_y = y)) %>%
+  # Aggregate over time
+  group_by(from, to,  from_x, from_y, to_x, to_y) %>%
+  summarize(evacuation = sum(evacuation, na.rm = TRUE))
+
+# Show ego-centric sample
+g1 = ggplot() +
+  geom_sf(data = polygons, fill = "#373737") +
+  # Plot the original population of edges
+  geom_segment(data = edges, 
+               mapping = aes(x = from_x, y = from_y,
+                             xend = to_x, yend = to_y),
+               color = "darkgrey", alpha = 0.5) +
+  # Plot the original population of nodes
+  geom_point(data = nodes, mapping = aes(x = x, y = y), color = "darkgrey") +
+  # Plot the ego-centric sample of edges
+  geom_segment(data = sampled_edges_geo, 
+               mapping = aes(x = from_x, y = from_y,
+                             xend = to_x, yend = to_y),
+               color = "dodgerblue", alpha = 0.5) +
+  # Plot the ego-centric sample of nodes
+  geom_point(data = sampled_nodes_geo, mapping = aes(x = x, y = y),
+             shape = 21, fill = "white", color = "dodgerblue") 
+
+edges
+sampled_edges_geo
+
+# Show edgewise sample
+g2 = ggplot() +
+  geom_sf(data = polygons, fill = "#373737") +
+  # Plot the original population of edges
+  geom_segment(data = edges, 
+               mapping = aes(x = from_x, y = from_y,
+                             xend = to_x, yend = to_y),
+               color = "darkgrey", alpha = 0.5) +
+  # Plot the original population of nodes
+  geom_point(data = nodes, mapping = aes(x = x, y = y), color = "darkgrey") +
+  # Plot the ego-centric sample of edges
+  geom_segment(data = sampled_edges2_geo, 
+               mapping = aes(x = from_x, y = from_y,
+                             xend = to_x, yend = to_y),
+               color = "violetred", alpha = 0.5) +
+  # Plot the ego-centric sample of nodes
+  geom_point(data = sampled_nodes2_geo, mapping = aes(x = x, y = y),
+             shape = 21, fill = "white", color = "violetred") 
+
+g2
+
+# Plot together
+ggpubr::ggarrange(plotlist = list(g1,g2), nrow = 1)
+
+
+## 3.4 Spatial Buffers ###############################################
+
+
+# First - sample to relevant times.
+# Second - sample to relevant regions.
+# Third - randomly sample times, if we needed to.
+# Fourth - randomly sample either nodes or edges
+
+
+# Let's load in our county subdivisions
+points = read_sf("data/evacuation/county_subdivisions.geojson") %>%
+  # Get centroid coordinates
+  mutate(geometry %>% st_centroid() %>% st_coordinates() %>% 
+           as_tibble() %>% select(x = 1, y = 2)) %>%
+  # Get just the coordinates, for joining
+  as_tibble() %>%
+  select(geoid, x,y)
+
+# Get state polygon
+polygons = read_sf("data/evacuation/states.geojson") %>%
+  # Narrow into florida
+  filter(state == "FL")
+
+
+# Let's get the full population of nodes.
+nodes = read_rds("data/evacuation/nodes.rds") %>%
+  select(node, geoid) %>%
+  # Join in coordinates
+  left_join(by = "geoid", y = points) %>%
+  # Give me just valid nodes with valid coordinates
+  filter(!is.na(x), !is.na(y))
+
+# Then, let's use our edges to calculate some statistics per time slice.
+edges = read_rds("data/evacuation/edges.rds") %>%
+  select(from, to, date_time, evacuation) %>%
+  # Filter just to evacuation
+  filter(evacuation > 0) %>%
+  # STEP 1: FILTER TO RELEVANT TIME
+  filter(date_time < as_datetime("2019-09-10 00:00:00")) %>%
+  # Join in coordinates
+  left_join(by = c("from" = "node"), y = nodes %>% select(node, from_x = x, from_y = y)) %>%
+  left_join(by = c("to" = "node"), y = nodes %>% select(node, to_x = x, to_y = y)) %>%
+  # Give me just valid rows
+  filter(!is.na(to_x), !is.na(to_y), !is.na(from_x), !is.na(from_y))
+  
+# STEP 2: FILTER TO RELEVANT AREA
+# Let's draw a spatial buffer.
+
+# Find a point of interest that is meaningful
+# 1208692158 - Miami
+
+poi = nodes %>%
+  filter(geoid == "1208692158") %>%
+  mutate(geometry = paste0("POINT(", x, " ", y, ")")) %>%
+  mutate(geometry = st_as_sfc(geometry)) %>%
+  st_as_sf(crs = 4326)
+
+buffer = poi %>%
+  summarize(geometry = st_buffer(geometry, dist = 1000*500))
+
+ggplot() +
+  geom_sf(data = polygons, fill = "#373737") +
+  geom_sf(data = buffer, color = "red", alpha = 0.5) +
+  geom_sf(data = poi, color = "red") 
+
+# Get my buffer sampled nodes
+buffer_sampled_nodes = nodes %>%
+  mutate(geometry = paste0("POINT(", x, " ", y, ")")) %>%
+  mutate(geometry = st_as_sfc(geometry)) %>%
+  st_as_sf(crs = 4326) %>%
+  # Spatial filter out any points not in the buffer
+  st_join(y = buffer, left = FALSE) %>%
+  as_tibble()
+
+
+# Get my buffer sampled edges - just edges within the zone.
+buffer_sampled_edges = edges %>%
+  filter(from %in% buffer_sampled_nodes$node & to %in% buffer_sampled_nodes$node )
+
+# I want to take now an edgewise sample.
+random_buffer_sampled_edges = buffer_sampled_edges %>%
+  sample_n(size = 20000)
+
+# Give me all the nodes in that sample...
+random_buffer_sampled_nodes = random_buffer_sampled_edges %>%
+  reframe(node = c(from, to) %>% unique()) %>%
+  left_join(by = "node", y= buffer_sampled_nodes)
+
+
+
+
+ggplot() +
+  geom_sf(data = polygons, fill = "#373737") +
+  geom_sf(data = buffer, color = "red", alpha = 0.5) +
+  geom_sf(data = poi, color = "red")  +
+  # Plot the edgewise sample of edges
+  geom_segment(data = random_buffer_sampled_edges, 
+               mapping = aes(x = from_x, y = from_y,
+                             xend = to_x, yend = to_y),
+               color = "violetred", alpha = 0.5) +
+  # Plot the nodes connected to those edges.
+  geom_point(data = random_buffer_sampled_nodes, mapping = aes(x = x, y = y))
+
+
+random_stats = random_buffer_sampled_edges %>%
+  group_by(date_time) %>%
+  summarize(mean_evacuation = mean(evacuation)) 
+
+stats = edges  %>%
+  group_by(date_time) %>%
+  summarize(mean_evacuation = mean(evacuation)) 
+
+
+ggplot() +
+  geom_line(data = stats, mapping = aes(x = date_time, y = mean_evacuation,
+                                        color = "Filtered Population")) +
+  geom_line(data = random_stats, mapping = aes(x = date_time, y = mean_evacuation,
+                                               color = "Filtered Edgewise Sample"))
+  
 
 # 4. Conclusion ##########################################
 
