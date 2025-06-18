@@ -120,7 +120,6 @@ library(dpylr) # data wrangling
 library(readr) # reading data
 library(ggplot2) # visualizing data
 library(DBI) # for databases
-library(dbplyr) # data wrangling for databases
 library(RSQLite) # for SQLite
 library(stringr) # for string manipulation
 
@@ -130,18 +129,25 @@ library(stringr) # for string manipulation
 
 # Tell R to hire a 'SQL translator' object, which we'll name 'db',
 # sourced from our bluebikes data
-db <- dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+db = dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
+
+
+db
 
 # What tables are in our database?
 db %>% dbListTables()
 
 # Let's investigate them.
 
+
+
 ### stationbg_dataset ######################################
 
 # stationbg_dataset is a table of bluebikes stations 
 # and the traits of the block group they are located in.
 db %>% tbl("stationbg_dataset")
+
+
 
 # code - bluebikes station unique ID
 # geoid - census block group unique ID, in which bluebikes station is located
@@ -164,12 +170,15 @@ db %>% tbl("stationbg_dataset")
 db %>% tbl("stationbg_dataset") %>%
   glimpse()
 
+
 ### tally_rush_edges ##############################
 
 # `tally_rush_edges` is a table tallying the number of riders 
 # traveling between bluebikes stations
 # during a specific day and rush hour period (AM or PM)
 db %>% tbl("tally_rush_edges")
+
+
 
 # start_code - unique ID of bluebikes station where the ride started
 # end_code - unique ID of bluebikes station where the ride ended
@@ -205,6 +214,9 @@ db %>%
   # Grab first 6 rows
   head()
 
+
+
+
 ## 0.4 Collecting Data #####################
 
 mine <- db %>%
@@ -218,6 +230,24 @@ mine <- db %>%
 
 # Check it out!
 mine
+
+
+q_mine = db %>%
+  # Tell R to look in the tally_rush dataset in our SQLite database
+  # It will return the first 1000 rows
+  tbl("tally_rush") %>%
+  # Grab first 6 rows
+  head() 
+
+q_mine %>%
+  filter(rush == "am")
+
+q_mine %>%
+  filter(rush == "am") %>%
+  collect()
+
+
+
 
 ## 0.6 Handling Dates ####################################
 
@@ -278,6 +308,21 @@ db %>%
   collect()
 
 
+db %>%
+  tbl("tally_rush") %>%
+  mutate(month = str_sub(day, 6, 7)) %>%
+  # Zoom into October, using the 6th and 7th characters in the day vector
+  filter(month == "10")  %>%
+  # Zoom into just am rush hour traffic
+  filter(rush == "am") %>%
+  # Count how many rows (days) is in that?
+  summarize(count = n()) %>%
+  # collect response - 243 days!
+  collect()
+
+
+
+
 ### Visualize Collected Data by Date ##################
 myviz <- db %>%
   tbl("tally_rush") %>%
@@ -291,7 +336,8 @@ myviz <- db %>%
   # you WILL have to transform it from character into date format
   mutate(day = as.Date(day))
 
-
+# as.Date("2018-02-01")
+# as.numeric("23")
 
 myviz %>% 
   ggplot(mapping = aes(x = day, y = count)) +
@@ -299,6 +345,8 @@ myviz %>%
   labs(subtitle = "Yay October!")
 
 dbDisconnect(db)
+
+
 
 
 # 1. Querying Network Data ############################
@@ -323,10 +371,12 @@ db = dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
 
 db %>%
   tbl("tally_rush_edges") %>%
-  # zoom into just 2021
-  filter(str_sub(day, 1,4) == "2021") %>%
   # zoom into just morning
-  filter(rush == "am")
+  filter(rush == "am") %>%
+  # zoom into just 2021
+  filter(str_sub(day, 1,4) == "2021")
+
+
 
 ### Check Query Size ###########################################
 
@@ -367,6 +417,8 @@ edges = db %>%
   filter(rush == "am") %>%
   collect() 
 
+
+
 ### Time Benchmarking ##################
 
 # How long will your query take?
@@ -406,6 +458,9 @@ edges %>% head()
 # Great! We've got the edges in this network, weighted by number of rides.
 
 
+
+
+
 ## 1.2 Querying Node Data ###############################
 
 # Next, we're going to gather the nodes in this network.
@@ -430,6 +485,8 @@ db %>%
 # Check how many nodes - okay that's a doable size, no sampling needed
 db %>% tbl("stationbg_dataset") %>% summarize(count = n())
 
+# 425^2
+
 # Build a test query, where we will create a binary classifier 
 # for each station
 db %>%
@@ -437,7 +494,7 @@ db %>%
   select(code, geoid, pop_black_2020_smooth5) %>%
   # And let's classify it as 
   # above 50% or below 50%
-  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, "yes", "no")) 
+  mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, true = "yes", false = "no")) 
 
 ### Collect Query ######################
 
@@ -448,8 +505,12 @@ nodes = db %>%
   mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, "yes", "no")) %>%
   collect()
 
+
 # Disconnect
 dbDisconnect(db)
+
+
+
 
 # 2. Network Joins ########################################
 
@@ -563,6 +624,8 @@ data %>% head()
 # Connect
 db = dbConnect(RSQLite::SQLite(), "data/bluebikes/bluebikes.sqlite")
 
+
+
 # Build an edges query - but don't collect it!
 q_edges = db %>%
   tbl("tally_rush_edges") %>%
@@ -570,6 +633,9 @@ q_edges = db %>%
   filter(str_sub(day, 1,4) == "2021") %>%
   # zoom into just morning
   filter(rush == "am")
+
+q_edges
+
 
 # Build a nodes query - but don't collect it!
 q_nodes = db %>%
@@ -580,6 +646,9 @@ q_nodes = db %>%
   mutate(maj_black = if_else(pop_black_2020_smooth5 > 0.5, "yes", "no"))  %>%
   # Select ONLY final variables you need for joining
   select(code, maj_black)
+
+q_nodes
+
 
 
 # Build the joining query, using q_edges and q_nodes as if they were real tables
@@ -596,10 +665,16 @@ q_data = q_edges %>%
   filter(start_black != "NA" & end_black != "NA")
 
 
+
+q_data
+
+
+
 # Time Benchmark the Query
 system.time({
   q_data %>% collect()
 })
+
 
 # Collect the query!
 data = q_data %>% collect()
@@ -608,6 +683,13 @@ data = q_data %>% collect()
 data  %>% head()
 
 
+data %>%
+  group_by(start_black) %>%
+  summarize(count = n())
+
+data %>%
+  group_by(start_black, end_black) %>%
+  summarize(count = n())
 
 
 ## Join & Aggregate BEFORE Collecting ###########################
@@ -642,6 +724,8 @@ stat = q_stat %>% collect()
 
 # View it!
 stat
+
+
 
 # Suppose we have some extra formatting to do.
 # This is a good task to have R do after collect()-ing the data.

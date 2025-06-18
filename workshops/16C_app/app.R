@@ -64,7 +64,6 @@ server <- function(input, output) {
   
   output$plot <- renderPlotly({
     
-    
     plot_ly(
       diamonds[diamonds$cut == input$cut,], 
       x = ~carat

@@ -25,8 +25,10 @@ ui = bslib::page(
   ),
   
   bslib::layout_sidebar(
+    height = "1000px",
     # Make a sidebar
     sidebar = bslib::sidebar(
+      width = "500px",
       "Select the neighborhood you want to view social infrastructure sites for.",
       ## input$type ###############################
       shiny::checkboxGroupInput(
@@ -46,16 +48,17 @@ ui = bslib::page(
     bslib::card(
       bslib::card_header("VISUALS"),
       # Split half layout
-      bslib::layout_column_wrap(width = 0.5,
-                                ## output$map ##########################
-                                bslib::card_body(
-                                  shiny::plotOutput(outputId = "map", width = "100%", height = "100%")
-                                ),
-                                ## output$bars ###########################
-                                bslib::card_body(
-                                  shiny::plotOutput(outputId = "bars", width = "100%", height = "100%")
-                                )
-                                
+      bslib::layout_column_wrap(
+        width = 0.5,
+        ## output$map ##########################
+        bslib::card_body(
+          shiny::plotOutput(outputId = "map", width = "100%", height = "100%")
+        ),
+        ## output$bars ###########################
+        bslib::card_body(
+          shiny::plotOutput(outputId = "bars", width = "100%", height = "100%")
+        )
+        
       )
     )
   )
@@ -78,6 +81,7 @@ server <- function(input, output) {
   xlim = c(-71.14, -71.01)
   ylim = c(42.37, 42.28)
   
+  
   ### **EDIT 1** ######################################
   # Add new data
   # Let's get a default list of categories
@@ -87,6 +91,8 @@ server <- function(input, output) {
   
   # Streets!
   streets = read_sf("streets.geojson")
+  
+  
   
   
   # REACTIVITY #################################
@@ -132,6 +138,7 @@ server <- function(input, output) {
   
   ## bars ###################################
   output$bars = renderPlot({
+    
     gg_bars = ggplot() +
       geom_col(
         data = tally(), 
@@ -147,11 +154,10 @@ server <- function(input, output) {
       theme(legend.position = "none") 
     
     gg_bars # View it
-  })
+  }) #%>% bindEvent({ tally() })
   
   ## map ####################################
   output$map = renderPlot({
-    
     
     # Quickly filter the polygons by name
     polygons_poi = neighborhoods %>% 

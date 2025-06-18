@@ -22,6 +22,9 @@ getwd()
 # Set working directory to our app folder
 setwd("workshops/16C_app")
 
+# setwd("/cloud/project/")
+# getwd()
+
 # Get Boston neighborhoods (https://data.boston.gov/dataset/boston-neighborhood-boundaries-approximated-by-2020-census-block-groups1/resource/c9663e7a-84c2-435c-91c0-91cdce1ee5ac)
 neighborhoods = read_sf("boston_neighborhoods.geojson") %>%
   select(name = blockgr2020_ctr_neighb_name, geometry) %>%
@@ -29,8 +32,12 @@ neighborhoods = read_sf("boston_neighborhoods.geojson") %>%
   filter(!name %in% c("West Roxbury", "Roslindale", "Mattapan", "Hyde Park",
                       "Brighton", "Allston", "Charlestown", "East Boston", "Harbor Islands"))
 
+neighborhoods
+
 # Get social infrastructure sites
 points = read_sf("boston_social_infra.geojson")
+
+points
 
 # Get our default coordinate box 
 xlim = c(-71.14, -71.01)
@@ -41,6 +48,11 @@ categories = tibble(
   group = c("Community Spaces", "Parks", "Places of Worship", "Social Business")
 ) # notice we skipped the "Other" category - we don't want to visualize it.
 
+
+# points %>%
+#   group_by(group) %>%
+#   summarize(count = n())
+ 
 # Streets!
 streets = read_sf("streets.geojson")
 object.size(streets) / 1e6 # 5 MB!
@@ -54,12 +66,16 @@ object.size(streets) / 1e6 # 5 MB!
 # - Let's make a map that visualizes just the selected types in selected areas
 
 
-
 # INPUTS ###############################
 
 # In this section, let's add an `input` list, to match our inputs in the app
 input = list(type = c("Parks", "Community Spaces"),
              area = c("Roxbury", "Dorchester") )
+
+
+input
+
+
 
 
 
@@ -73,7 +89,6 @@ input = list(type = c("Parks", "Community Spaces"),
 
 # Narrow into just the points in those areas
 poi = points %>%
-  mutate(group = factor(group)) %>%
   # Just social infrastructure sites in our selected types
   filter(group %in% input$type) %>%
   # Spatially filter by just these neighborhoods
@@ -81,7 +96,15 @@ poi = points %>%
     y = neighborhoods %>% 
       filter(name %in% input$area) %>%
       select(name, geometry), 
+    # Keep only the points that had a successful join
     left = FALSE)
+
+
+
+
+
+
+
 
 # Get total tally of sites per type
 tally = poi %>% 
@@ -95,12 +118,19 @@ tally = poi %>%
   mutate(count = case_when(is.na(count) ~ 0, TRUE ~ count))
 
 
+
+
+
+
 # VISUALS ###############################
 
 ## gg_bars ################################
 
 # update when:
 # -- tally changes
+
+
+
 
 gg_bars = ggplot() +
   geom_col(data = tally, mapping = aes(x = group, y = count, fill = group)) +
@@ -115,6 +145,10 @@ gg_bars = ggplot() +
 
 gg_bars # View it
 
+
+
+
+
 ## gg_map ################################
 
 # Quickly filter the polygons by name
@@ -128,15 +162,44 @@ bb = polygons_poi %>%
 # You can query it like... 
 bb$xmin
 
+bb$xmin
+bb$ymin
+
 # Turn it into a literal polygon box as an sf feature
 box = bb %>% 
   st_as_sfc() %>% # turn into a geometry
   tibble(geometry = .) %>% # put in a tibble
   st_as_sf() # turn into a spatial data.frame
 
+# ggplot() +
+#   geom_sf(data = box) +
+#   geom_sf(data = polygons_poi)
+
 # Get just streets in the box
 streets_box = streets %>%
   st_crop(y = box) # Crop these spatial features to just those in the box
+
+
+# ggplot() +
+#   geom_sf(data = box) +
+#   geom_sf(data = streets_box, color = "grey") +
+#   geom_sf(data = polygons_poi, fill = NA, color = "dodgerblue", linewidth = 2) +
+#   geom_sf(data = poi, mapping = aes(fill = group),
+#           shape = 21, color = "white", stroke = 0.5, size = 3) + 
+#   theme_void() +
+#   theme(legend.position = 'bottom')  +
+#   coord_sf(xlim = c(bb$xmin, bb$xmax),
+#            ylim = c(bb$ymin, bb$ymax)) +
+#   ggspatial::annotation_north_arrow(
+#     location = "tr", 
+#     height = unit(0.5, "cm"),
+#     width = unit(0.5, "cm")) +
+#   ggspatial::annotation_scale(location = "bl") +
+#   labs(fill = "Type")
+# 
+
+
+
 
 # Show specific neighborhoods 
 gg_map = ggplot() +

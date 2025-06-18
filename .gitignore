@@ -4,3 +4,4 @@
 .Ruserdata
 data/bluebikes/bluebikes.sqlite
 .Renviron
+bluebikes.sqlite

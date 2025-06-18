@@ -13,8 +13,14 @@ library(GGally)
 library(sf)
 library(ggspatial)
 
-# See the data/boston_social_infra folder!
 
+# install.packages("sf")
+# install.packages("ggspatial")
+# install.packages("GGally")
+
+# See the data/boston_social_infra folder!
+setwd("/cloud/project/")
+getwd()
 # Load Data
 mypoints <- read_sf("data/boston_social_infra/boston_social_infra.geojson") 
 myshapes <- read_sf("data/boston_social_infra/boston_grid.geojson")
@@ -26,3 +32,11 @@ mylines <- read_sf("data/boston_social_infra/boston_train_lines.geojson")
 # https://rpubs.com/timothyfraser/mapping_social_infra
 # I wrote this a couple years back, but I think it's still worthwhile!
 # Just adjust the file paths, and you're good to go.
+
+
+# ggplot() +
+#   geom_sf(data = myshapes, fill = "tan", color = "white", size = 0.5) +
+#   geom_sf(data = mypoints, color = 'dodgerblue', size = 2, alpha = 0.5)  +
+#   geom_sf(data = mylines, color = "black")
+
+

@@ -11,6 +11,7 @@
 library(dplyr) # for tidy data wrangling
 library(readr) # for reading in data
 library(viridis) # for visualization
+library(ggplot2)
 # Mapping packages
 library(sf) # for spatial data.frames
 # library(rgdal) # for background geospatial operations (might not need this anymore)
@@ -46,6 +47,8 @@ wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 # - Adjacency
 # - Service Areas
 
+
+
 # Nearest Distance ##########################################
 
 # You have been commissioned by the Secretary of State in Boston
@@ -77,6 +80,11 @@ closest = polls %>%
   as_tibble() %>%
   select(id, station)
 
+
+
+
+
+
 # I'd love to get a distance measure for these. How could we do this?
 
 # First, we need to create lines between each poll and each tstop
@@ -85,6 +93,9 @@ closest = polls %>%
 # Just the closest poll-and-tstop pairs
 # Let's say each poll-and-tstop pair are in a group, 
 # with a specific group ID - the poll's ID
+
+
+
 
 # Let's bundle these points 
 points = bind_rows(
@@ -100,6 +111,13 @@ points = bind_rows(
 
 
 
+
+points %>%
+  # For each closest-station-poll pair, 
+  group_by(id, station) %>%
+  # Bundle points into a multiple, then draw a line through the points
+  summarize(geometry = geometry %>% st_union())
+
 # Iteratively, get linestrings
 lines = points %>%
   # For each closest-station-poll pair, 
@@ -110,12 +128,24 @@ lines = points %>%
   mutate(km = geometry %>% st_length() %>% as.numeric() %>% {./ 1000})
 
 
+# st_length()
+lines
+
+
 # How far is the nearest polling place from each T stop, on average?
 # Eg. At Which t-stops should we consider adding a shuttle to the polls?
 lines %>%
   as_tibble() %>%
   group_by(station) %>%
-  summarize(mean_dist = mean(km))
+  summarize(mean_dist = mean(km)) %>%
+  arrange(desc(mean_dist))
+
+
+
+
+
+
+
 
 
 # Which precincts are FURTHEST from their nearest t-stop?
@@ -128,7 +158,17 @@ lines %>%
 
 
 
+
+
+
+
+
+
+
 rm(list = ls())
+
+
+
 
 
 
@@ -151,11 +191,46 @@ poi = read_sf("data/boston_voting/train_stops_boston.geojson") %>%
   # Let's investigate Mass Ave T Stop
   filter(station == "Massachusetts Ave", line == "ORANGE")
 
+precincts
+poi
+
+
+ggplot() +
+  geom_sf(data = precincts) +
+  geom_sf(data = poi, size = 5, color = "orange")
+
+
+
+
+# precincts %>%
+#   st_join(y = poi, join = st_intersects, left = FALSE)
+
+
+
+
+
+
+
+
+
 # Get the polygons that are 0 degrees of separation away (contains the poi)
 p0 = precincts %>%
   st_join(y = poi, left = FALSE) %>%
   select(ward_precinct, geometry) %>%
   mutate(degree = 0)
+
+p0
+
+ggplot() +
+  geom_sf(data = precincts) +
+  geom_sf(data = p0, fill = "dodgerblue", alpha = 0.5) +
+  geom_sf(data = poi, size = 5, shape = 21,
+          fill = "orange", color = "white", stroke = 2) +
+  coord_sf(xlim = c(-71.1, -71.05), ylim = c(42.32, 42.35))
+
+
+
+
 
 # Get the polygons that are 1 degree of separation away
 p1 = precincts %>%
@@ -166,6 +241,9 @@ p1 = precincts %>%
   filter(!ward_precinct %in% c(p0$ward_precinct) ) %>%
   mutate(degree = 1)
 
+
+
+
 # Get the polygons that are 2 degrees of separation away
 p2 = precincts %>%
   # By inner joining into the 1 degree of separation polygons
@@ -174,6 +252,9 @@ p2 = precincts %>%
   # Filter out those already within
   filter(!ward_precinct %in% c( p1$ward_precinct, p0$ward_precinct) ) %>%
   mutate(degree = 2)
+
+
+
 
 # Get the polygons that are 3 degrees of separation away
 p3 = precincts %>%
@@ -185,14 +266,43 @@ p3 = precincts %>%
   mutate(degree = 3)
 
 
+
+
+
 # Bundle them together!
 neighbors = bind_rows( p0,p1,p2,p3 )
 
 
+
+
 # Visualize it!
 ggplot() +
-  geom_sf(data = neighbors, mapping = aes(fill = factor(degree) ), color = "white", alpha = 0.75) +
+  geom_sf(data = neighbors, mapping = aes(fill = factor(degree) ), 
+          color = "white", alpha = 0.75) +
+  geom_sf(data = poi)
+
+
+ggplot() +
+  coord_sf(xlim = c(-71.1, -71.05), ylim = c(42.32, 42.35)) +
+  geom_sf(data = neighbors, mapping = aes(fill = factor(degree) ), 
+          color = "white", alpha = 0.75)  +
   geom_sf(data = poi) 
+
+
+
+ggplot() +
+  coord_sf(xlim = c(-71.1, -71.05), ylim = c(42.32, 42.35)) +
+  geom_sf(data = neighbors, mapping = aes(fill = factor(degree) ), 
+          color = "white", alpha = 0.75)  +
+  geom_sf(data = poi) +
+  scale_fill_viridis(option = "plasma", discrete = TRUE, 
+                     begin = 0.0, end = 0.9)
+
+
+rm(list= ls())
+
+
+
 
 ## Iterative Adjacency ############################
 
@@ -206,10 +316,14 @@ poi = read_sf("data/boston_voting/train_stops_boston.geojson") %>%
   # Let's investigate Mass Ave T Stop AND Cambridge T Stop
   filter( (station == "Massachusetts Ave" & line == "ORANGE") | (station == "Haymarket" ) )
 
+
+
 # For each station, find the precincts for that station
 p0 = precincts %>%
   st_join(y = poi, left = FALSE) %>%
   mutate(degree = 0)
+
+
 
 # For each station's precinct, find the precincts adjoining that precinct
 p1 = precincts %>% 
@@ -217,7 +331,19 @@ p1 = precincts %>%
   st_join(y = p0, join = st_touches, left = FALSE) %>%
   mutate(degree = 1)
 
+
+ggplot() +
+  geom_sf(data = p0, mapping = aes(fill = factor(degree) )) +
+  geom_sf(data = p1, mapping = aes(fill = factor(degree) )) +
+  geom_sf(data = poi)
+
+
+
 rm(list = ls())
+
+
+
+
 
 
 # Service Areas #####################################
@@ -231,7 +357,7 @@ rm(list = ls())
 
 library(dplyr)
 library(readr)
-library(tidyr)
+#library(tidyr)
 library(broom)
 library(sf)
 library(stringr)
@@ -240,6 +366,9 @@ wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 
 # Background for plotting
 precincts = read_sf("data/boston_voting/precincts.geojson")
+
+
+
 
 # Load polling place points
 polls <- read_sf("data/boston_voting/polling_places.geojson") %>%
@@ -253,10 +382,19 @@ polls <- read_sf("data/boston_voting/polling_places.geojson") %>%
 # View the CRS (coordinate reference system) = should be WGS 84
 st_crs(polls)
 
+
+
+
+
+
+
 ## Clustering #####################################
 
 # First, we need to step out of spatial data into a simple tibble,
 # with an id for joining, and an x and y column
+
+polls$geometry %>% st_coordinates() %>% as_tibble() %>% select(x = 1, y = 2)
+
 
 # Get point data
 points = polls %>%
@@ -270,42 +408,83 @@ points = polls %>%
   # Grab just the point identifier, x, and y.
   select(id, x, y)
 
-# We can use k-means clustering to find the clusters that minimize the sum of squared residuals
+
+
+
+
+
+
+
+# We can use k-means clustering to find the clusters that 
+# minimize the sum of squared residuals
 # Suppose we have 3 trucks, so we want 3 service areas.
 # Cluster into 3 areas
 m = points %>%
   kmeans(x = ., centers = 3)
 
+
+
+
+
 # View cluster details
 broom::tidy(m)
 broom::glance(m)
+
+
+
 
 # Add the cluster ID in
 polls = polls %>% 
   mutate(cluster = m$cluster)
 
 
-# Finally, we could create polygons for these clusters using some sf magick too.
+
+# polls %>%
+#   # For each cluster...
+#   group_by(cluster) %>%
+#   # union points into multipoints, then find the boundaries of the multipoints
+#   summarize(geometry = geometry %>% st_union())
+
+
+# Finally, we could create polygons for these clusters using some sf magic too.
 cluster_polygons = polls %>%
   # For each cluster...
   group_by(cluster) %>%
   # union points into multipoints, then find the boundaries of the multipoints
   summarize(geometry = geometry %>% st_union() %>% st_convex_hull())
 
+
+# 
+# ggplot() +
+#   geom_sf(data = precincts) +
+#   geom_sf(data = polls,
+#           mapping = aes(color = factor(cluster))) +
+#   geom_sf(data = cluster_polygons, 
+#           mapping = aes(fill = factor(cluster)),
+#           alpha = 0.5)
+# 
+# 
+
+
+
+
+
 # Visualize it!
 ggplot() +
   # Plot a simple background of precincts
   geom_sf(data = precincts, fill = "black", color = "#373737") +
-  # Plot polls over top
-  geom_sf(data = polls, 
-          mapping = aes(fill = factor(cluster) ),
-          size = 3, shape = 21,  color = "white") + 
   # Visualize the clusters 
   geom_sf(data = cluster_polygons,
           mapping = aes(fill = factor(cluster) ),
           alpha = 0.5, color = "white") +
+  # Plot polls over top
+  geom_sf(data = polls, 
+          mapping = aes(fill = factor(cluster) ),
+          size = 3, shape = 21,  color = "white") + 
   labs(fill = "Service Area") +
   theme_void()
+
+
 
 
 ## Iteratively Clustering  #####################################
@@ -313,6 +492,8 @@ ggplot() +
 # But what if we have MANY areas we want to establish clusters for?
 # We can use our group_by() / reframe() routine with a grouping variable, like 'group',
 # which describes inner vs. outer areas of Boston relative to the city downtown.
+polls
+
 
 
 # Let's grab the coordinates, in GROUPS for inner and outer boston
@@ -321,6 +502,31 @@ points = polls %>%
   mutate(geometry %>% st_coordinates() %>% as_tibble() %>% select(x = 1, y = 2)) %>%
   # Grab just the point identifier, x, and y.
   select(id, group, x, y) 
+
+points
+
+
+# Test it on one group first
+points %>%
+  filter(group == "inner") %>%
+  group_by(group) %>%
+  reframe(
+    id = id,
+    cluster2 = kmeans(x = tibble(x,y),  centers = 3)$cluster
+  )
+
+
+# This works too
+points %>%
+  filter(group == "inner") %>%
+  group_by(group) %>%
+  reframe(
+    id = id,
+    cluster2 = {
+     output = kmeans(x = tibble(x,y),  centers = 3)
+     output$cluster
+    }
+  )
 
 
 points2 = points %>%
@@ -334,9 +540,18 @@ points2 = points %>%
   # Make a cluster id respective of the group
   mutate(clusterid = paste0(group, "-", cluster2))
 
+
+
+
+
+
+
 # Let's join this cluster ID back into polls
 polls = polls %>%
   left_join(by = c("id", "group"), y = points2)
+
+
+
 
 
 
@@ -345,12 +560,23 @@ points2 %>%
   group_by(clusterid, group, cluster2) %>%
   summarize(count = n())
 
+
+
+
 # Make new cluster polygons for these clusters-by-group
 cluster_polygons2 = polls %>%
   # For each cluster...
   group_by(clusterid, group, cluster2) %>%
   # union points into multipoints, then find the boundaries of the multipoints
   summarize(geometry = geometry %>% st_union() %>% st_convex_hull())
+
+
+
+ggplot() +
+  geom_sf(data = cluster_polygons2, fill = "grey", alpha = 0.5) +
+  geom_sf(data = polls, mapping = aes(color = factor(cluster2) ))
+
+
 
 # Let's visualize them.
 ggplot() +
@@ -366,6 +592,8 @@ ggplot() +
           alpha = 0.5, color = "white") +
   labs(fill = "Service Area") +
   theme_void()
+
+
 
 # Clean up
 rm(list = ls())

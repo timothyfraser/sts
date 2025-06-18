@@ -25,6 +25,13 @@ points = read_sf("boston_social_infra.geojson")
 
 input = list(area = c("Dorchester", "Roxbury"), type = c("Community Spaces", "Parks"))
 
+input
+
+
+
+
+
+
 # Filter polygons and points
 polygons_poi = neighborhoods %>% filter(name %in% input$area)
 points_poi = points %>% filter(group %in% input$type)

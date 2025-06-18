@@ -8,11 +8,14 @@
 # Load Packages
 library(dplyr)
 library(readr)
-library(sf)
 library(ggplot2)
 library(viridis)
+library(sf)
 library(gstat) # new package for spatial smoothing
 library(ggpubr) # new package for bundling charts
+
+# install.packages("gstat")
+# install.packages("ggpubr")
 
 # Equal Area projection
 aea <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
@@ -30,13 +33,24 @@ wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 # Heatmaps #########################################################
 
 
-
-
 # Let's filter to the percentage of all possible ballots that were cast -
 # commonly known as 'voter turnout'.
 data = read_csv("data/boston_voting/boston_votes.csv") %>%
   # We have voting data for MOST precincts - lets narrow into a cohesive chunk
   filter(!ward %in% c("22", "21", "18", "20"))
+
+# 2020 election results - at the precinct level
+data
+
+
+
+
+
+
+
+
+
+
 
 # Let's get precinct polygons
 precincts = read_sf("data/boston_voting/precincts.geojson") %>%
@@ -45,11 +59,31 @@ precincts = read_sf("data/boston_voting/precincts.geojson") %>%
   # Make a joined spatial dataset of variables 'precincts'
   inner_join(by = "ward_precinct", y = data)
 
+
+
+precincts
+
+
+
+
+
+
+
+
 # Let's plot it.
 ggplot() +
-  geom_sf(data = precincts, mapping = aes(fill = voter_turnout), color = "white") +
+  geom_sf(data = precincts, 
+          mapping = aes(fill = voter_turnout), 
+          color = "white") +
   scale_fill_viridis(option = "plasma") +
   theme_void()
+
+
+
+
+
+
+
 
 # Some of these precincts are larger than others.
 # If we mapped boston in equal sized grid cells,
@@ -61,6 +95,13 @@ ggplot() +
 
 # Both require we make a grid.
 
+
+
+
+
+
+
+
 ## Gridding #############################################
 
 # To spatially average, we need to make a grid!
@@ -69,6 +110,21 @@ ggplot() +
 # Make boundaries for boston
 boston = precincts %>%
   summarize(geometry = st_union(geometry))
+
+
+ggplot() +
+  geom_sf(data = boston)
+
+
+
+# boston %>%
+#   st_transform(crs = aea) %>%
+#   st_make_grid(cellsize = c(1000,1000), square = TRUE, crs = aea) %>%
+#   st_transform(crs = wgs)  %>%
+#   st_as_sf() %>% rename(geometry = x) %>%
+#   mutate(cell = 1:n())
+
+
 
 
 # Let's make a grid
@@ -84,10 +140,36 @@ grid = boston %>%
   # Give each cell a unique ID
   mutate(cell = 1:n())
 
+grid
+
+
+
+
+
+
+
+
+
+
+
 # View it!
 ggplot() +
   geom_sf(data = boston, fill = "grey") +
   geom_sf(data = grid, fill = NA)
+
+
+
+# Let's plot it.
+ggplot() +
+  geom_sf(data = precincts, 
+          mapping = aes(fill = voter_turnout), 
+          color = "white") +
+  geom_sf(data = grid, fill = NA) +
+  scale_fill_viridis(option = "plasma") +
+  theme_void()
+
+
+
 
 
 ## Spatial Averaging ###################################
@@ -98,11 +180,17 @@ ggplot() +
 # To start, we have 238 grid cells.
 nrow(grid)
 
+
+
+
 # Join in voter turnout to each cell, using the geometry of precincts
 grid %>%
-  st_join(y = precincts %>% select(geometry, voter_turnout),
+  st_join(y = precincts %>% select(voter_turnout, geometry),
           # Join by which geometries overlap
           join = st_overlaps)
+
+
+
 
 # After joining, we have 665 observations
 # many cells have multiple precincts overlapping them
@@ -134,34 +222,85 @@ gridded_averages
 # Plot it!
 ggplot() +
   # Map the gridded averages!
-  geom_sf(data = gridded_averages, mapping = aes(fill = voter_turnout), color = "white") +
+  geom_sf(data = gridded_averages, 
+          mapping = aes(fill = voter_turnout),
+          color = "white") +
   # Overlay boston overtop, with a blank fill
   geom_sf(data = boston, fill = NA, color = "black", linewidth = 1.5) +
   scale_fill_viridis(option = "plasma") +
   theme_void()
 
 
+
+
+
+
 ## Spatial Smoothing ##########################
 
-# Alternatively, a different way to approximate change in values over space
+# Alternatively, a different way to approximate 
+# change in values over space
 # is to use a model.
 # We could use a spatial interpolation model 
 # to spatially smooth our estimates,
 # using a distance function.
 
 # gstat allows us to do lots of spatial statistics.
+# gstat
 
 # Inverse Distance Weighting is particularly helpful for big datasets,
 # because it's quite simple and quick.
 # It says, I assume that values closer together should have similar values.
-# If I have Inverse Distance, I assume values differ as distance increases linearly.
-# If I have Inverse Distance Squared Weighting, I assume values differ via a squared function as distance increases.
+# If I have Inverse Distance, I assume values differ as distance increases via an inverse function
+# If I have Inverse Distance Squared Weighting, 
+#     I assume values differ via a squared function as distance increases.
 
-# We CAN supply polgyons, but it'll take more time.
+# We CAN supply polygon, but it'll take more time.
 
 # Spatial smoothing actually occurs using points,
 # so it's always fastest to provide exact grid cell centroid points for predictions,
 # and then join the predictions back into the grid polygons.
+# Let's filter to the percentage of all possible ballots that were cast -
+# commonly known as 'voter turnout'.
+
+# Equal Area projection
+aea <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+# Equal Distance projection
+aed <- "+proj=eqdc +lat_0=0 +lon_0=0 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs "
+
+# Get EPSG:4326 (WGS 84) projection
+wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+data = read_csv("data/boston_voting/boston_votes.csv") %>%
+  # We have voting data for MOST precincts - lets narrow into a cohesive chunk
+  filter(!ward %in% c("22", "21", "18", "20"))
+
+
+# Let's get precinct polygons
+precincts = read_sf("data/boston_voting/precincts.geojson") %>%
+  # Make the geometries valid, if they are not
+  st_make_valid() %>%
+  # Make a joined spatial dataset of variables 'precincts'
+  inner_join(by = "ward_precinct", y = data)
+
+
+# Make boundaries for boston
+boston = precincts %>%
+  summarize(geometry = st_union(geometry))
+
+
+# Let's make a grid
+grid = boston %>% 
+  # Transform to equal area conic projection for area calculations
+  st_transform(crs = aea) %>%
+  # Make a grid of exactly 1000 x 1000 meters
+  st_make_grid(cellsize = c(1000,1000), square = TRUE, crs = aea) %>%
+  # Transform it back to wgs projection
+  st_transform(crs = wgs) %>%
+  # Make it into an spatial data.frame
+  st_as_sf() %>% rename(geometry = x) %>% 
+  # Give each cell a unique ID
+  mutate(cell = 1:n())
 
 
 ### using polygons ##########################
@@ -178,8 +317,11 @@ system.time({
 
 # Let's get centroid points per grid cell
 gridded_points = grid %>% mutate(geometry = geometry %>% st_centroid()  )
+
 # Let's get centroid points per precinct
 precinct_points = precincts %>% mutate(geometry = geometry %>% st_centroid())
+
+
 # Check how long it takes
 system.time({
   # Make the model object
@@ -192,7 +334,14 @@ system.time({
     nmax = 10, 
     # What's the level of inverse distance weighting? 1? 2 (squared)? 3 (cubed)?
     set = list(idp = 2))
+  m
   predict(m, newdata = gridded_points)
+  
+  predict(m, newdata = gridded_points)$var1.pred
+  
+  gridded_points %>%
+    mutate(pred = predict(m, newdata = .)$var1.pred)
+  
 })
 # Takes about 0.03 seconds for me with points.
 # Wow! That's fast.
@@ -206,6 +355,8 @@ system.time({
 gridded_points = grid %>% mutate(geometry = geometry %>% st_centroid()  )
 # Let's get centroid points per precinct
 precinct_points = precincts %>% mutate(geometry = geometry %>% st_centroid())
+
+
 # Make a model with IDW of 1 (linear)
 m1 = gstat::gstat(formula = voter_turnout ~ 1, locations = precinct_points, 
                   nmax = 10, set = list(idp = 1))
@@ -222,14 +373,60 @@ point_estimates = gridded_points %>%
   mutate(y1 = predict(m1, newdata = .)$var1.pred,
          y2 = predict(m2, newdata = .)$var1.pred,
          y3 = predict(m3, newdata = .)$var1.pred)
+
+
+
+
+
 # Now you can compare them!
 point_estimates
+
+
+
+
+
 
 # Last, let's join these back into your grid
 gridded_estimates = grid %>%
   left_join(
     by = "cell", 
     y = point_estimates %>% as_tibble() %>% select(cell, y1,y2,y3))
+
+
+
+gridded_estimates
+
+
+ggplot() + 
+  geom_sf(data = precincts, mapping = aes(fill = voter_turnout))
+
+ggplot() + 
+  geom_sf(data = precinct_points, mapping = aes(color = voter_turnout))
+
+ggplot() + 
+  geom_sf(data = precinct_points, mapping = aes(color = voter_turnout)) +
+  geom_sf(data = grid, fill = NA)
+
+
+ggplot() + 
+  geom_sf(data = precinct_points, mapping = aes(color = voter_turnout)) +
+  geom_sf(data = gridded_points, color = "grey", alpha = 0.5)
+
+
+ggplot() +
+  geom_sf(data = precinct_points, mapping = aes(color = voter_turnout)) +
+  geom_sf(data = point_estimates, mapping = aes(fill = y1), 
+          color = "grey", shape = 21)
+
+
+ggplot() +
+  geom_sf(data = gridded_estimates, mapping = aes(fill = y1)) +
+  geom_sf(data = precinct_points, mapping = aes(fill = voter_turnout),
+          shape = 21, color = "white", alpha = 0.5)
+
+
+
+
 
 # Let's plot each different level of weighting, for comparison
 
@@ -241,6 +438,11 @@ g1 = ggplot() +
   theme_void() +
   labs(title = "Inverse Distance\nWeighting = 1")
 
+g1
+
+
+
+
 # Inverse Distance Weighting x 2 
 g2 = ggplot() +
   geom_sf(data = gridded_estimates, mapping = aes(fill = y2), color = "white") +
@@ -248,6 +450,10 @@ g2 = ggplot() +
   scale_fill_viridis(option = "plasma") +
   theme_void() +
   labs(title = "Inverse Distance\nWeighting = 2")
+
+
+g2
+
 
 # Inverse Distance Weighting x 3
 g3 = ggplot() +
@@ -257,7 +463,23 @@ g3 = ggplot() +
   theme_void() +
   labs(title = "Inverse Distance\nWeighting = 3")
 
+g3
+
+
+gridded_estimates %>%
+  filter(cell == 124)
+
+
+
 # Let's use the ggpubr package to compare these maps side by side
 library(ggpubr)
 
-ggarrange(plotlist = list(g1,g2,g3), ncol = 3, legend = "bottom", common.legend = TRUE) 
+gg = ggpubr::ggarrange(
+  plotlist = list(g1,g2,g3), ncol = 3, 
+  legend = "bottom", common.legend = TRUE) 
+
+ggsave(gg, filename = "workshops/14C_heatmap.png",
+       dpi = 300, width = 8, height = 4)
+
+
+

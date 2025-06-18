@@ -11,6 +11,7 @@ library(readr)
 library(sf)
 library(ggplot2)
 library(viridis)
+library(stringr) # for string detection
 
 # Equal Area projection
 aea <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
@@ -22,9 +23,11 @@ aed <- "+proj=eqdc +lat_0=0 +lon_0=0 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +ellps=GR
 wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 
 # Look up more projections at spatialreference.org - proj4
-#https://spatialreference.org/ref/epsg/wgs-84/
+# https://spatialreference.org/ref/epsg/wgs-84/
 
 # Spatial Joins #######################################
+
+read_sf("data/boston_voting/polling_places.geojson")
 
 # You run logistics engineering for a nationwide logistics and deliveries firm,
 # responsible for delivering/collecting ballots to polling places across the country.
@@ -51,43 +54,79 @@ zone = read_sf("data/boston_voting/precincts.geojson") %>%
   # Create a spatial filter
   summarize(geometry = st_union(geometry))
 
+zone
+
 # Give me just the polls that are within the zone.
 zonepolls = polls %>%
   # Join in the zone, but keep only the rows with a valid join (left = FALSE)
   st_join(zone, left = FALSE)
+
+
+
+
+
+
+
+
+
 
 # How many are there?
 zonepolls %>%
   as_tibble() %>%
   summarize(count = n())
 
+
+
+
+
+
+
+
+
 # Plot them
 ggplot() +
   geom_sf(data = zone, fill = "dodgerblue", alpha = 0.5) +
-  geom_sf(data = polls, size = 4, color = "grey") +
-  geom_sf(data = zonepolls, size = 3, color = "black") +
+  geom_sf(data = polls, size = 4, color = "grey", alpha = 0.25) +
+  geom_sf(data = zonepolls, size = 3, color = "dodgerblue") +
   theme_void()
+
+
+
+
+
+
+
 
 
 rm(list = ls())
 
+
+
+
+
+
 # Spatial Aggregation #####################################
 
 
-# You run logistics engineering for a nationwide logistics and deliveries firm,
-# responsible for delivering/collecting ballots to polling places across the country.
+# You run logistics engineering for a nationwide logistics 
+# and deliveries firm,
+# responsible for delivering/collecting ballots
+# to polling places across the country.
 # You have just downloaded a subset of data from your firm database.
 
 # You have a spatial dataset of Boston voting precincts. 
 # There are 5~10 precincts in each ward.
-# You want to calculate the total size of each ward that your company administers.
 
 # Your company makes deliveries for wards 01, 04, and 08.
+
+# You want to calculate the total size of each ward
+# that your company administers.
 
 library(dplyr)
 library(readr)
 library(sf)
 library(stringr)
+library(ggplot2)
 
 # Get EPSG:4326 (WGS 84) projection
 wgs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
@@ -109,11 +148,16 @@ data = read_sf("data/boston_voting/precincts.geojson")
 # Let's use string substitution to extract each ward.
 # Let's get the ward group for each - first 2 characters
 precincts = data %>%
-  mutate(ward = str_sub(ward_precinct, 1,2)) 
+  mutate(ward = str_sub(ward_precinct, start = 1, end = 2)) 
+
+
+
 
 # Let's filter to just the wards your company administers
 precincts = precincts %>% 
   filter(ward %in% c("01", "04", "08"))
+
+
 
 
 
@@ -123,6 +167,11 @@ wards = precincts %>%
   group_by(ward) %>%
   summarize(geometry = st_union(geometry))
 
+
+
+
+
+
 # Finally, let's measure the area in each polygon
 wards = wards %>%
   # First, transform to an equal area projection...
@@ -131,6 +180,13 @@ wards = wards %>%
   mutate(area = st_area(geometry) %>% as.numeric() %>% {. / 1000^2} ) %>%
   # Go back to wgs projection
   st_transform(crs = wgs)
+
+# wards %>%
+#   mutate(area = geometry %>% st_area() %>% as.numeric() %>% {. / 1000^2 })
+
+
+
+
 
 # Looks like ward 1 has by far the largest area of coverage
 # (a lot of it is water.)
