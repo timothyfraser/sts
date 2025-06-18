@@ -1,4 +1,4 @@
-#' @name Z_extra.R
+#' @name Z1.R
 #' @title Extra Trainings
 #' @description
 #' This script contains extra, **optional** trainings for those interested.

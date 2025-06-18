@@ -10,6 +10,9 @@ install.packages("dplyr")
 install.packages("readr")
 install.packages("ggplot2")
 install.packages("tidyr")
+install.packages("stringr")
+install.packages("lubridate")
+install.packages("purrr")
 # Databases
 install.packages(c("DBI", "RMySQL", "RSQLite"))
 # Geospatial
