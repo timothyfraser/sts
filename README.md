@@ -65,7 +65,7 @@ Then, open our first script, called `1P_coding_0.R`! In `workshops`, all scripts
 
 ------------------------------------------------------------------------
 
-## 🧾 [Cheat Sheets](#cheat-sheets) {#cheat-sheets}
+## 🧾 [Cheat Sheets](#cheat-sheets)
 
 ### Cheat Sheets Summary Table
 
