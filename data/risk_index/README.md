@@ -4,7 +4,6 @@
 
 ⚠️ **Note:** This dataset has been processed for tract-level analyses and may omit some original fields. See `risk.rds` for major indicators overall. See `risk_others.rds`for hazard-specific results.
 
-------------------------------------------------------------------------
 
 ## 🌪️ Overview
 
@@ -26,6 +25,19 @@ The index combines:
 to produce composite **Risk Index Scores**, **Ratings**, and **Percentiles**.
 
 ------------------------------------------------------------------------
+
+### Prerequisites
+
+Be sure to load these packages before trying to work with the data below. Some are written in sf spatial features format and will not preview correctly otherwise. Many are saved as compressed R Data Storage .rds files to conserve space and retain all column formats.
+
+```r
+library(dplyr) # for data wrangling
+library(readr) # for reading data
+library(sf) # for spatial features
+```
+
+------------------------------------------------------------------------
+
 
 ## 📦 `risk.rds` Data Format
 

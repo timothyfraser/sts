@@ -5,3 +5,4 @@
 data/bluebikes/bluebikes.sqlite
 .Renviron
 workshops/23C_dashboards/app_nycflights/rsconnect/
+.env
