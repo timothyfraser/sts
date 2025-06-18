@@ -2,6 +2,23 @@
 
 This folder contains minute-by-minute data summarizing the impacts of congestion pricing and the congestion relief zone in New York City - the United States' biggest experiment with transportation activity management ever! Data below describes the congestion relief zone in Manhattan, with supporting metadata files.
 
+[![Congestion Relief Zone - Source: [NY Metropolitan Transit Authority](https://congestionreliefzone.mta.info/)](images/clipboard-490080029.png)](https://congestionreliefzone.mta.info/)
+
+------------------------------------------------------------------------
+
+## Prerequisites
+
+Be sure to load these packages before trying to work with the data below. Some are written in `sf` spatial features format and will not preview correctly otherwise. Many are saved as compressed R Data Storage `.rds` files to conserve space and retain all column formats.
+
+``` r
+library(dplyr) # for data wrangling
+library(readr) # for reading data
+library(sf) # for spatial features
+library(lubridate) # for date-time formatting
+```
+
+------------------------------------------------------------------------
+
 ## 🧠[**Codebook**](#codebook) {#codebook}
 
 -   🚗 [zone_vehicle_entries.rds](#zone_vehicle_entriesrds) — Vehicle Entries into Congestion Zone
@@ -16,6 +33,8 @@ This folder contains minute-by-minute data summarizing the impacts of congestion
 
 -   🏙️ [metro.rds](#metrords) — NYC Metro Counties
 
+-   🗂 [bg.rds](#bgrds) — Census Block Groups (TIGRIS)
+
 ------------------------------------------------------------------------
 
 ### 🚗`zone_vehicle_entries.rds`
@@ -27,7 +46,7 @@ This dataset contains detailed traffic volume data for vehicles entering the NYC
 #### Variable Descriptions
 
 | Variable | Type | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | `toll_date` | `date` | Calendar date of entry (YYYY-MM-DD). |
 | `toll_hour` | `POSIXct` | Hourly timestamp of entry (floored to hour). |
 | `toll_10min_block` | `POSIXct` | Timestamp for 10-minute time block (rounded). |
@@ -61,7 +80,7 @@ This dataset defines the polygon boundary for the NYC Congestion Relief Zone.
 #### Variable Descriptions
 
 | Variable | Type | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | `geometry` | `MULTIPOLYGON [°]` | The official boundary of the congestion relief or tolling zone within NYC, represented as one or more polygons in WGS84 coordinates. |
 
 #### Notes
@@ -80,7 +99,7 @@ This dataset includes TIGER/Line primary and secondary roads (major highways) wi
 #### Variable Descriptions
 
 | Variable | Type | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | `linearid` | `character` | Unique linear feature ID from the TIGER/Line shapefiles. |
 | `fullname` | `character` | Full road or highway name (e.g., `"Southern State Pkwy"`). |
 | `rttyp` | `character` | Road type classification (e.g., `"M"` for primary roads, `"S"` for secondary). |
@@ -103,7 +122,7 @@ This dataset includes all TIGER/Line road segments (including local streets) wit
 #### Variable Descriptions
 
 | Variable | Type | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | `linearid` | `character` | Unique linear feature ID from the TIGER/Line shapefiles. |
 | `fullname` | `character` | Full road or street name. |
 | `rttyp` | `character` | Road type code (e.g., `"M"` for local road, `"S"` for secondary). |
@@ -127,7 +146,7 @@ This dataset contains geospatial boundary data and metadata for counties in the 
 #### Variable Descriptions
 
 | Variable | Type | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | `state` | `character` | U.S. state abbreviation (e.g., `"NY"`, `"NJ"`). |
 | `geoid` | `character` | FIPS-based geographic identifier (GEOID) for the county. |
 | `name` | `character` | County name without "County" suffix. |
@@ -149,7 +168,7 @@ This dataset defines the set of counties that make up the New York City metropol
 #### Variable Descriptions
 
 | Variable | Type | Description |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | `state` | `character` | U.S. state abbreviation (e.g., `"NY"`, `"NJ"`). |
 | `county` | `character` | County name (e.g., `"Kings County"`). |
 | `geoid` | `character` | FIPS-based geographic identifier (GEOID) for the county, used for joining with other datasets. |
@@ -160,3 +179,20 @@ This dataset defines the set of counties that make up the New York City metropol
 -   This dataset can be used as a filter or spatial region definition for metropolitan-level aggregations.
 
 ------------------------------------------------------------------------
+
+### 🗂 `bg.geojson`
+
+This dataset contains **14,822 U.S. Census Block Groups** with spatial geometry and metadata, located in the broader NYC metro area. Each row represents a distinct block group identified by its `geoid`.
+
+#### Variable Descriptions
+
+| Column | Description |
+|------------------------------------|------------------------------------|
+| 🏛 `county` | 5-digit FIPS code for the county containing the block group |
+| 🆔 `geoid` | 12-digit FIPS code uniquely identifying the block group |
+| 🌎 `area_land` | Land area of the block group in square meters (numeric) |
+| 🧭 `geometry` | Spatial geometry (multipolygon), used for mapping and spatial operations |
+
+### 🧭 Spatial Info
+
+-   CRS (Coordinate Reference System) should be inspected using `st_crs()` to confirm compatibility with other geospatial layers. Saved as NAD 83.

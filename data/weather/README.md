@@ -2,6 +2,21 @@
 
 This folder contains hourly meteorological data for the **New York City metro region,** stored in `weather.csv`, with supporting metadata files.
 
+------------------------------------------------------------------------
+
+## Prerequisites
+
+Be sure to load these packages before trying to work with the data below. Some are written in `sf` spatial features format and will not preview correctly otherwise. Many are saved as compressed R Data Storage `.rds` files to conserve space and retain all column formats.
+
+``` r
+library(dplyr) # for data wrangling
+library(readr) # for reading data
+library(sf) # for spatial features
+library(lubridate) # for date-time formatting
+```
+
+------------------------------------------------------------------------
+
 ## 🧠[**Codebook**](#codebook) {#codebook}
 
 -   🌦️ [weather.csv](#weathercsv) — Hourly Weather per Sensor (Visual Crossing)
@@ -11,6 +26,8 @@ This folder contains hourly meteorological data for the **New York City metro re
 -   🏙️ [metro.rds](#metrords) — NYC Metro Counties
 
 -   🗺️ [counties.rds](#countiesrds) — County Boundaries & Land Area
+
+-   🗂 [bg.rds](#bgrds) — Census Block Groups (TIGRIS)
 
 ------------------------------------------------------------------------
 
@@ -113,3 +130,22 @@ This dataset contains metadata and geospatial information about air quality moni
 -   This dataset is typically used to map, filter, or label air quality sensor locations.
 -   The `geometry` column may require geospatial packages (`sf` or `sp`) for proper interpretation.
 -   `dist` is useful for nearest-neighbor queries or spatial subsetting.
+
+------------------------------------------------------------------------
+
+### 🗂 `bg.geojson`
+
+This dataset contains **14,822 U.S. Census Block Groups** with spatial geometry and metadata, located in the broader NYC metro area. Each row represents a distinct block group identified by its `geoid`.
+
+#### Variable Descriptions
+
+| Column | Description |
+|------------------------------------|------------------------------------|
+| 🏛 `county` | 5-digit FIPS code for the county containing the block group |
+| 🆔 `geoid` | 12-digit FIPS code uniquely identifying the block group |
+| 🌎 `area_land` | Land area of the block group in square meters (numeric) |
+| 🧭 `geometry` | Spatial geometry (multipolygon), used for mapping and spatial operations |
+
+### 🧭 Spatial Info
+
+-   CRS (Coordinate Reference System) should be inspected using `st_crs()` to confirm compatibility with other geospatial layers. Saved as NAD 83.

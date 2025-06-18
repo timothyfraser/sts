@@ -23,3 +23,6 @@ read_excel("data/electric_school_buses/raw_file_jan_13_2023.xlsx", sheet = "Pric
   write_csv("data/electric_school_buses/buses.csv")
 
 read_csv("data/electric_school_buses/buses.csv") %>% head(2) %>% glimpse()
+
+
+
