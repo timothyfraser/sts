@@ -70,7 +70,7 @@ This dataset includes municipality-level covariates used in a matching experimen
 | `financial_str_index_2010`      | Financial strength index (higher = stronger fiscal standing).                                | `69`                   |
 | `ratio_revs_exp_2010`           | Ratio of municipal revenues to expenditures.                                                  | `0.6`                  |
 | `disaster_deaths_2011`          | Number of disaster-related deaths in 2011.                                                   | `0`                    |
-| `disaster_damage_2011`          | Estimated damage amount from the 2011 disaster (in ¥100 million).                            | `0`                    |
+| `disaster_damage_2011`          | Estimated number of buildings damaged or destroyed from the 2011 disaster                         | `0`                    |
 
 ---
 
