@@ -81,3 +81,35 @@ This dataset includes municipality-level covariates used in a matching experimen
 - `pv_output_2018` and `windspeed_2018` are modeled estimates from METI’s solar and wind databases.
 - Solar system counts are disaggregated by capacity band for understanding scale of installation.
 - The dataset was designed for analyzing municipalities based on socioeconomic, geographic, and disaster-exposure covariates.
+
+
+## Codebook: `jp_matching_experiment.csv`
+
+This dataset contains municipality-level covariates for examining the social, economic, and demographic variation in exposure to the 2011 Tōhoku earthquake and tsunami in Japan. Each row represents a municipality in the year 2011 to 2018 (?).
+
+### Columns
+
+| Variable                      | Description                                                                                     | Example     |
+|------------------------------|-------------------------------------------------------------------------------------------------|-------------|
+| `muni_code`                  | Unique municipality identifier (Japanese official code).                                        | `02201`     |
+| `muni`                       | Name of the municipality (English transliteration).                                             | `Aomori`    |
+| `pref`                       | Name of the prefecture.                                                                         | `Aomori`    |
+| `year`                       | Year of observation (always 2011 for this dataset).                                             | `2011`      |
+| `by_tsunami`                 | Categorical indicator of tsunami impact. `"Hit"` if municipality experienced tsunami damage or deaths, `"Not Hit"` otherwise. | `Hit` |
+| `social_capital`             | Composite index measuring social capital (e.g. community participation, trust), where 0 = worst possible and 1 = best possible.               | `0.393`     |
+| `damage_rate`                | Rate of damaged or destroyed buildings per 1000 residents (0 if no impact).                           | `0.001`     |
+| `pop_density`                | Population density (persons per km²).                                                           | `1137.5`    |
+| `exp_dis_relief_per_capita` | Per-capita government expenditure on disaster relief in fiscal 2011 (in 10,000s of yen).        | `2.44`      |
+| `income_per_capita`         | Per-capita income (millions of yen).                                                            | `1.13`      |
+| `unemployment`              | Unemployment rate (%) in 2011.                                                                  | `5.9`       |
+| `pop_women`                 | Share of population that is female (%).                                                         | `53.6`      |
+| `pop_over_age_65`           | Share of population age 65 and older (%).                                                       | `27.9`      |
+
+---
+
+### Notes
+
+- All data reflect pre- or post-disaster conditions as measured in or around 2011.
+- `social_capital` is based on survey or aggregate indicators (source-dependent).
+- The dataset can be used for matching designs or causal inference related to tsunami exposure and resilience.
+- `damage_rate` and `exp_dis_relief_per_capita` are zero for municipalities not affected by the disaster.
