@@ -2,6 +2,8 @@
 
 A collection of additional READMEs for files located in the main directory of the data folder.
 
+---
+
 ## `jp_solar.csv` 🇯🇵☀️
 
 This dataset includes **monthly observations of rooftop solar adoption** across a matched sample of 147 Japanese municipalities, collected over **43 months** surrounding the 2011 Tōhoku earthquake and tsunami.
@@ -34,6 +36,7 @@ Each row represents a **city-month** observation, totaling **6,321 observations*
 | 02204     | 2018-12-25 | 2018 | 198              | 0        | 34284 | 9      | 0.2625131256562828     |
 
 
+---
 
 ## `jp_solar_farms_2018.csv`
 
@@ -85,6 +88,7 @@ This dataset includes municipality-level covariates used in a matching experimen
 - Solar system counts are disaggregated by capacity band for understanding scale of installation.
 - The dataset was designed for analyzing municipalities based on socioeconomic, geographic, and disaster-exposure covariates.
 
+---
 
 ## `jp_matching_experiment.csv`
 
@@ -120,9 +124,132 @@ This dataset contains municipality-level covariates for examining the social, ec
 - The dataset can be used for matching designs or causal inference related to tsunami exposure and resilience.
 - `damage_rate` and `exp_dis_relief_per_capita` are zero for municipalities not affected by the disaster.
 
+---
+
 ## `jp_emissions.csv`
 
-Dataset of emissions per municipality in Japan over ~15 years.
-Records dozens of types of emissions inventories, measured in metric tons of CO2.
+This dataset contains annual greenhouse gas emissions estimates and associated socioeconomic indicators for municipalities across Japan, spanning approximately 2005–2020. Each row represents a municipality-year observation and includes detailed emissions breakdowns, population statistics, government expenditures, and social indicators.
+
+- `jp_emissions.csv` — 20,892 rows × 59 columns
+- Format: CSV (UTF-8 encoded)
+- Units: Emissions in metric tons CO₂ equivalent unless otherwise stated
+
+### 📅 Time and Geography
+
+| Variable         | Description |
+|------------------|-------------|
+| `year`           | Calendar year |
+| `pref_code`      | Japanese prefecture code (2-digit) |
+| `pref`           | Prefecture name (romanized) |
+| `pref_jp`        | Prefecture name (Japanese) |
+| `muni_code`      | 5-digit municipality code |
+| `muni`           | Municipality name (romanized) |
+| `muni_jp`        | Municipality name (Japanese) |
+
+### ♻️ Emissions Totals
+
+| Variable                       | Description |
+|--------------------------------|-------------|
+| `emissions`                   | Total CO₂ emissions (metric tons) |
+| `emissions_industrial_subtotal` | Industrial emissions (sum of categories below) |
+| `emissions_manufacturing`     | Manufacturing sector emissions |
+| `emissions_construction_mining` | Construction & mining emissions |
+| `emissions_agr_forest_fish`   | Agriculture, forestry, and fishing emissions |
+| `emissions_consumer_subtotal` | Consumer emissions (sum of households and business) |
+| `emissions_business`          | Commercial/business sector emissions |
+| `emissions_households`        | Household emissions |
+| `emissions_transport_subtotal` | Transportation emissions (sum below) |
+| `emissions_automobiles`       | Private vehicles |
+| `emissions_trucks`            | Commercial trucks |
+| `emissions_railroad`          | Rail transport |
+| `emissions_boats`             | Maritime emissions |
+| `emissions_waste`             | Waste treatment emissions |
+| `emissions_1990_2005`         | Reduction required vs. 1990/2005 baseline |
+
+### 👥 Demographics & Socioeconomics
+
+| Variable         | Description |
+|------------------|-------------|
+| `pop`            | Total population |
+| `pop_women`      | % women |
+| `pop_age_65_plus`| % age 65+ |
+| `income_per_capita` | Annual income per capita (1000s of yen) |
+| `unemployment`   | % unemployed |
+| `pop_college`    | % with college education |
+| `area_inhabitable` | km² of habitable area |
+| `land_price_res` | Average residential land price (¥/m²) |
+
+### 👷 Employment by Sector (%)
+
+| Variable             | Description |
+|----------------------|-------------|
+| `employees_primary`   | Agriculture, forestry, fishing |
+| `employees_secondary` | Manufacturing and industry |
+| `employees_tertiary`  | Services, retail, etc. |
+| `employees_muni`      | Public sector (municipality-employed) |
+
+### 💰 Fiscal Indicators
+
+| Variable             | Description |
+|----------------------|-------------|
+| `fin_str_index`      | Financial strength index |
+| `ratio_rev_exp`      | Revenue-to-expenditure ratio |
+| `exp_social_welfare` | Municipal spending on social welfare |
+| `exp_health`         | Spending on health |
+| `exp_public_works`   | Public works budget |
+| `exp_fire`           | Firefighting services budget |
+| `exp_education`      | Education spending |
+
+### 💼 Economic Output (million yen)
+
+| Variable             | Description |
+|----------------------|-------------|
+| `value_manuf_mill`   | Manufacturing value |
+| `value_agr_mill`     | Agriculture value |
+| `value_commerce_mill`| Commercial output value |
+
+### 🌱 Environment & Migration
+
+| Variable             | Description |
+|----------------------|-------------|
+| `renewables_kw_rate` | Installed renewable energy per capita (kW/person) |
+| `social_capital`     | Composite social capital score |
+| `bonding` / `bridging` / `linking` | Subcomponents of social capital |
+| `vulnerability`      | Composite vulnerability index |
+| `total_migration_rate` | Net migration per 1000 people |
+| `inmigrants` / `outmigrants` | Annual in-/out-migration count |
+
+### 🧭 Disaster Impact Flags (2011)
+
+| Variable             | Description |
+|----------------------|-------------|
+| `fukushima`          | Flag for Fukushima-affected municipalities (1 = affected) |
+| `tsunami`            | Flag for tsunami-impacted areas |
+| `death_2011`         | Deaths reported from 2011 disaster |
+| `destroy_2011`       | Structures destroyed in 2011 |
+| `damage_2011`        | Structures damaged in 2011 |
+| `exclusion_zone`     | Within nuclear exclusion zone (1 = yes) |
+
+---
+
+## 🧠 Example Uses
+
+- Modeling the impact of social capital on emissions reductions  
+- Identifying high-need areas for disaster recovery funding  
+- Longitudinal tracking of municipal climate progress  
+
+---
+
+## 📌 Notes
+
+- Emissions estimates derived from inventory methods; units are metric tons CO₂e  
+- Fiscal and employment values are standardized per capita or per municipality where noted  
+- Some indicators (e.g., population) are interpolated or repeated for years with missing data  
+
+## 📚 Source
 
 https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Ty7f6yAAAAAJ&cstart=20&pagesize=80&authuser=1&citation_for_view=Ty7f6yAAAAAJ:u5HHmVD_uO8C
+
+---
+
+
