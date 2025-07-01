@@ -4,7 +4,7 @@ A collection of additional READMEs for files located in the main directory of th
 
 ---
 
-## `jp_solar.csv` 🇯🇵☀️
+## `jp_solar.csv` ☀️
 
 This dataset includes **monthly observations of rooftop solar adoption** across a matched sample of 147 Japanese municipalities, collected over **43 months** surrounding the 2011 Tōhoku earthquake and tsunami.
 
@@ -253,3 +253,27 @@ https://scholar.google.com/citations?view_op=view_citation&hl=en&user=Ty7f6yAAAA
 ---
 
 
+## `environmental_health.csv` - Environmental Health Dataset
+
+### Load
+```r
+library(readr)
+env_health <- read_csv("data/environmental_health.csv", show_col_types = FALSE)
+```
+| county         | fips  | state | air\_pollution | pop\_black | poc | urban          | party      | wealth       |
+| -------------- | ----- | ----- | -------------- | ---------- | --- | -------------- | ---------- | ------------ |
+| Autauga County | 01001 | AL    | 11.7           | 0.19       | Low | Urbanized Area | Republican | Above Median |
+
+### Variables
+
+- county: County name
+- fips: 5-digit FIPS code
+- state: State abbreviation
+- air_pollution: Numeric air pollution measure (micrograms per cubic meter of PM2.5)
+- pop_black: Proportion of Black residents (0-1)
+- poc: People of Color category (e.g. "Low", "High") - above a threshold of 30%.
+- urban: Urbanization status (e.g. "Urbanized Area", "Rural Area")
+- party: Dominant political party in 2016 election.
+- wealth: Wealth category relative to median ("Above Median", "Below Median")
+
+---
