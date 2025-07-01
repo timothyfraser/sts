@@ -1,13 +1,134 @@
-# README `emissions.rds`
+# README `/transportation`
 
-Explainer for the `emissions.rds` database file, sourced from Cornell's `catserver`, a county level database of emissions estimates for every county in the US, from 1990-2060.
+Explainer for the `emissions.rds` database file and accompanying files in the `transportation` folder.
+Sourced from Cornell's `catserver`, a county level database of emissions estimates for every county in the US, from 1990-2060.
 
-## 3. Logic of a `catserver` query
+## Dataset Codebooks
+
+### `emissions.rds` - Emissions and vehicle activity per county-year per pollutant, vehicle sourcetype, regulatory class, fueltype, and roadtype.
+
+| Variable      | Type      | Description                                           | Example                       |
+| ------------- | --------- | ----------------------------------------------------- | ----------------------------- |
+| `by`          | integer   | Disaggregation level ID (see section 3.3 for details) | 16 (overall), 8 (sourcetype)  |
+| `year`        | integer   | Year of the record                                    | 2020                          |
+| `geoid`       | character | Geographic identifier (county/state)                  | "36109" (Tompkins County, NY) |
+| `pollutant`   | integer   | Pollutant code (see section 4 for list)               | 98 (CO2 Equivalent)           |
+| `sourcetype`  | integer   | Vehicle source type (NA if `by == 16`)                | 21 (Passenger Car)            |
+| `regclass`    | integer   | Regulatory vehicle class (NA if not applicable)       | 20 (Light Duty Vehicle)       |
+| `fueltype`    | integer   | Fuel type (NA if not applicable)                      | 2 (Diesel)                    |
+| `roadtype`    | integer   | Road type (NA if not applicable)                      | 5 (Urban Unrestricted)        |
+| `emissions`   | double    | Annual emissions for the pollutant (US tons)          | 50000.12                      |
+| `vmt`         | double    | Vehicle Miles Traveled (annual miles)                 | 10000000                      |
+| `vehicles`    | double    | Total vehicles counted                                | 50000                         |
+| `starts`      | double    | Number of vehicle starts (ignitions)                  | 1200000                       |
+| `sourcehours` | double    | Hours vehicles were operating                         | 2000000                       |
+| `idlehours`   | double    | Hours trucks spent idling (NA if not applicable)      | NA                            |
+| `hoteld`      | double    | Hours trucks spent hotelling with diesel aux power    | NA                            |
+| `hotelb`      | double    | Hours trucks spent hotelling with battery or AC       | NA                            |
+| `hotelo`      | double    | Hours trucks spent hotelling with all engines off     | NA                            |
+
+
+### Example Output from `emissions.rds`
+
+Below is an example snippet of typical rows from the emissions dataset for Tompkins County, NY (`geoid == "36109"`), year 2020, pollutant CO2 Equivalent (`pollutant == 98`):
+
+| by | year | geoid | pollutant | sourcetype | regclass | fueltype | roadtype | emissions |     vmt | sourcehours | vehicles |  starts | idlehours | hoteld | hotelb | hotelo |
+| :- | :--- | :---- | :-------- | :--------- | :------- | :------- | :------- | --------: | ------: | ----------: | -------: | ------: | --------: | -----: | -----: | -----: |
+| 16 | 2020 | 36109 | 98        | NA         | NA       | NA       | NA       |  50000.23 | 1.2e+07 |      400000 |    15000 | 1200000 |        NA |     NA |     NA |     NA |
+| 8  | 2020 | 36109 | 98        | 21         | NA       | NA       | NA       |  30000.11 | 7.5e+06 |      250000 |     8000 |  650000 |        NA |     NA |     NA |     NA |
+| 14 | 2020 | 36109 | 98        | NA         | NA       | 2        | NA       |  10000.45 | 2.5e+06 |       90000 |     3000 |  250000 |        NA |     NA |     NA |     NA |
+| 15 | 2020 | 36109 | 98        | NA         | NA       | NA       | 5        |   2000.67 | 5.0e+05 |       20000 |     3000 |  100000 |        NA |     NA |     NA |     NA |
+
+*Note: NA values indicate that those fields are not applicable for that level of disaggregation.*
+
+---
+
+### `areas.rds` - Areas
+
+| field            | type      | meaning                               | example                       |
+| :--------------- | :-------- | :------------------------------------ | :---------------------------- |
+| `type`           | character | Type of area (currently mostly NA)    | NA                            |
+| `geoid`          | character | Unique geographic identifier          | `"36001"` (Albany County, NY) |
+| `level`          | character | Geographic level                      | `"county"`                    |
+| `state`          | character | State abbreviation                    | `"NY"`                        |
+| `state_code`     | character | Numeric state code                    | `"36"`                        |
+| `name`           | character | Short name of the area                | `"Albany"`                    |
+| `fullname`       | character | Full name of the area including state | `"Albany County, NY"`         |
+| `division`       | character | Census division name                  | `"Middle Atlantic"`           |
+| `level_plural`   | character | Plural form of level                  | `"counties"`                  |
+| `level_singular` | character | Singular form of level                | `"county"`                    |
+| `level_upper`    | character | Upper level abbreviation              | `"NY"`                        |
+| `area`           | character | General area type                     | `"County"`                    |
+| `sublevel`       | character | Sub-level identifier                  | `"muni"`                      |
+| `geoid_upper`    | character | Upper geographic identifier           | `"36"`                        |
+
+---
+
+### `bys.rds` - Disaggregation Types
+
+| field   | type      | meaning                             | example     |
+| :------ | :-------- | :---------------------------------- | :---------- |
+| `by`    | double    | Numeric ID for disaggregation level | `16`        |
+| `term`  | character | Name of the disaggregation level    | `"overall"` |
+| `label` | character | Human-readable label                | `"Overall"` |
+
+---
+
+### `pollutants.rds` - Pollutants
+
+| field       | type      | meaning                   | example            |
+| :---------- | :-------- | :------------------------ | :----------------- |
+| `pollutant` | double    | Pollutant ID              | `98`               |
+| `term`      | character | Full name of pollutant    | `"CO2 Equivalent"` |
+| `label`     | character | Short label for pollutant | `"CO2e"`           |
+
+---
+
+### `metrics.rds` - Metric Names and Labels
+
+| field   | type      | meaning                     | example              |
+| :------ | :-------- | :-------------------------- | :------------------- |
+| `term`  | character | Metric identifier           | `"emissions"`        |
+| `label` | character | Human-readable metric label | `"Emissions (tons)"` |
+
+---
+
+### `roads.rds` - Roads spatial data
+
+| field      | type      | meaning                               | example              |
+| :--------- | :-------- | :------------------------------------ | :------------------- |
+| `linearid` | character | Unique identifier for road segment    | `"1104487584583"`    |
+| `fullname` | character | Full name of the road                 | `"State Rte 85 Alt"` |
+| `rttyp`    | character | Road type code                        | `"S"`                |
+| `mtfcc`    | character | MAF/TIGER feature classification      | `"S1200"`            |
+| `geoid`    | character | Geographic ID of area containing road | `"36001"`            |
+| `geometry` | geometry  | Spatial geometry of road segment      | `LINESTRING (...)`   |
+
+---
+
+### `counties.geojson` / `states.geojson` - geographic boundaries
+
+| field        | type      | meaning                           | example              |
+| :----------- | :-------- | :-------------------------------- | :------------------- |
+| `geoid`      | character | Geographic ID                     | `"01061"`            |
+| `state`      | character | State abbreviation                | `"AL"`               |
+| `name`       | character | County or state name              | `"Geneva County"`    |
+| `area_land`  | double    | Land area (square meters)         | `1487908432`         |
+| `area_water` | double    | Water area (square meters)        | `11567409`           |
+| `geometry`   | geometry  | Spatial polygons or multipolygons | `MULTIPOLYGON (...)` |
+
+<br>
+<br>
+
+
+---
+
+## Understanding `emissions.rds` and data from Cornell's CATSERVER
 
 This data was generated by the EPA's MOVES software, the gold standard for emissions estimation. Then, it was post-processed into a tidy format by the CAT team. Most codes in the database are derived from the [**MOVES id codes, available here.**](https://github.com/USEPA/EPA_MOVES_Model/blob/master/docs/MOVES4CheatsheetOnroad.pdf) Here's a brief description of the tables, columns, and their values.
 
 
-### 3.1 identifiers
+### identifiers
 
 Every row has 3 main identifier fields, including `geoid`, `year`, `pollutant`, and `by`. See table below for definitions.
 
@@ -20,7 +141,7 @@ Every row has 3 main identifier fields, including `geoid`, `year`, `pollutant`, 
 
 ![MOVES Pollutant IDs](moves_cheatsheet_onroad_p1.png)
 
-### 3.3 disaggregation identifier
+### disaggregation identifier
 
 Every row has the special `by` identifier, which as mentioned above, shows the level of disaggregation in CAT formatted data. Here's a breakdown of currently supported `by` disaggregation levels.
 
@@ -32,7 +153,7 @@ Every row has the special `by` identifier, which as mentioned above, shows the l
 | `14` | by fueltype | emissions, vmt, vehicles etc. by type of fuel. | So total CO2e emissions from diesel vehicles in Tompkins County in 2020 would be in the row where `by == 14`, `fueltype == 2`, `year == 2020`,  `geoid == "36109"`, and `pollutant == 98`. |
 | `15` | by roadtype | emissions and vmt by type of road. | (Notice that non-road dependent values like `vehicles` does NOT vary by road but remains constant across all roadtypes.) So, total CO2e emissions from urban unrestricted roads in Tompkins County in 2020 would be in the row where `by == 15`, `roadtype == 5`, `year == 2020`, `geoid == 36109`, and `pollutant == 98`. |
 
-### 3.4 subtype identifiers
+### subtype identifiers
 
 Each row has 4 subtype identifiers, describing whether the `emissions` and other metrics reported are measured ***overall*** for that `geoid-year-pollutant` set or measured for a specific `sourcetype`, `regclass`, `fueltype`, and/or `roadtype`. Each specific subtype has a unique ID code, originating from MOVES. If all 4 dissagregation identifiers are `NA`, it means it's measured overall and *not* disaggregated. For the complete list of `ids` outputted by MOVES, see the [**MOVES Onroad Cheatsheet**](moves_cheatsheet_onroad.pdf), also shown below the table.
 
@@ -45,7 +166,7 @@ Each row has 4 subtype identifiers, describing whether the `emissions` and other
 
 ![MOVES Pollutant IDs](moves_cheatsheet_onroad_p2.png)
 
-### 3.5 metrics
+### metrics
 
 Finally, each unique set of identifiers above contains its own metrics! Every row contains 9 metrics of interest. These include `emissions`, plus 8 activity metrics. (Although not all counties have all; MOVES can't estimate idling or hotelling for counties without much long-haul truck activity). 
 
@@ -61,7 +182,7 @@ Finally, each unique set of identifiers above contains its own metrics! Every ro
 | `hotelb` | double | hours | total annual hours trucks spent 'hotelling' doing [mandatory rest breaks](https://www.epa.gov/sites/default/files/2017-01/documents/hoteling-hrs-moves.pdf),  using *Battery or AC*. |
 | `hotelo` | double | hours | total annual hours trucks spent 'hotelling', doing [mandatory rest breaks](https://www.epa.gov/sites/default/files/2017-01/documents/hoteling-hrs-moves.pdf), when *All Engines Off*. |
 
-### 3.6 Diagram
+### Diagram
 
 When filtering a table, it may help to use the following order shown in the `mermaid` diagram below.
 
@@ -174,9 +295,9 @@ g4 --> d3; d3 --> g5;
 ```
 
 
-## 4. Index of Unique Values
+## Index of Unique Variables
 
-CAT Format currently includes the following set of fiels, the unique ids within them, the term they represent, and a descriptive label for each.
+CAT Format currently includes the following set of fields, the unique ids within them, the term they represent, and a descriptive label for each.
 
 | field | id | term | label | 
 |:---  | :---: | :--- | :--- |
