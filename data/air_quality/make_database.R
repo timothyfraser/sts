@@ -32,3 +32,6 @@ dbDisconnect(db)
 
 # Cleanup
 rm(list = ls())
+
+# Remove database
+unlink("mydb.sqlite")
