@@ -1,4 +1,8 @@
-# `README`: 📊 National Risk Index — Census Tract Level
+![Banner Image](../../docs/images/title.png)
+
+# README '/risk_index'
+
+## 📊 National Risk Index — Census Tract Level
 
 > `data/risk_index/risk.rds`
 
@@ -215,3 +219,10 @@ Some hazards (e.g., Tsunami, Volcanic Activity) may have sparse coverage or regi
 read_rds("data/risk_index/risk_others.rds") %>% head()
 ```
 
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-risk_index)

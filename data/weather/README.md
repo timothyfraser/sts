@@ -1,6 +1,8 @@
-# README `/weather`
+![Banner Image](../../docs/images/title.png)
 
-This folder contains hourly meteorological data for the **New York City metro region,** stored in `weather.csv`, with supporting metadata files.
+# README '/weather'
+
+> This folder contains hourly meteorological data for the **New York City metro region,** stored in `weather.csv`, with supporting metadata files.
 
 ------------------------------------------------------------------------
 
@@ -149,3 +151,11 @@ This dataset contains **14,822 U.S. Census Block Groups** with spatial geometry 
 ### 🧭 Spatial Info
 
 -   CRS (Coordinate Reference System) should be inspected using `st_crs()` to confirm compatibility with other geospatial layers. Saved as NAD 83.
+
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-weather)

@@ -1,6 +1,8 @@
-# README `/air_quality`
+![Banner Image](../../docs/images/title.png)
 
-This folder contains hourly air quality records for a sample of sensors in the NYC metropolitan region, between January 2018 and June 2025. Some records have higher data quality than others. See below for descriptions, codebooks, and supporting metadata.
+d# README '/air_quality'
+
+> This folder contains hourly air quality records for a sample of sensors in the NYC metropolitan region, between January 2018 and June 2025. Some records have higher data quality than others. See below for descriptions, codebooks, and supporting metadata.
 
 ------------------------------------------------------------------------
 
@@ -186,3 +188,11 @@ This dataset contains **14,822 U.S. Census Block Groups** with spatial geometry 
 ### 🧭 Spatial Info
 
 -   CRS (Coordinate Reference System) should be inspected using `st_crs()` to confirm compatibility with other geospatial layers. Saved as NAD 83.
+
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-air_quality)

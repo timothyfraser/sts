@@ -1,4 +1,6 @@
-# README `/boston_social_infra`
+![Banner Image](../../docs/images/title.png)
+
+# README '/boston_social_infra'
 
 ## 🏙️ Boston Social Infrastructure Dataset
 
@@ -87,3 +89,9 @@ Sociodemographic attributes for each spatial grid cell. Can be joined to `boston
 | `boston_block_groups.geojson` + external Census data | `geoid` |
 
 ---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-boston_social_infra)

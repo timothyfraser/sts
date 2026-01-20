@@ -1,4 +1,6 @@
-# README `/evacuation`
+![Banner Image](../../docs/images/title.png)
+
+# README '/evacuation'
 
 ## 📘 Hurricane Dorian Evacuation Dataset Codebook
 
@@ -110,3 +112,9 @@ This spatial dataset contains U.S. county boundaries and land/water area measure
 - Filter by state or region for focused spatial analysis
 
 ---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-evacuation)

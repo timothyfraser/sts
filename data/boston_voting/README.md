@@ -1,6 +1,8 @@
-# 🗳️ README: Boston Voting Dataset Codebook (`/boston_voting`)
+![Banner Image](../../docs/images/title.png)
 
-This folder contains spatial and tabular data on voter behavior, polling locations, precinct geography, and transit infrastructure for Boston, MA.
+# 🗳️ README: Boston Voting Dataset Codebook ('/boston_voting')
+
+> This folder contains spatial and tabular data on voter behavior, polling locations, precinct geography, and transit infrastructure for Boston, MA.
 
 ---
 
@@ -99,3 +101,11 @@ precincts <- read_rds("data/boston_voting/precincts.rds")
 # Join example
 votes_geo <- precincts %>% left_join(votes, by = "ward_precinct")
 ```
+
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-boston_voting)

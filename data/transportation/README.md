@@ -1,7 +1,9 @@
-# README `/transportation`
+![Banner Image](../../docs/images/title.png)
 
-Explainer for the `emissions.rds` database file and accompanying files in the `transportation` folder.
-Sourced from Cornell's `catserver`, a county level database of emissions estimates for every county in the US, from 1990-2060.
+# README '/transportation'
+
+> Explainer for the `emissions.rds` database file and accompanying files in the `transportation` folder.  
+> Sourced from Cornell's `catserver`, a county level database of emissions estimates for every county in the US, from 1990-2060.
 
 ## Dataset Codebooks
 
@@ -136,10 +138,10 @@ Every row has 3 main identifier fields, including `geoid`, `year`, `pollutant`, 
 |:---          |  :---:   | :---    |:---                                    |
 | `geoid` | character | unique string identifier for each geographic area. | The US overall is `00` (2 characters). New York state is `36` (2 characters). Tompkins County, NY is `36109` (5 characters). |
 | `year` | integer | unique 4-digit identifier for each year. | Currently, every 5 years from 1990 to 2060 are implemented (I think we skipped 1995 because MOVES couldn't do it (?)). |
-| `pollutant` | integer | unique 2-3 digit identifier for each of ~19 supported pollutants. | `pollutant == 98` is CO2e, or Carbon Dioxide Equivalent, our main pollutant of interest. (Note: Steer clear of VOC; I think it's only partially accurate. Ask Tim for more details.) For the complete list of `ids` outputted by MOVES, see the [**MOVES Onroad Cheatsheet**](moves_cheatsheet_onroad.pdf). |
+| `pollutant` | integer | unique 2-3 digit identifier for each of ~19 supported pollutants. | `pollutant == 98` is CO2e, or Carbon Dioxide Equivalent, our main pollutant of interest. (Note: Steer clear of VOC; I think it's only partially accurate. Ask Tim for more details.) For the complete list of `ids` outputted by MOVES, see the [**MOVES Onroad Cheatsheet**](../../docs/cheatsheets/moves_cheatsheet_onroad.pdf). |
 | `by` | integer | unique identifier for each level of disaggregation, specific to our CAT system. | This id includes [16, 8, 12, 14, and 15], and describes whether that row reflects a value overall (`by == 16`) or a value disaggregeated by a specific `sourcetype` (`by == 8`), a specific `fueltype` (`by == 14`), a specific `regclass`/regulatory class (`by == 12`), or a specific `roadtype` (`by == 15`). When `by == 16` (overall), the `sourcetype`, `regclass`, `fueltype`, and `roadtype` fields will all be `NA` (because it's overall, not disaggregated). |
 
-![MOVES Pollutant IDs](moves_cheatsheet_onroad_p1.png)
+![MOVES Pollutant IDs](../../docs/cheatsheets/moves_cheatsheet_onroad_p1.png)
 
 ### disaggregation identifier
 
@@ -155,7 +157,7 @@ Every row has the special `by` identifier, which as mentioned above, shows the l
 
 ### subtype identifiers
 
-Each row has 4 subtype identifiers, describing whether the `emissions` and other metrics reported are measured ***overall*** for that `geoid-year-pollutant` set or measured for a specific `sourcetype`, `regclass`, `fueltype`, and/or `roadtype`. Each specific subtype has a unique ID code, originating from MOVES. If all 4 dissagregation identifiers are `NA`, it means it's measured overall and *not* disaggregated. For the complete list of `ids` outputted by MOVES, see the [**MOVES Onroad Cheatsheet**](moves_cheatsheet_onroad.pdf), also shown below the table.
+Each row has 4 subtype identifiers, describing whether the `emissions` and other metrics reported are measured ***overall*** for that `geoid-year-pollutant` set or measured for a specific `sourcetype`, `regclass`, `fueltype`, and/or `roadtype`. Each specific subtype has a unique ID code, originating from MOVES. If all 4 dissagregation identifiers are `NA`, it means it's measured overall and *not* disaggregated. For the complete list of `ids` outputted by MOVES, see the [**MOVES Onroad Cheatsheet**](../../docs/cheatsheets/moves_cheatsheet_onroad.pdf), also shown below the table.
 
 | field        |  type    |  meaning                   | example                                                                 |
 |:---          |  :---:   | :---                       |   :---                                                                  |
@@ -164,7 +166,7 @@ Each row has 4 subtype identifiers, describing whether the `emissions` and other
 | `fueltype`  | integer   | unique fuel type id        | diesel is `fueltype == 2`                                               |
 | `roadtype`  | integer   | unique road type id        | urban unrestricted access roads (eg. trucks allowed) is `roadtype == 5` |
 
-![MOVES Pollutant IDs](moves_cheatsheet_onroad_p2.png)
+![MOVES Pollutant IDs](../../docs/cheatsheets/moves_cheatsheet_onroad_p2.png)
 
 ### metrics
 
@@ -361,3 +363,11 @@ CAT Format currently includes the following set of fields, the unique ids within
 | roadtype | 3 | Rural Unrestricted Access | Rural\nUnrestricted |
 | roadtype | 2 | Rural Restricted Access | Rural\nRestricted |
 | roadtype | 1 | Off-Network | Off-Network |
+
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-transportation)

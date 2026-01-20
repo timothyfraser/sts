@@ -1,8 +1,12 @@
-# README: Social Infrastructure Dataset
+![Banner Image](../../docs/images/title.png)
 
-**Author**: Tim Fraser\
-**File**: `social_infra/example.R`\
-**⚠️ Note**: This data is not yet released — please do **not share widely**.
+# README '/social_infra'
+
+## 🧱 Social Infrastructure Dataset
+
+> **Author**: Tim Fraser  
+> **File**: `social_infra/example.R`  
+> **⚠️ Note**: This data is not yet released — please do **not share widely**.
 
 ## 🧱 Overview
 
@@ -141,3 +145,11 @@ Includes:
 
 Other datasets are available, but **not recommended** for dashboard use at this time.\
 Their processing methods require further documentation.
+
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-social_infra)

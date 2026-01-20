@@ -1,4 +1,6 @@
-# README `/redlining`
+![Banner Image](../../docs/images/title.png)
+
+# README '/redlining'
 
 ## 🗂️ Historic Redlining Indicator (HRI) Dataset
 
@@ -89,4 +91,10 @@ For a sample, try `tracts_ny.geojson`, which shows just census tracts in New Yor
 
 ![](images/clipboard-3263965432.png)
 
-------------------------------------------------------------------------
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-redlining)

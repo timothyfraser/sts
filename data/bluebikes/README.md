@@ -1,6 +1,8 @@
-# README `/bluebikes`
+![Banner Image](../../docs/images/title.png)
 
-## Bluebikes Data Folder
+# README '/bluebikes'
+
+## 📊 Bluebikes Data Folder
 
 This folder contains comprehensive data and materials for analyzing the Boston Bluebikes bikesharing system (formerly Hubway), covering about a decade of rides.
 
@@ -114,3 +116,9 @@ glimpse(dates)
 - `geoid` is the key spatial identifier linking stations to census areas.
 
 ---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-bluebikes)

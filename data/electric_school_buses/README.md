@@ -1,4 +1,6 @@
-# README `/electric_school_buses`
+![Banner Image](../../docs/images/title.png)
+
+# README '/electric_school_buses'
 
 ## 🚌 Electric School Bus Price Tracker — State-Level Base Prices
 
@@ -85,3 +87,11 @@ For questions or data requests, contact: **Phillip Burgoyne-Allen**\
 library(readr)
 read_rds("data/risk_index/electric_bus_prices.rds") %>% head()
 ```
+
+---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-electric_school_buses)

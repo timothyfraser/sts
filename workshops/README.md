@@ -1,4 +1,6 @@
-# README `/workshops`
+![Banner Image](../docs/images/title.png)
+
+# README '/workshops'
 
 ------------------------------------------------------------------------
 
@@ -88,3 +90,11 @@ Then, open our first script, called `workshops/1P_coding_0.R`! In `/workshops`, 
 -   📁 [Z_extra](https://github.com/timothyfraser/sts/tree/3week/workshops/Z_extra)
     -   📄 [github_setup.R](https://github.com/timothyfraser/sts/blob/3week/workshops/Z_extra/github_setup.R)
     -   📄 [Z_extra.R](https://github.com/timothyfraser/sts/blob/3week/workshops/Z_extra/Z1.R)
+
+---
+
+![Footer Image](../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#Table-of-Contents)

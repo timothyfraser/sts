@@ -1,6 +1,8 @@
-# README `/data`
+![Banner Image](../docs/images/title.png)
 
-A collection of additional READMEs for files located in the main directory of the data folder.
+# README '/data'
+
+> A collection of additional READMEs for files located in the main directory of the data folder.
 
 ---
 
@@ -277,3 +279,9 @@ env_health <- read_csv("data/environmental_health.csv", show_col_types = FALSE)
 - wealth: Wealth category relative to median ("Above Median", "Below Median")
 
 ---
+
+![Footer Image](../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-data)

@@ -1,7 +1,8 @@
+![Banner Image](../../docs/images/title.png)
 
-# README `/committees`
+# README '/committees'
 
-## Distaster Recovery Committees Datasets
+## 🏛️ Disaster Recovery Committees Datasets
 
 Citations:
 
@@ -119,3 +120,9 @@ Citations:
 | `community_participation_relig`               | character | Religious community participation                 | NA, "no"                             |
 
 ---
+
+![Footer Image](../../docs/images/footer.png)
+
+---
+
+← 🏠 [Back to Top](#README-committees)
