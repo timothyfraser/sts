@@ -16,7 +16,6 @@ data = mtcars
 print("STAGE: LOAD data")
 print(head(data, 1))   # Quick check that data loaded correctly
 
-
 # ------------------------------------------------------------------
 # DEFINE UI
 # ------------------------------------------------------------------
@@ -42,7 +41,8 @@ ui = function(){
     # Card 2: Output display
     card(
       # This will display the computed mean MPG.
-      textOutput(outputId = "meanmpg")
+      textOutput(outputId = "meanmpg"),
+      Sys.getenv("VARNAME")
     )
   )
 }
