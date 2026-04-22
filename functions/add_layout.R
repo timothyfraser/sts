@@ -3,7 +3,7 @@
 add_layout = function(graph, by, layout = "fr", ...){
   # Generate a layout for the graph object
   layout = ggraph(graph, layout = layout, ...) %>%
-    with(data) %>%
+    {.$data} %>%
     select(any_of(c(by, "x","y")))
   
   # Join it in.
