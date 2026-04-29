@@ -1,0 +1,40 @@
+name,type,committee_type,geography,level,town,committee_romaji,committee_japanese
+committee_1,TRUE,Other,national,national,National,3.11 Shinsai Densho- Kenkyu-kai,3.11震災伝承研究会
+committee_2,TRUE,Municipal,iwate,municipal,Otsuchi-cho,O-tsuchi cho- Fukko Senryaku Kaigi,大槌町復興戦略会議
+committee_3,TRUE,Municipal,iwate,municipal,Ofunato-shi,O-funawatarishi Saigai Fukko Keikaku Suishin Iinkai,大船渡市災害復興計画推進委員会
+committee_4,TRUE,Municipal,iwate,municipal,Miyako-shi,Miyakoshi Higashinihon Daishinsai Fukko Keikaku Kento- Iinkai,宮古市東日本大震災復興計画検討委員会
+committee_5,TRUE,Municipal,iwate,municipal,Yamada-cho,Yamadacho- Higashinihon Daishinsai Tsunami Fukko Keikaku Sakutei Iinkai,山田町東日本大震災津波復興計画策定委員会
+committee_6,TRUE,Municipal,iwate,municipal,Yamada-cho,Yamadacho- Higashinihon Daishinsai Tsunami Fukko Bijon Sakutei Senmon Bukai,山田町東日本大震災津波復興ビジョン策定専門部会
+committee_7,TRUE,Municipal,iwate,municipal,Iwaizumi-cho,Iwaizumicho- Higashinihon Daishinsai Fukko Iinkai,岩泉町東日本大震災復興委員会
+committee_8,TRUE,Municipal,iwate,municipal,Noda-mura,Nodamura Higashinihon Daishinsai Tsunami Fukko Honbu,野田村東日本大震災津波復興本部
+committee_9,TRUE,Municipal,iwate,municipal,Noda-mura,Nodamura Higashinihon Daishinsai Tsunami Fukko Keikaku Sakutei Iinkai,野田村東日本大震災津波復興計画策定委員会
+committee_10,TRUE,Municipal,iwate,municipal,Kamaishi-shi,Kamaishishi Fukko Machizukuri Iinkai,釜石市復興まちづくり委員会
+committee_11,TRUE,Municipal,iwate,municipal,Rikuzen-Takata-shi,Rikuzen Takatashi Shinsai Fukko Keikaku Suishin Iinkai,陸前高田市震災復興計画推進委員会
+committee_12,TRUE,Municipal,iwate,municipal,Rikuzen-Takata-shi,Rikuzen Takatashi Shinsai Fukko Keikaku Kento- Iinkai,陸前高田市震災復興計画検討委員会
+committee_13,TRUE,Municipal,miyagi,municipal,Shichigahama-cho,Shichigahamacho- Shinsaifukko Kento- Iinkai,七ヶ浜町・震災復興検討委員会
+committee_14,TRUE,Municipal,miyagi,municipal,Watari-cho,Wataricho- Shinsai Fukko Kaigi,亘理町・震災復興会議
+committee_15,TRUE,Municipal,miyagi,municipal,Sendai-shi,Sendaishi Shinsai Fukko Kento- Kaigi,仙台市震災復興検討会議
+committee_16,TRUE,Municipal,miyagi,municipal,Rifu-cho,Rifucho- Shinsai Fukko Keikaku Sakutei Iinkai,利府町・震災復興計画策定委員会
+committee_17,TRUE,Municipal,miyagi,municipal,Minamisanriku-cho,Minamisanrikucho Shinsai Fukko Keikaku Sakutei Kaigi Iin,南三陸町震災復興計画策定会議委員
+committee_18,TRUE,Municipal,miyagi,municipal,Minamisanriku-cho,Minamisanrikucho-,南三陸町
+committee_19,TRUE,Municipal,miyagi,municipal,Minamisanriku-cho,Jimukyoku,事務局
+committee_20,TRUE,Municipal,miyagi,municipal,Natori-shi,Natorishi Aratana Mirai Kaigi,名取市新たな未来会議
+committee_21,TRUE,Municipal,miyagi,municipal,Shiogama-shi,Shiogamashi Shinsai Fukko Keikaku Kento- Iinkai,塩竈市・震災復興計画検討委員会
+committee_22,TRUE,Municipal,miyagi,municipal,Tagajo-shi,Tagajo-shi Fukko Kento- Iinkai Iin,多賀城市復興検討委員会委員
+committee_23,TRUE,Municipal,miyagi,municipal,Onagawa-cho,Onagawacho- Fukko Keikaku Sakutei Iinkai,女川町復興計画策定委員会
+committee_24,TRUE,Municipal,miyagi,municipal,Yamamoto-cho,Yamamotocho- Shinsai Fukko Yu-shikisya Kaigi,山元町・震災復興有識者会議
+committee_25,TRUE,Municipal,miyagi,municipal,Iwanuma-shi,Iwanumashi Shinsai Fukko Kaigi,岩沼市震災復興会議
+committee_26,TRUE,Municipal,miyagi,municipal,Higashi-Matsushima-shi,Higashimatsuyamashi Fukko Seibi Kyo-gikai,東松島市・復興整備協議会
+committee_27,TRUE,Municipal,miyagi,municipal,Matsushima-cho,Matsuhimacho- Shinsai Fukko Keikaku Kento- Kaigi,松島町震災復興計画検討会議
+committee_28,TRUE,Municipal,miyagi,municipal,Kurihara-shi,Kuriharashi So-go- Keikaku Shingikai,栗原市・総合計画審議会
+committee_29,TRUE,Municipal,miyagi,municipal,Kisennuma-shi,Kisennumashi Shinsai Fukko Kaigi,気仙沼市震災復興会議
+committee_30,TRUE,Municipal,miyagi,municipal,Ishinomaki-shi,Ishimakishi Shinsai Fukko Bijon Kondankai,石巻市震災復興ビジョン懇談会
+committee_31,TRUE,Municipal,miyagi,municipal,Kakuda-shi,Kakudashi Shinsai Fukkyu Fukko Shimin Kaigi,角田市震災復旧・復興市民会議
+committee_32,TRUE,Other,national,national,National,(Naikakufu Chu-o- Bo-sai Kaigi To-hokuchiho- Taiheiyo-oki Jishin wo Kyo-kun to shita Jishin Tsunami Taisaku ni kansuru Senmon Cho-sakai,内閣府・中央防災会議・東北地方太平洋沖地震を教訓とした地震津波対策に関する専門調査会
+committee_33,TRUE,Other,national,national,National,Higashinihon Shinsai Fukko Ko-so- Kaigi,東日本大震災復興構想会議
+committee_34,TRUE,Other,national,national,National,Higashinihon Daishinsai Fukko Ko-so- Kaigi Kento- Bukai,東日本大震災復興構想会議・検討部会
+committee_35,TRUE,Other,national,national,National,Kokudo Ko-tsu-sho- Kaigan ni okeru Tsunami Taisaku Kento- Iinkai,国土交通省・海岸における津波対策検討委員会
+committee_36,TRUE,Prefectural,iwate,prefectural,Iwate-ken,Iwateken Higashinihon Daishinsai Tsunami Fukko Iinkai,岩手県東日本大震災津波復興委員会
+committee_37,TRUE,Prefectural,iwate,prefectural,Iwate-ken,Higashinihon Daishinsai Tsunami Fukko Iinkai So-go- Kikaku Senmon Iinkai,東日本大震災津波復興委員会総合企画専門委員会
+committee_38,TRUE,Prefectural,miyagi,prefectural,Miyagi-ken,Miyagiken Shinsai Fukko Kaigi,宮城県震災復興会議
+committee_39,TRUE,Prefectural,miyagi,prefectural,Miyagi-ken,Higashinihon Daishinsai no Kioku Kyu-kun Densho- no Arikata Kento- Yu-shikisha Kaigi,東日本大震災の記憶・教訓伝承のあり方検討有識者会議
