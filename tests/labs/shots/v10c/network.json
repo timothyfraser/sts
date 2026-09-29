@@ -1,0 +1,38 @@
+[
+  {
+    "url": "http://127.0.0.1:43717/labs/v10c-projection.html",
+    "type": "document",
+    "status": 200,
+    "bytes": 23556
+  },
+  {
+    "url": "http://127.0.0.1:43717/assets/sts.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 13167
+  },
+  {
+    "url": "http://127.0.0.1:43717/labs/kit/lab.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 7050
+  },
+  {
+    "url": "http://127.0.0.1:43717/labs/kit/lab.js",
+    "type": "script",
+    "status": 200,
+    "bytes": 15131
+  },
+  {
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
+    "type": "script",
+    "status": 200,
+    "bytes": 279706
+  },
+  {
+    "url": "http://127.0.0.1:43717/labs/data/v10c_memberships.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 8223
+  }
+]
