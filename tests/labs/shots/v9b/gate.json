@@ -1,13 +1,13 @@
 {
   "lab": "v9b",
   "ok": true,
-  "checked_at": "2026-09-29T06:24:58.377Z",
+  "checked_at": "2026-09-29T06:41:56.827Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 207 ms < 1500 ms"
+      "msg": "0 console errors; first render 310 ms < 1500 ms"
     },
     {
       "ok": true,
@@ -115,7 +115,7 @@
       "ok": true,
       "check": "h",
       "state": "-",
-      "msg": "data 4.4 KB <= 500.0 KB; JS 27.6 KB <= 150.0 KB"
+      "msg": "data 4.4 KB <= 500.0 KB; JS 28.4 KB <= 150.0 KB"
     },
     {
       "ok": true,
