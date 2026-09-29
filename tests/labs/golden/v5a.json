@@ -1,0 +1,163 @@
+{
+  "lab": "v5a",
+  "page": "docs-v3/labs/v5a-normalize-it.html",
+  "generated_by": "tools/labs/prep/v5a.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "view": "denormalized",
+        "rename": false,
+        "add": false,
+        "fk": false
+      },
+      "readouts": {
+        "tables": 1,
+        "rows": 40,
+        "cells": 480,
+        "bytes": 3854,
+        "changed": 0,
+        "orphans": 0,
+        "insert": "none"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = OFF\")\ndbWriteTable(db, \"flights_wide\", flights_wide)\n\nchanged = 0\nadded = 0\n\nwide = tbl(db, \"flights_wide\") %>% collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE flights_wide (id TEXT, carrier TEXT, airline TEXT, tailnum TEXT,\n  manufacturer TEXT, model TEXT, seats INTEGER, origin TEXT, origin_name TEXT,\n  dest TEXT, dest_name TEXT, dep_delay INTEGER);\n"
+      }
+    },
+    {
+      "name": "renamed_wide",
+      "state": {
+        "view": "denormalized",
+        "rename": true,
+        "add": false,
+        "fk": false
+      },
+      "readouts": {
+        "tables": 1,
+        "rows": 40,
+        "cells": 480,
+        "bytes": 3842,
+        "changed": 12,
+        "orphans": 0,
+        "insert": "none"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = OFF\")\ndbWriteTable(db, \"flights_wide\", flights_wide)\n\nchanged = dbExecute(db, \"UPDATE flights_wide SET airline = 'ExpressJet Airlines LLC' WHERE carrier = 'EV'\")\nadded = 0\n\nwide = tbl(db, \"flights_wide\") %>% collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE flights_wide (id TEXT, carrier TEXT, airline TEXT, tailnum TEXT,\n  manufacturer TEXT, model TEXT, seats INTEGER, origin TEXT, origin_name TEXT,\n  dest TEXT, dest_name TEXT, dep_delay INTEGER);\n\nUPDATE flights_wide SET airline = 'ExpressJet Airlines LLC' WHERE carrier = 'EV';\n"
+      }
+    },
+    {
+      "name": "normalized",
+      "state": {
+        "view": "normalized",
+        "rename": false,
+        "add": false,
+        "fk": false
+      },
+      "readouts": {
+        "tables": 4,
+        "rows": 40,
+        "cells": 472,
+        "bytes": 2607,
+        "changed": 0,
+        "orphans": 0,
+        "insert": "none"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = OFF\")\ndbExecute(db, \"CREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE airports (faa TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE planes (tailnum TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, seats INTEGER)\")\ndbExecute(db, \"CREATE TABLE flights (id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier), tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa), dest TEXT REFERENCES airports (faa), dep_delay INTEGER)\")\ndbWriteTable(db, \"airlines\", airlines, append = TRUE)\ndbWriteTable(db, \"airports\", airports, append = TRUE)\ndbWriteTable(db, \"planes\", planes, append = TRUE)\ndbWriteTable(db, \"flights\", flights, append = TRUE)\n\nchanged = 0\nadded = 0\n\n# rebuild the wide table for a dashboard\nwide = tbl(db, \"flights\") %>%\n  left_join(tbl(db, \"airlines\") %>% rename(airline = name), by = \"carrier\") %>%\n  left_join(tbl(db, \"planes\"), by = \"tailnum\") %>%\n  collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT);\nCREATE TABLE flights (\n  id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier),\n  tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa),\n  dest TEXT REFERENCES airports (faa),\n  dep_delay INTEGER);\n\n-- the join that rebuilds the wide table\nSELECT f.*, a.name AS airline, p.manufacturer, p.model, p.seats\nFROM flights f\nLEFT JOIN airlines a ON a.carrier = f.carrier\nLEFT JOIN planes p ON p.tailnum = f.tailnum;\n"
+      }
+    },
+    {
+      "name": "renamed_norm",
+      "state": {
+        "view": "normalized",
+        "rename": true,
+        "add": false,
+        "fk": false
+      },
+      "readouts": {
+        "tables": 4,
+        "rows": 40,
+        "cells": 472,
+        "bytes": 2606,
+        "changed": 1,
+        "orphans": 0,
+        "insert": "none"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = OFF\")\ndbExecute(db, \"CREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE airports (faa TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE planes (tailnum TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, seats INTEGER)\")\ndbExecute(db, \"CREATE TABLE flights (id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier), tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa), dest TEXT REFERENCES airports (faa), dep_delay INTEGER)\")\ndbWriteTable(db, \"airlines\", airlines, append = TRUE)\ndbWriteTable(db, \"airports\", airports, append = TRUE)\ndbWriteTable(db, \"planes\", planes, append = TRUE)\ndbWriteTable(db, \"flights\", flights, append = TRUE)\n\nchanged = dbExecute(db, \"UPDATE airlines SET name = 'ExpressJet Airlines LLC' WHERE carrier = 'EV'\")\nadded = 0\n\n# rebuild the wide table for a dashboard\nwide = tbl(db, \"flights\") %>%\n  left_join(tbl(db, \"airlines\") %>% rename(airline = name), by = \"carrier\") %>%\n  left_join(tbl(db, \"planes\"), by = \"tailnum\") %>%\n  collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT);\nCREATE TABLE flights (\n  id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier),\n  tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa),\n  dest TEXT REFERENCES airports (faa),\n  dep_delay INTEGER);\n\nUPDATE airlines SET name = 'ExpressJet Airlines LLC' WHERE carrier = 'EV';\n\n-- the join that rebuilds the wide table\nSELECT f.*, a.name AS airline, p.manufacturer, p.model, p.seats\nFROM flights f\nLEFT JOIN airlines a ON a.carrier = f.carrier\nLEFT JOIN planes p ON p.tailnum = f.tailnum;\n"
+      }
+    },
+    {
+      "name": "orphan",
+      "state": {
+        "view": "normalized",
+        "rename": false,
+        "add": true,
+        "fk": false
+      },
+      "readouts": {
+        "tables": 4,
+        "rows": 41,
+        "cells": 478,
+        "bytes": 2625,
+        "changed": 0,
+        "orphans": 1,
+        "insert": "inserted"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = OFF\")\ndbExecute(db, \"CREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE airports (faa TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE planes (tailnum TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, seats INTEGER)\")\ndbExecute(db, \"CREATE TABLE flights (id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier), tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa), dest TEXT REFERENCES airports (faa), dep_delay INTEGER)\")\ndbWriteTable(db, \"airlines\", airlines, append = TRUE)\ndbWriteTable(db, \"airports\", airports, append = TRUE)\ndbWriteTable(db, \"planes\", planes, append = TRUE)\ndbWriteTable(db, \"flights\", flights, append = TRUE)\n\nchanged = 0\nadded = tryCatch(dbExecute(db, \"INSERT INTO flights (id, carrier, tailnum, origin, dest, dep_delay) VALUES ('f41', 'ZZ', 'N612DL', 'JFK', 'LAX', 0)\"),\n  error = function(e) -1)\n\n# rebuild the wide table for a dashboard\nwide = tbl(db, \"flights\") %>%\n  left_join(tbl(db, \"airlines\") %>% rename(airline = name), by = \"carrier\") %>%\n  left_join(tbl(db, \"planes\"), by = \"tailnum\") %>%\n  collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT);\nCREATE TABLE flights (\n  id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier),\n  tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa),\n  dest TEXT REFERENCES airports (faa),\n  dep_delay INTEGER);\n\nINSERT INTO flights (id, carrier, tailnum, origin, dest, dep_delay)\nVALUES ('f41', 'ZZ', 'N612DL', 'JFK', 'LAX', 0);\n\n-- the join that rebuilds the wide table\nSELECT f.*, a.name AS airline, p.manufacturer, p.model, p.seats\nFROM flights f\nLEFT JOIN airlines a ON a.carrier = f.carrier\nLEFT JOIN planes p ON p.tailnum = f.tailnum;\n"
+      }
+    },
+    {
+      "name": "fk_reject",
+      "state": {
+        "view": "normalized",
+        "rename": false,
+        "add": true,
+        "fk": true
+      },
+      "readouts": {
+        "tables": 4,
+        "rows": 40,
+        "cells": 472,
+        "bytes": 2607,
+        "changed": 0,
+        "orphans": 0,
+        "insert": "rejected"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = ON\")\ndbExecute(db, \"CREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE airports (faa TEXT PRIMARY KEY, name TEXT)\")\ndbExecute(db, \"CREATE TABLE planes (tailnum TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, seats INTEGER)\")\ndbExecute(db, \"CREATE TABLE flights (id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier), tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa), dest TEXT REFERENCES airports (faa), dep_delay INTEGER)\")\ndbWriteTable(db, \"airlines\", airlines, append = TRUE)\ndbWriteTable(db, \"airports\", airports, append = TRUE)\ndbWriteTable(db, \"planes\", planes, append = TRUE)\ndbWriteTable(db, \"flights\", flights, append = TRUE)\n\nchanged = 0\nadded = tryCatch(dbExecute(db, \"INSERT INTO flights (id, carrier, tailnum, origin, dest, dep_delay) VALUES ('f41', 'ZZ', 'N612DL', 'JFK', 'LAX', 0)\"),\n  error = function(e) -1)\n\n# rebuild the wide table for a dashboard\nwide = tbl(db, \"flights\") %>%\n  left_join(tbl(db, \"airlines\") %>% rename(airline = name), by = \"carrier\") %>%\n  left_join(tbl(db, \"planes\"), by = \"tailnum\") %>%\n  collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE airlines (carrier TEXT PRIMARY KEY, name TEXT);\nCREATE TABLE flights (\n  id TEXT PRIMARY KEY,\n  carrier TEXT REFERENCES airlines (carrier),\n  tailnum TEXT REFERENCES planes (tailnum),\n  origin TEXT REFERENCES airports (faa),\n  dest TEXT REFERENCES airports (faa),\n  dep_delay INTEGER);\n\nINSERT INTO flights (id, carrier, tailnum, origin, dest, dep_delay)\nVALUES ('f41', 'ZZ', 'N612DL', 'JFK', 'LAX', 0);\n\n-- the join that rebuilds the wide table\nSELECT f.*, a.name AS airline, p.manufacturer, p.model, p.seats\nFROM flights f\nLEFT JOIN airlines a ON a.carrier = f.carrier\nLEFT JOIN planes p ON p.tailnum = f.tailnum;\n"
+      }
+    },
+    {
+      "name": "wide_add",
+      "state": {
+        "view": "denormalized",
+        "rename": false,
+        "add": true,
+        "fk": true
+      },
+      "readouts": {
+        "tables": 1,
+        "rows": 41,
+        "cells": 492,
+        "bytes": 3872,
+        "changed": 0,
+        "orphans": 1,
+        "insert": "inserted"
+      },
+      "code": {
+        "r": "db = dbConnect(RSQLite::SQLite(), \":memory:\")\ndbExecute(db, \"PRAGMA foreign_keys = ON\")\ndbWriteTable(db, \"flights_wide\", flights_wide)\n\nchanged = 0\nadded = tryCatch(dbExecute(db, \"INSERT INTO flights_wide (id, carrier, tailnum, origin, dest, dep_delay) VALUES ('f41', 'ZZ', 'N612DL', 'JFK', 'LAX', 0)\"),\n  error = function(e) -1)\n\nwide = tbl(db, \"flights_wide\") %>% collect()",
+        "sql": "-- Postgres enforces REFERENCES always; SQLite only with PRAGMA foreign_keys = ON\nCREATE TABLE flights_wide (id TEXT, carrier TEXT, airline TEXT, tailnum TEXT,\n  manufacturer TEXT, model TEXT, seats INTEGER, origin TEXT, origin_name TEXT,\n  dest TEXT, dest_name TEXT, dep_delay INTEGER);\n\nINSERT INTO flights_wide (id, carrier, tailnum, origin, dest, dep_delay)\nVALUES ('f41', 'ZZ', 'N612DL', 'JFK', 'LAX', 0);\n"
+      }
+    }
+  ],
+  "ack": []
+}
