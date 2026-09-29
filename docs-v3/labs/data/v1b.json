@@ -1,0 +1,92 @@
+{
+  "table_rows": 336776,
+  "table_cols": 19,
+  "bytes_per_value": 8,
+  "wire_bytes_per_s": 1250000,
+  "positions": {
+    "first": {
+      "rows_moved": 336776,
+      "cols_moved": 19,
+      "transfer_ms": 40951.96,
+      "sql": "SELECT *\nFROM `flights`",
+      "result": [
+        {
+          "carrier": "B6",
+          "flights": 2557,
+          "mean_delay": 13.47
+        },
+        {
+          "carrier": "AA",
+          "flights": 1455,
+          "mean_delay": 7.67
+        },
+        {
+          "carrier": "DL",
+          "flights": 972,
+          "mean_delay": 10.27
+        },
+        {
+          "carrier": "9E",
+          "flights": 914,
+          "mean_delay": 14.76
+        }
+      ]
+    },
+    "after_filter": {
+      "rows_moved": 5898,
+      "cols_moved": 19,
+      "transfer_ms": 717.2,
+      "sql": "SELECT `flights`.*\nFROM `flights`\nWHERE (`origin` = 'JFK') AND (`dest` = 'BOS')",
+      "result": [
+        {
+          "carrier": "B6",
+          "flights": 2557,
+          "mean_delay": 13.47
+        },
+        {
+          "carrier": "AA",
+          "flights": 1455,
+          "mean_delay": 7.67
+        },
+        {
+          "carrier": "DL",
+          "flights": 972,
+          "mean_delay": 10.27
+        },
+        {
+          "carrier": "9E",
+          "flights": 914,
+          "mean_delay": 14.76
+        }
+      ]
+    },
+    "after_summarise": {
+      "rows_moved": 4,
+      "cols_moved": 3,
+      "transfer_ms": 0.08,
+      "sql": "SELECT `carrier`, COUNT(*) AS `flights`, AVG(`dep_delay`) AS `mean_delay`\nFROM (\n  SELECT `flights`.*\n  FROM `flights`\n  WHERE (`origin` = 'JFK') AND (`dest` = 'BOS')\n) AS `q01`\nGROUP BY `carrier`",
+      "result": [
+        {
+          "carrier": "B6",
+          "flights": 2557,
+          "mean_delay": 13.47
+        },
+        {
+          "carrier": "AA",
+          "flights": 1455,
+          "mean_delay": 7.67
+        },
+        {
+          "carrier": "DL",
+          "flights": 972,
+          "mean_delay": 10.27
+        },
+        {
+          "carrier": "9E",
+          "flights": 914,
+          "mean_delay": 14.76
+        }
+      ]
+    }
+  }
+}
