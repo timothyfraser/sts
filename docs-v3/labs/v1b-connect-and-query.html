@@ -57,7 +57,7 @@
         <ol class="v1b-steps" id="steps"></ol>
         <div class="v1b-step-nav lab-seg" role="group" aria-label="Step through the life cycle"><button type="button" id="step-prev">Back</button><button type="button" id="step-next">Next step</button></div>
         <p class="v1b-caption" id="step-live" aria-live="polite"></p></div>
-      <div><h2>What crossed the wire</h2><div id="table"></div></div>
+      <div><h2>What crossed the wire</h2><div id="table"></div><p class="v1b-caption" id="table-note"></p></div>
     </aside>
   </section>
   <div id="code"></div>
@@ -121,13 +121,16 @@
   var stepsEl = document.getElementById('steps');
   STEPS.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; stepsEl.appendChild(li); });
 
-  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'carrier', label: 'carrier' }, { key: 'origin', label: 'origin' }, { key: 'dest', label: 'dest' }, { key: 'flights', label: 'flights', num: true, fmt: 0 }], { label: 'First rows that crossed the wire', key: function (r) { return r.k; } });
+  // Column union: raw flights rows (before/after filter) vs the summarised rows. update() hides the set that did not cross the wire.
+  var RAW_COLS = ['flight', 'origin', 'dest', 'dep_delay'], SUM_COLS = ['flights', 'mean_delay'];
+  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'carrier', label: 'carrier' }, { key: 'flight', label: 'flight', num: true, fmt: String }, { key: 'origin', label: 'origin' }, { key: 'dest', label: 'dest' }, { key: 'dep_delay', label: 'dep_delay', num: true, fmt: 0 }, { key: 'flights', label: 'flights', num: true, fmt: 0 }, { key: 'mean_delay', label: 'mean_delay', num: true, fmt: 2 }], { label: 'First rows that crossed the wire', key: function (r) { return r.k; } });
+  var tableNote = document.getElementById('table-note');
 
   function wireRows(s) {
     var p = D.positions[s.collect];
-    if (s.collect === 'after_summarise') return p.result.map(function (r) { return { k: 'r' + r.carrier, carrier: r.carrier, origin: 'JFK', dest: 'BOS', flights: r.flights }; });
+    if (s.collect === 'after_summarise') return p.result.map(function (r) { return { k: 'r' + r.carrier, carrier: r.carrier, flights: r.flights, mean_delay: r.mean_delay }; });
     var rows = s.collect === 'first' ? sample : sample.filter(function (r) { return r.origin === 'JFK' && r.dest === 'BOS'; });
-    return rows.slice(0, 6).map(function (r) { return { k: 's' + r.month + '-' + r.day + '-' + r.carrier + r.flight, carrier: r.carrier, origin: r.origin, dest: r.dest, flights: null }; });
+    return rows.slice(0, 6).map(function (r) { return { k: 's' + r.month + '-' + r.day + '-' + r.carrier + r.flight, carrier: r.carrier, flight: r.flight, origin: r.origin, dest: r.dest, dep_delay: r.dep_delay }; });
   }
 
   var runId = 0;
@@ -172,9 +175,10 @@
       sec.querySelector('strong').textContent = bad ? 'Exposed: password is in the script' : 'Safe: read from .env';
       sec.querySelector('span').textContent = bad ? 'Anyone who sees this file or its git history has the database password.' : 'The script names SUPABASE_PASSWORD; the value stays in a file git ignores.';
       Array.prototype.forEach.call(stepsEl.children, function (li, i) { li.className = i === step ? 'is-now' : (i < step ? 'is-done' : ''); if (i === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current'); });
+      tableNote.textContent = step < 4 ? 'No rows yet: collect() has not run.' : (s.collect === 'after_summarise' ? 'All ' + p.cols_moved + ' columns of the summarised answer.' : 'First 6 rows; 5 of the ' + p.cols_moved + ' columns that crossed.');
       document.getElementById('step-live').textContent = 'Step ' + (step + 1) + ' of ' + STEPS.length + (step >= 4 ? ': rows have crossed the wire.' : ': no rows have moved yet.');
       var done = ms ? tBar.end().catch(function () {}) : Promise.resolve();
-      return Promise.all([done, sendPackets(n), tb.update(step >= 4 ? wireRows(s) : [])]);
+      return Promise.all([done, sendPackets(n), tb.update(step >= 4 ? wireRows(s) : [], { hide: s.collect === 'after_summarise' ? RAW_COLS : SUM_COLS })]);
     },
     readouts: function (s, d) {
       var p = d.positions[s.collect];
