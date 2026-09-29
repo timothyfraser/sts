@@ -1,13 +1,13 @@
 {
   "lab": "v5b",
   "ok": true,
-  "checked_at": "2026-09-29T06:45:33.779Z",
+  "checked_at": "2026-09-29T07:29:32.385Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 774 ms < 1500 ms"
+      "msg": "0 console errors; first render 645 ms < 1500 ms"
     },
     {
       "ok": true,
@@ -139,7 +139,7 @@
       "ok": true,
       "check": "i",
       "state": "-",
-      "msg": "2 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v5b/impeccable.json"
+      "msg": "0 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v5b/impeccable.json"
     }
   ]
 }

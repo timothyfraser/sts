@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:34955/labs/v10a-centrality-lab.html",
+    "url": "http://127.0.0.1:44081/labs/v10a-centrality-lab.html",
     "type": "document",
     "status": 200,
     "bytes": 21995
   },
   {
-    "url": "http://127.0.0.1:34955/assets/sts.css",
+    "url": "http://127.0.0.1:44081/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:34955/labs/kit/lab.css",
+    "url": "http://127.0.0.1:44081/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
-    "bytes": 7050
+    "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:34955/labs/kit/lab.js",
+    "url": "http://127.0.0.1:44081/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,13 +30,13 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:34955/labs/data/v10a_nodes.csv",
+    "url": "http://127.0.0.1:44081/labs/data/v10a_nodes.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 611
   },
   {
-    "url": "http://127.0.0.1:34955/labs/data/v10a_edges.csv",
+    "url": "http://127.0.0.1:44081/labs/data/v10a_edges.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 2111

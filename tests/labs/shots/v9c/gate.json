@@ -1,13 +1,13 @@
 {
   "lab": "v9c",
   "ok": true,
-  "checked_at": "2026-09-29T06:16:26.415Z",
+  "checked_at": "2026-09-29T07:31:35.757Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 266 ms < 1500 ms"
+      "msg": "0 console errors; first render 175 ms < 1500 ms"
     },
     {
       "ok": true,
@@ -103,7 +103,7 @@
       "ok": true,
       "check": "i",
       "state": "-",
-      "msg": "2 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v9c/impeccable.json"
+      "msg": "0 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v9c/impeccable.json"
     }
   ]
 }

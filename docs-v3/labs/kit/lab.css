@@ -10,15 +10,18 @@
 .lab-head .lab-lo{color:var(--muted);margin:0 0 12px}
 .lab-bench{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:1px;background:var(--bench-bg);
   color:var(--bench-ink);border-radius:10px;overflow:hidden}
-.lab-visual{display:flex;flex-direction:column;min-width:0;padding:12px}
-.lab-stage{position:relative;min-height:320px;flex:1}
+/* the visual column sizes to its content; only the sidebar spans the bench height */
+.lab-visual{display:flex;flex-direction:column;min-width:0;padding:12px;align-self:start}
+/* reserve height only while the stage is still empty (loading); a drawn stage is as tall as its figure */
+.lab-stage{position:relative;min-height:0;flex:1}
+.lab-stage:empty{min-height:320px}
 .lab-stage svg{display:block;width:100%;height:auto}
 .lab-side{background:var(--bench-panel);border-left:1px solid var(--bench-line);padding:12px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .lab-side h2,.lab-side h3{font:600 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bench-muted);margin:0 0 6px}
 .lab-controls{display:flex;flex-direction:column;gap:8px}
 .lab-controls label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--bench-ink)}
 .lab-controls select,.lab-controls input[type=range]{accent-color:var(--y);font:inherit}
-.lab-controls select{background:var(--bench-panel);color:var(--bench-ink);border:1px solid var(--bench-line);border-radius:4px;padding:4px 6px}
+.lab-controls select{background:var(--bench-panel);color:var(--bench-ink);border:1px solid var(--bench-line);border-radius:6px;padding:4px 6px}
 .lab-seg{display:inline-flex;border:1px solid var(--bench-line);border-radius:6px;overflow:hidden}
 .lab-seg button{background:transparent;color:var(--bench-ink);border:0;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
 .lab-seg button[aria-pressed=true]{background:var(--y);color:var(--y-ink)}
@@ -32,7 +35,7 @@
 .lab-metric.flash{animation:lab-flash var(--dur-slow) var(--ease-out)}
 @keyframes lab-flash{from{background:rgba(125,211,252,.25)}to{background:transparent}}
 .lab-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--bench-muted);list-style:none;padding:0;margin:0}
-.lab-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.lab-legend i{display:inline-block;width:10px;height:10px;border-radius:6px;margin-right:4px;vertical-align:-1px}
 .lab-status{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font:12px var(--mono);color:var(--bench-muted);border-top:1px solid var(--bench-line);padding-top:8px;margin-top:8px}
 .lab-status .dot{width:8px;height:8px;border-radius:50%;background:var(--bench-up);display:inline-block;margin-right:6px}
 .lab-status[data-state=busy] .dot{background:var(--y)} .lab-status[data-state=error] .dot{background:var(--bench-down)}
@@ -43,7 +46,7 @@
 .lab-code-tabs{display:flex;gap:4px}
 .lab-code-bar [role=tab]{background:transparent;color:var(--code-ink);border:0;border-bottom:2px solid transparent;padding:4px 10px;font:600 12px var(--mono);cursor:pointer}
 .lab-code-bar [role=tab][aria-selected=true]{border-bottom-color:var(--y)}
-.lab-code-bar [data-code-copy]{margin-left:auto;background:transparent;color:var(--code-ink);border:1px solid var(--bench-line);border-radius:4px;padding:3px 10px;font:12px var(--mono);cursor:pointer}
+.lab-code-bar [data-code-copy]{margin-left:auto;background:transparent;color:var(--code-ink);border:1px solid var(--bench-line);border-radius:6px;padding:3px 10px;font:12px var(--mono);cursor:pointer}
 .lab-code pre{margin:0;padding:12px;overflow-x:auto;font:13px/1.5 var(--mono)}
 /* table */
 .lab-table-wrap{overflow-x:auto;max-height:340px;overflow-y:auto}
@@ -59,7 +62,7 @@
 /* learning checks (light page surface) */
 .lab-lcs{display:grid;gap:12px;margin:16px 0}
 .lab-lc{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface)}
-.lab-lc h3{margin:0 0 4px;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lab-lc h2,.lab-lc h3{margin:0 0 4px;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .lab-lc .lc-q{margin:0 0 10px;font-weight:600}
 .lc-options{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .lc-option{text-align:left;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit;cursor:pointer}
