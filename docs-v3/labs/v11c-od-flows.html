@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Origin-destination flows</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .od-map .flow{fill:none;stroke:var(--y);stroke-linecap:round;opacity:.72}
+  .od-map .zone-dot{fill:var(--bench-ink);opacity:.85}
+  .od-map .particle{fill:var(--bench-ink)}
+  .od-map .arrow{fill:var(--y)}
+  .od-map path.poly{fill:var(--bench-panel);stroke:var(--bench-line);stroke-width:.6}
+  .od-map path.poly.is-hl{fill:var(--bench-line);stroke:var(--bench-muted);stroke-opacity:.35}
+  .od-share{display:flex;flex-direction:column;gap:6px;font-size:12px}
+  .od-share .track{height:10px;border-radius:6px;background:var(--bench-line);overflow:hidden}
+  .od-share .fill{height:100%;width:100%;background:var(--y);transform-origin:left center;transform:scaleX(0);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+  .od-share .cap{display:flex;justify-content:space-between;color:var(--bench-muted);font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .od-note{font-size:12px;line-height:1.45;color:var(--bench-muted);margin:0}
+  .od-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .lab-lcs h2{margin:0 0 4px}
+  @media (prefers-reduced-motion: reduce){.od-share .fill{transition:none}}
+</style>
+</head>
+<body data-lab="v11c">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 11 · Origin-destination flows</p>
+    <h1>Aggregation changes the story</h1>
+    <p class="lab-lo"><strong>Learning objective:</strong> Aggregate an OD table to different zones and thresholds, and see how aggregation and thresholding change net flows.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="map"></div>
+      <div class="od-sr"><h2>Corridors drawn on the map</h2><ol id="sr-list" aria-live="polite"></ol></div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <div role="group" aria-label="Zone level" class="lab-seg" id="c-zone"><button type="button" data-v="county" aria-pressed="true">County</button><button type="button" data-v="state" aria-pressed="false">State (region)</button></div>
+          <div role="group" aria-label="Direction" class="lab-seg" id="c-dir"><button type="button" data-v="gross" aria-pressed="true">Gross</button><button type="button" data-v="net" aria-pressed="false">Net</button></div>
+          <label>Minimum flow (extra Facebook users) <select id="c-min"><option value="0">0</option><option value="100" selected>100</option><option value="500">500</option><option value="1000">1,000</option><option value="5000">5,000</option></select></label>
+          <label>Corridors drawn (top N) <select id="c-top"><option value="5">5</option><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option></select></label>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Flow retained</h2>
+        <div class="od-share"><div class="track" aria-hidden="true"><div class="fill" id="share-fill"></div></div>
+          <div class="cap"><span id="share-txt">-</span><span>of the zone-to-zone total</span></div></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>corridor, width = volume</li><li><i style="background:var(--bench-ink)"></i>moving dots = travellers, denser = more</li></ul>
+        <p class="od-note">Each line bends to the left of its direction of travel, so A to B and B to A sit side by side.</p></div>
+      <div><h2>In/out balance per zone</h2><div id="table"></div></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <h2>Learning checks</h2>
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">At the default settings (county zones, gross flows, minimum 100), what share of the total county-to-county flow is kept?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">About 20%: only the 20 drawn corridors count</button><button class="lc-option" data-correct="true">About 99%</button><button class="lc-option" data-correct="false">About 81%</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read the "Flow retained" bar or the "share kept" metric. Top N only changes what is drawn, not what is kept.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>98.7%: 343 county pairs carry 504,642 of the 511,414 extra trips. Small pairs are numerous but light, so a threshold of 100 drops many rows and very little flow. (81% is what a threshold of 1,000 keeps.)</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Switch Direction from Gross to Net at county level. What happens to the biggest gross corridor, Miami-Dade to Broward?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">It stays on top: net flow only trims every corridor by the same share</button><button class="lc-option" data-correct="true">It nearly vanishes: about 23,000 trips each way cancel to a net of about 250</button><button class="lc-option" data-correct="false">It reverses and becomes Broward to Miami-Dade at full size</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Net flow is flow minus the reverse corridor. Watch the top corridor in the status bar and the flow kept metric.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Miami-Dade to Broward is 23,208 and Broward to Miami-Dade is 22,954, so the net is 254 and it drops out of the top corridors. Net flow kept falls from 504,642 to 26,599 and the top corridor becomes Houston to Henry County in Alabama. At state level the top corridor also changes, from FL to GA (2,645 gross) to GA to AL (net 168).</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Why can aggregating to larger zones hide the evacuation routes that matter most?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Larger zones lose flow because rounding removes trips</button><button class="lc-option" data-correct="true">Trips that start and end inside one big zone become intra-zone and drop out of the OD table</button><button class="lc-option" data-correct="false">Larger zones always have more flow, so the busy routes stand out more</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Switch Zone level to State and compare flow kept with the county total. Look at the filter(origin_zone != dest_zone) line.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Most Dorian evacuation ran inside Florida (Miami-Dade, Broward, Brevard, Volusia). At state level those trips have the same origin and destination zone, so the OD table keeps only 6,468 of the 511,414 extra trips and the busiest routes disappear.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var TOTAL_COUNTY = 511413.5;   // shown in the status bar only; readouts are computed below
+  var W = Math.max(300, document.getElementById('map').clientWidth || 600), H = Math.round(W * (W < 520 ? 0.95 : 0.72));
+  var mp, gFlow, gPart, gDots, names = {}, pos = {}, geo, flows, wScale, parts = [], raf = 0;
+
+  function zoneOf(r, z, end) { return z === 'state' ? r[end + '_state'] : r[end]; }
+  // od() mirrors: group_by(origin_zone, dest_zone) %>% summarise(flow = sum(flow)) %>% filter(origin_zone != dest_zone)
+  //               [net] self-join on the reverse pair, flow - coalesce(flow_back, 0), filter(flow > 0)
+  function od(s) {
+    var m = new Map();
+    flows.forEach(function (r) {
+      var o = zoneOf(r, s.zone, 'origin'), d = zoneOf(r, s.zone, 'dest'), k = o + '|' + d;
+      var e = m.get(k); if (!e) { e = { origin_zone: o, dest_zone: d, flow: 0 }; m.set(k, e); } e.flow += r.flow;
+    });
+    var out = Array.from(m.values()).filter(function (e) { return e.origin_zone !== e.dest_zone; })
+      .sort(function (a, b) { return a.origin_zone < b.origin_zone ? -1 : a.origin_zone > b.origin_zone ? 1 : (a.dest_zone < b.dest_zone ? -1 : a.dest_zone > b.dest_zone ? 1 : 0); });
+    if (s.direction === 'net') {
+      out = out.map(function (e) { var b = m.get(e.dest_zone + '|' + e.origin_zone); return { origin_zone: e.origin_zone, dest_zone: e.dest_zone, flow: e.flow - (b ? b.flow : 0) }; })
+        .filter(function (e) { return e.flow > 0; });
+    }
+    return out;
+  }
+  function kept(s, o) {
+    return o.filter(function (e) { return e.flow >= s.min_flow; }).map(function (e, i) { e.i = i; return e; })
+      .sort(function (a, b) { return b.flow - a.flow || a.i - b.i; });
+  }
+  function sum(a) { return a.reduce(function (t, e) { return t + e.flow; }, 0); }
+  function label(z) { return names[z] || z; }
+
+  function curve(e) {
+    var a = pos[e.origin_zone], b = pos[e.dest_zone]; if (!a || !b) return null;
+    var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, k = Math.min(0.22 * L, 60);
+    var c = [(a[0] + b[0]) / 2 + dy / L * k, (a[1] + b[1]) / 2 - dx / L * k];
+    return { a: a, b: b, c: c };
+  }
+  function at(q, t) { var u = 1 - t; return [u * u * q.a[0] + 2 * u * t * q.c[0] + t * t * q.b[0], u * u * q.a[1] + 2 * u * t * q.c[1] + t * t * q.b[1]]; }
+
+  // Signature motion: dots travel origin -> destination; how many ride a corridor is proportional to its volume.
+  function startParticles(top) {
+    cancelAnimationFrame(raf); parts = [];
+    var reduced = Lab.motion.reduced(), maxF = top.length ? top[0].flow : 1;
+    top.slice(0, 50).forEach(function (e) {
+      if (parts.length >= 240) return;
+      var q = curve(e); if (!q) return;
+      var n = Math.max(1, Math.round(10 * e.flow / maxF));
+      for (var j = 0; j < n; j++) parts.push({ q: q, t: reduced ? 0.5 : j / n });
+    });
+    var sel = gPart.selectAll('circle.particle').data(parts).join('circle').attr('class', 'particle').attr('r', W < 520 ? 1.6 : 2.1);
+    function place() { sel.attr('cx', function (p) { return at(p.q, p.t)[0]; }).attr('cy', function (p) { return at(p.q, p.t)[1]; }); }
+    place();
+    if (reduced) return;
+    var last = performance.now();
+    function tick(now) {
+      var dt = Math.min(64, now - last) / 1000; last = now;
+      if (!document.hidden) { parts.forEach(function (p) { p.t = (p.t + dt * 0.28) % 1; }); place(); }
+      raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'name', label: 'zone' }, { key: 'out', label: 'out', num: true, fmt: 0 }, { key: 'in', label: 'in', num: true, fmt: 0 }, { key: 'bal', label: 'in - out', num: true, fmt: 0 }], { label: 'In and out flow for the six zones with the largest imbalance', key: function (r) { return r.id; } });
+
+  var lab = Lab.create({
+    id: 'v11c', initial: { zone: 'county', min_flow: 100, direction: 'gross', top_n: 20 },
+    states: {
+      baseline: { zone: 'county', min_flow: 100, direction: 'gross', top_n: 20 },
+      net: { zone: 'county', min_flow: 100, direction: 'net', top_n: 20 },
+      region: { zone: 'state', min_flow: 100, direction: 'gross', top_n: 20 },
+      region_net: { zone: 'state', min_flow: 100, direction: 'net', top_n: 20 },
+      strict: { zone: 'county', min_flow: 1000, direction: 'gross', top_n: 10 }
+    },
+    load: function () {
+      return Promise.all([
+        d3.csv('data/v11c-flows.csv', function (r) { return { origin: r.origin, dest: r.dest, origin_state: r.origin_state, dest_state: r.dest_state, flow: +r.flow }; }),
+        d3.json('data/v11c-counties.geojson')
+      ]).then(function (res) {
+        flows = res[0]; geo = res[1];
+        // RFC 7946 files wind rings counter-clockwise; d3-geo wants clockwise, or a county becomes "the globe minus the county".
+        geo.features.forEach(function (f) {
+          if (d3.geoArea(f) > 2 * Math.PI) {
+            var g = f.geometry, rev = function (poly) { poly.forEach(function (ring) { ring.reverse(); }); };
+            if (g.type === 'Polygon') rev(g.coordinates); else g.coordinates.forEach(rev);
+          }
+        });
+        mp = Lab.map(document.getElementById('map'), geo, { width: W, height: H, label: 'Map of Alabama, Florida and Georgia counties with evacuation corridors drawn as curved lines; line width shows volume' });
+        mp.svg.classed('od-map', true);
+        mp.render({ highlight: function () { return false; } });
+        gFlow = mp.svg.append('g'); gPart = mp.svg.append('g'); gDots = mp.svg.append('g');
+        var byState = {};
+        geo.features.forEach(function (f) {
+          var p = f.properties, xy = mp.projection([p.cx, p.cy]);
+          pos[p.geoid] = xy; names[p.geoid] = p.name.replace(/ County$/, '') + ', ' + p.state;
+          (byState[p.state] = byState[p.state] || []).push(xy);
+        });
+        Object.keys(byState).forEach(function (s) { pos[s] = [d3.mean(byState[s], function (d) { return d[0]; }), d3.mean(byState[s], function (d) { return d[1]; })]; names[s] = s; });
+        wScale = d3.scaleSqrt().domain([0, d3.max(flows, function (r) { return r.flow; })]).range([1, W < 520 ? 9 : 14]);
+        return flows;
+      });
+    },
+    render: function (s) {
+      var o = od(s), k = kept(s, o), top = k.slice(0, s.top_n), ms = Lab.motion.reduced() ? 0 : 280;
+      var used = new Set(); k.forEach(function (e) { used.add(e.origin_zone); used.add(e.dest_zone); });
+      mp.render({ highlight: function (f) { return s.zone === 'county' ? used.has(f.properties.geoid) : used.has(f.properties.state); } });
+      var sel = gFlow.selectAll('path.flow').data(top, function (e) { return e.origin_zone + '|' + e.dest_zone; });
+      var ex = sel.exit(); if (ms) ex.transition().duration(ms * 0.6).attr('stroke-width', 0).remove(); else ex.remove();
+      var en = sel.enter().append('path').attr('class', 'flow').attr('stroke-width', ms ? 0 : function (e) { return wScale(e.flow); });
+      var all = en.merge(sel).attr('d', function (e) { var q = curve(e); return q ? 'M' + q.a + 'Q' + q.c + ' ' + q.b : null; });
+      var t = ms ? all.transition().duration(ms).ease(d3.easeCubicOut).attr('stroke-width', function (e) { return wScale(e.flow); }).end().catch(function () {}) : Promise.resolve(all.attr('stroke-width', function (e) { return wScale(e.flow); }));
+      var zs = Array.from(used).filter(function (z) { return pos[z]; });
+      gDots.selectAll('circle.zone-dot').data(zs, function (z) { return z; }).join('circle').attr('class', 'zone-dot').attr('r', s.zone === 'state' ? 5 : 2.2)
+        .attr('cx', function (z) { return pos[z][0]; }).attr('cy', function (z) { return pos[z][1]; });
+      startParticles(top);
+      d3.select('#sr-list').selectAll('li').data(top).join('li').text(function (e) { return label(e.origin_zone) + ' to ' + label(e.dest_zone) + ': ' + d3.format(',.0f')(e.flow); });
+      var bal = {}; k.forEach(function (e) { (bal[e.origin_zone] = bal[e.origin_zone] || { out: 0, in: 0 }).out += e.flow; (bal[e.dest_zone] = bal[e.dest_zone] || { out: 0, in: 0 }).in += e.flow; });
+      var rows = Object.keys(bal).map(function (z) { return { id: z, name: label(z), out: bal[z].out, in: bal[z].in, bal: bal[z].in - bal[z].out }; })
+        .sort(function (a, b) { return Math.abs(b.bal) - Math.abs(a.bal) || (a.id < b.id ? -1 : 1); }).slice(0, 6);
+      var share = sum(o) ? sum(k) / sum(o) : 0;
+      document.getElementById('share-fill').style.transform = 'scaleX(' + share.toFixed(4) + ')';
+      document.getElementById('share-txt').textContent = (share * 100).toFixed(1) + '%';
+      return Promise.all([t, tb.update(rows)]);
+    },
+    // readouts() mirrors summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))
+    readouts: function (s) {
+      var o = od(s), k = kept(s, o), tot = sum(o);
+      return { pairs_kept: k.length, flow_kept: sum(k), share_kept: tot ? sum(k) / tot : 0, top_corridor: k.length ? k[0].origin_zone + ' -> ' + k[0].dest_zone : 'none' };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'share_kept', label: 'share kept', fmt: function (v) { return (v * 100).toFixed(1) + '%'; } },
+      { key: 'flow_kept', label: 'flow kept', fmt: 0 },
+      { key: 'pairs_kept', label: 'OD pairs kept', fmt: 0 },
+      { key: 'top_corridor', label: 'top pair', fmt: function (v) { if (v === 'none') return v; var p = v.split(' -> '), sh = W < 520; return (sh ? p.map(function (z) { return label(z).replace(/, [A-Z]{2}$/, ''); }) : p.map(label)).join(' → '); } }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) {
+      if (r.top_corridor === 'none') return 'no ' + s.zone + ' pair reaches ' + s.min_flow;
+      var p = r.top_corridor.split(' -> ');
+      return 'top ' + s.direction + ' corridor: ' + label(p[0]) + ' to ' + label(p[1]) + ' · county total ' + d3.format(',.0f')(TOTAL_COUNTY);
+    },
+    // code.r / code.sql build EXACTLY the strings code_r() / code_sql() build in tools/labs/prep/v11c.R.
+    code: {
+      r: function (s) {
+        var z = s.zone === 'state' ? ['origin_state', 'dest_state'] : ['origin', 'dest'];
+        return 'od = flows %>%\n  group_by(origin_zone = ' + z[0] + ', dest_zone = ' + z[1] + ') %>%\n  summarise(flow = sum(flow), .groups = "drop") %>%\n  filter(origin_zone != dest_zone)' +
+          (s.direction === 'net' ? '\n\n# net flow: subtract the reverse corridor (a self-join)\nod = od %>%\n  left_join(od, by = c("origin_zone" = "dest_zone", "dest_zone" = "origin_zone"),\n            suffix = c("", "_back")) %>%\n  mutate(flow = flow - coalesce(flow_back, 0)) %>%\n  filter(flow > 0) %>%\n  select(origin_zone, dest_zone, flow)' : '') +
+          '\n\nkept = od %>%\n  filter(flow >= ' + s.min_flow + ') %>%\n  arrange(desc(flow))\n\nkept %>%\n  summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))\n\nkept %>% slice_head(n = ' + s.top_n + ')  # the corridors drawn on the map';
+      },
+      sql: function (s) {
+        var z = s.zone === 'state' ? ['origin_state', 'dest_state'] : ['origin', 'dest'];
+        return 'WITH od AS (\n  SELECT ' + z[0] + ' AS origin_zone, ' + z[1] + ' AS dest_zone, SUM(flow) AS flow\n  FROM flows\n  WHERE ' + z[0] + ' <> ' + z[1] + '\n  GROUP BY ' + z[0] + ', ' + z[1] + '\n)' +
+          (s.direction === 'net' ? ',\nnet AS (\n  SELECT a.origin_zone, a.dest_zone, a.flow - COALESCE(b.flow, 0) AS flow\n  FROM od a\n  LEFT JOIN od b ON a.origin_zone = b.dest_zone AND a.dest_zone = b.origin_zone\n  WHERE a.flow - COALESCE(b.flow, 0) > 0\n)' : '') +
+          '\nSELECT origin_zone, dest_zone, flow\nFROM ' + (s.direction === 'net' ? 'net' : 'od') + '\nWHERE flow >= ' + s.min_flow + '\nORDER BY flow DESC;';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-min').value = String(s.min_flow);
+      document.getElementById('c-top').value = String(s.top_n);
+      [['c-zone', s.zone], ['c-dir', s.direction]].forEach(function (p) { document.querySelectorAll('#' + p[0] + ' button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === p[1])); }); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-min').addEventListener('change', function (e) { lab.setState({ min_flow: +e.target.value }); });
+  document.getElementById('c-top').addEventListener('change', function (e) { lab.setState({ top_n: +e.target.value }); });
+  document.querySelectorAll('#c-zone button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ zone: b.dataset.v }); }); });
+  document.querySelectorAll('#c-dir button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ direction: b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>
