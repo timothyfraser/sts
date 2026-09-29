@@ -11,13 +11,15 @@
         "how": "left",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 7,
         "rows_out": 12,
         "na_cells": 0,
+        "na_name_rows": 0,
         "explosion": 1,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -34,13 +36,15 @@
         "how": "inner",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 7,
         "rows_out": 12,
         "na_cells": 0,
+        "na_name_rows": 0,
         "explosion": 1,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -57,13 +61,15 @@
         "how": "right",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 7,
         "rows_out": 14,
         "na_cells": 6,
+        "na_name_rows": 0,
         "explosion": 1.16666666666667,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -80,13 +86,15 @@
         "how": "full",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 7,
         "rows_out": 14,
         "na_cells": 6,
+        "na_name_rows": 0,
         "explosion": 1.16666666666667,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -103,13 +111,15 @@
         "how": "semi",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 7,
         "rows_out": 12,
         "na_cells": 0,
+        "na_name_rows": 0,
         "explosion": 1,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -126,13 +136,15 @@
         "how": "anti",
         "dup": false,
         "miss": true,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 13,
         "rows_right": 7,
         "rows_out": 1,
         "na_cells": 0,
+        "na_name_rows": 1,
         "explosion": 0.0769230769230769,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -149,13 +161,15 @@
         "how": "left",
         "dup": true,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 8,
         "rows_out": 14,
         "na_cells": 0,
+        "na_name_rows": 0,
         "explosion": 1.16666666666667,
         "cardinality": "m:m",
         "outcome": "warn"
@@ -172,13 +186,15 @@
         "how": "left",
         "dup": false,
         "miss": true,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 13,
         "rows_right": 7,
         "rows_out": 13,
         "na_cells": 1,
+        "na_name_rows": 1,
         "explosion": 1,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -195,13 +211,15 @@
         "how": "left",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 10,
         "rows_out": 12,
         "na_cells": 1,
+        "na_name_rows": 1,
         "explosion": 1,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -218,13 +236,15 @@
         "how": "anti",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 12,
         "rows_right": 10,
         "rows_out": 1,
         "na_cells": 0,
+        "na_name_rows": 1,
         "explosion": 0.0833333333333333,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -241,13 +261,15 @@
         "how": "left",
         "dup": false,
         "miss": false,
-        "cast": false
+        "cast": false,
+        "blank": false
       },
       "readouts": {
         "rows_left": 8,
         "rows_right": 6,
         "rows_out": 8,
         "na_cells": 0,
+        "na_name_rows": 0,
         "explosion": 1,
         "cardinality": "m:1",
         "outcome": "ok"
@@ -264,13 +286,15 @@
         "how": "left",
         "dup": false,
         "miss": false,
-        "cast": true
+        "cast": true,
+        "blank": false
       },
       "readouts": {
         "rows_left": 8,
         "rows_right": 6,
         "rows_out": -1,
         "na_cells": -1,
+        "na_name_rows": -1,
         "explosion": -1,
         "cardinality": "—",
         "outcome": "error"
@@ -278,6 +302,31 @@
       "code": {
         "r": "y = munis %>%\n  mutate(muni_code = as.integer(muni_code))\nresult = solar %>%\n  left_join(by = \"muni_code\", y = y)\n# Error in `left_join()`:\n# ! Can't join `x$muni_code` with `y$muni_code` due to incompatible types.",
         "sql": "SELECT a.*, b.*\nFROM solar AS a\nLEFT JOIN y AS b\n  ON a.muni_code = b.muni_code;"
+      }
+    },
+    {
+      "name": "anti_vs_leftna",
+      "state": {
+        "pair": "airports",
+        "how": "anti",
+        "dup": false,
+        "miss": false,
+        "cast": false,
+        "blank": true
+      },
+      "readouts": {
+        "rows_left": 12,
+        "rows_right": 10,
+        "rows_out": 1,
+        "na_cells": 0,
+        "na_name_rows": 3,
+        "explosion": 0.0833333333333333,
+        "cardinality": "m:1",
+        "outcome": "ok"
+      },
+      "code": {
+        "r": "y = airports %>%\n  mutate(name = if_else(faa == \"MCO\", NA, name))\nresult = flights %>%\n  anti_join(by = c(\"dest\" = \"faa\"), y = y)\nna_rows = flights %>%\n  left_join(by = c(\"dest\" = \"faa\"), y = y) %>%\n  filter(is.na(name))",
+        "sql": "SELECT a.*\nFROM flights AS a\nWHERE NOT EXISTS (\n  SELECT 1 FROM y AS b WHERE a.dest = b.faa\n);"
       }
     }
   ],
