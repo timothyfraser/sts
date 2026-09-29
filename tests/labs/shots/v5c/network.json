@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:40647/labs/v5c-simulate-qoi.html",
+    "url": "http://127.0.0.1:32865/labs/v5c-simulate-qoi.html",
     "type": "document",
     "status": 200,
-    "bytes": 19045
+    "bytes": 19150
   },
   {
-    "url": "http://127.0.0.1:40647/assets/sts.css",
+    "url": "http://127.0.0.1:32865/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:40647/labs/kit/lab.css",
+    "url": "http://127.0.0.1:32865/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:40647/labs/kit/lab.js",
+    "url": "http://127.0.0.1:32865/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:40647/labs/data/v5c.json",
+    "url": "http://127.0.0.1:32865/labs/data/v5c.json",
     "type": "fetch",
     "status": 200,
     "bytes": 218736
