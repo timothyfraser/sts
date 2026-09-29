@@ -1,13 +1,13 @@
 {
   "lab": "v13b",
   "ok": true,
-  "checked_at": "2026-09-29T06:16:59.647Z",
+  "checked_at": "2026-09-29T07:04:15.188Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 270 ms < 1500 ms"
+      "msg": "0 console errors; first render 238 ms < 1500 ms"
     },
     {
       "ok": true,
@@ -91,6 +91,18 @@
       "ok": true,
       "check": "c",
       "state": "min0_warm",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "silent_default",
+      "msg": "4 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "silent_default",
       "msg": "code panel matches golden (r)"
     },
     {
@@ -103,7 +115,7 @@
       "ok": true,
       "check": "h",
       "state": "-",
-      "msg": "data 2.3 KB <= 500.0 KB; JS 23.2 KB <= 150.0 KB"
+      "msg": "data 2.4 KB <= 500.0 KB; JS 23.6 KB <= 150.0 KB"
     },
     {
       "ok": true,
@@ -151,7 +163,7 @@
       "ok": true,
       "check": "i",
       "state": "-",
-      "msg": "4 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v13b/impeccable.json"
+      "msg": "2 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v13b/impeccable.json"
     }
   ]
 }

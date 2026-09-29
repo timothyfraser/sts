@@ -72,7 +72,8 @@
     "no_sf": "Error in library(sf) : there is no package called 'sf'",
     "no_env": "Error: ALLOWED_ORIGIN is not set; refusing to start",
     "bad_entry": "Error: Unable to locate primary document 'plumber.R' in the bundle",
-    "cold": "No running process for this content; starting one (min_processes = 0)"
+    "cold": "No running process for this content; starting one (min_processes = 0)",
+    "silent": "GET /health 200 in 0.15s (no error: every origin allowed, Access-Control-Allow-Origin: *)"
   },
   "timing": {
     "boot_s": 8.4,
