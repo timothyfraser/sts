@@ -9,7 +9,7 @@
       "description": "Repeating-gradient stripes used as surface decoration are a recurring generated-UI signature. Reach for a deliberate texture or leave the surface plain.",
       "severity": "advisory",
       "category": "slop",
-      "file": "/home/user/wt/sts-kit3/docs-v3/labs/v11b-catchments.html",
+      "file": "/home/user/wt/sts-labs1/docs-v3/labs/v11b-catchments.html",
       "line": 0,
       "snippet": "repeating-gradient decorative stripes",
       "advisory": true

@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:37795/labs/v4a-api-anatomy.html",
+    "url": "http://127.0.0.1:42113/labs/v4a-api-anatomy.html",
     "type": "document",
     "status": 200,
     "bytes": 23192
   },
   {
-    "url": "http://127.0.0.1:37795/assets/sts.css",
+    "url": "http://127.0.0.1:42113/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:37795/labs/kit/lab.css",
+    "url": "http://127.0.0.1:42113/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:37795/labs/kit/lab.js",
+    "url": "http://127.0.0.1:42113/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:37795/labs/data/v4a.json",
+    "url": "http://127.0.0.1:42113/labs/data/v4a.json",
     "type": "fetch",
     "status": 200,
     "bytes": 72762

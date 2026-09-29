@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:41379/labs/v2a-pivot-long-wide.html",
+    "url": "http://127.0.0.1:45355/labs/v2a-pivot-long-wide.html",
     "type": "document",
     "status": 200,
     "bytes": 18334
   },
   {
-    "url": "http://127.0.0.1:41379/labs/kit/lab.css",
-    "type": "stylesheet",
-    "status": 200,
-    "bytes": 7768
-  },
-  {
-    "url": "http://127.0.0.1:41379/assets/sts.css",
+    "url": "http://127.0.0.1:45355/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:41379/labs/kit/lab.js",
+    "url": "http://127.0.0.1:45355/labs/kit/lab.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 7768
+  },
+  {
+    "url": "http://127.0.0.1:45355/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:41379/labs/data/v2a.csv",
+    "url": "http://127.0.0.1:45355/labs/data/v2a.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 850

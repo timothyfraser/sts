@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:41541/labs/v1b-connect-and-query.html",
+    "url": "http://127.0.0.1:35707/labs/v1b-connect-and-query.html",
     "type": "document",
     "status": 200,
     "bytes": 18861
   },
   {
-    "url": "http://127.0.0.1:41541/assets/sts.css",
+    "url": "http://127.0.0.1:35707/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:41541/labs/kit/lab.css",
+    "url": "http://127.0.0.1:35707/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:41541/labs/kit/lab.js",
+    "url": "http://127.0.0.1:35707/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,13 +30,13 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:41541/labs/data/v1b.json",
+    "url": "http://127.0.0.1:35707/labs/data/v1b.json",
     "type": "fetch",
     "status": 200,
     "bytes": 2124
   },
   {
-    "url": "http://127.0.0.1:41541/labs/data/v1b_sample.csv",
+    "url": "http://127.0.0.1:35707/labs/data/v1b_sample.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 46844

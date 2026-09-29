@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:43459/labs/v8a-where-to-compute.html",
+    "url": "http://127.0.0.1:34055/labs/v8a-where-to-compute.html",
     "type": "document",
     "status": 200,
     "bytes": 22274
   },
   {
-    "url": "http://127.0.0.1:43459/assets/sts.css",
+    "url": "http://127.0.0.1:34055/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:43459/labs/kit/lab.css",
+    "url": "http://127.0.0.1:34055/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:43459/labs/kit/lab.js",
+    "url": "http://127.0.0.1:34055/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:43459/labs/data/v8a.json",
+    "url": "http://127.0.0.1:34055/labs/data/v8a.json",
     "type": "fetch",
     "status": 200,
     "bytes": 1163
