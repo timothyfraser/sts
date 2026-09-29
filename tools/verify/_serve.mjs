@@ -26,9 +26,30 @@ export function serve() {
   });
 }
 
+// Behind a TLS-intercepting proxy (cloud sessions) Chromium does not trust the proxy CA,
+// while Node does (NODE_EXTRA_CA_CERTS). So when a proxy is set, CDN requests are fetched by
+// Node and fulfilled into the page. With no proxy (CI, laptops) the browser fetches directly.
+const CDN = /^https:\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com)\//;
+export async function cdnRoute(ctx) {
+  if (!(process.env.HTTPS_PROXY || process.env.https_proxy)) return;
+  await ctx.route(CDN, async (route) => {
+    try {
+      const r = await fetch(route.request().url());
+      const body = Buffer.from(await r.arrayBuffer());
+      await route.fulfill({ status: r.status, body,
+        headers: { 'content-type': r.headers.get('content-type') || 'application/octet-stream',
+                   'access-control-allow-origin': '*' } });
+    } catch (e) { await route.abort(); }
+  });
+}
+
 export async function launch() {
   const executablePath = process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-  return chromium.launch({ executablePath, args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ executablePath, args: ['--no-sandbox'] });
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (opts) => { const ctx = await newContext(opts); await cdnRoute(ctx); return ctx; };
+  browser.newPage = async (opts) => { const ctx = await browser.newContext(opts); const pg = await ctx.newPage(); pg.close = async (o) => { await ctx.close(o); }; return pg; };
+  return browser;
 }
 
 // Accepts "docs-v3/x.html", "x.html" or an absolute path; returns the docs-v3-relative path.
