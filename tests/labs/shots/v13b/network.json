@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:34359/labs/v13b-deploy-anatomy.html",
+    "url": "http://127.0.0.1:39615/labs/v13b-deploy-anatomy.html",
     "type": "document",
     "status": 200,
-    "bytes": 16928
+    "bytes": 17121
   },
   {
-    "url": "http://127.0.0.1:34359/assets/sts.css",
+    "url": "http://127.0.0.1:39615/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:34359/labs/kit/lab.css",
+    "url": "http://127.0.0.1:39615/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:34359/labs/kit/lab.js",
+    "url": "http://127.0.0.1:39615/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:34359/labs/data/v13b.json",
+    "url": "http://127.0.0.1:39615/labs/data/v13b.json",
     "type": "fetch",
     "status": 200,
     "bytes": 2437
