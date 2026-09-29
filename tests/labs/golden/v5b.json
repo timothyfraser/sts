@@ -110,11 +110,10 @@
       "readouts": {
         "samples": 1000,
         "center": -1.082,
-        "se_observed": 2.15683284654327,
-        "se_formula": 8.04201217842599
+        "se_observed": 2.15683284654327
       },
       "code": {
-        "r": "library(dplyr)\nlibrary(readr)\n\nflights = read_csv(\"data/flights.csv\") %>%\n  select(dep_delay) %>%\n  filter(!is.na(dep_delay))\n\nset.seed(5460)\nstats = replicate(n = 1000, expr = {\n  flights %>%\n    slice_sample(n = 25, replace = FALSE) %>%\n    summarize(stat = median(dep_delay)) %>%\n    pull(stat)\n})\n\ntibble(stat = stats) %>%\n  summarize(samples = n(), center = mean(stat),\n            se_observed = sd(stat),\n            se_formula = sd(flights$dep_delay) / sqrt(25))",
+        "r": "library(dplyr)\nlibrary(readr)\n\nflights = read_csv(\"data/flights.csv\") %>%\n  select(dep_delay) %>%\n  filter(!is.na(dep_delay))\n\nset.seed(5460)\nstats = replicate(n = 1000, expr = {\n  flights %>%\n    slice_sample(n = 25, replace = FALSE) %>%\n    summarize(stat = median(dep_delay)) %>%\n    pull(stat)\n})\n\ntibble(stat = stats) %>%\n  summarize(samples = n(), center = mean(stat),\n            se_observed = sd(stat))\n# sd/sqrt(n) is the SE of the mean only: no formula for the median",
         "sql": "-- one sample of 25 flights without replacement\nSELECT dep_delay  -- no MEDIAN() in SQLite: take the middle row in R\nFROM (\n  SELECT dep_delay FROM flights\n  WHERE dep_delay IS NOT NULL\n  ORDER BY random()\n  LIMIT 25\n);\n-- PostgreSQL shortcut: FROM flights TABLESAMPLE SYSTEM (1)\n-- repeat 1000 times, then take sd() of the 1000 stats"
       }
     }

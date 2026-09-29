@@ -57,8 +57,9 @@ code_r = function(s) {
     "})\n\n",
     "tibble(stat = stats) %>%\n",
     "  summarize(samples = n(), center = mean(stat),\n",
-    "            se_observed = sd(stat),\n",
-    "            se_formula = sd(flights$dep_delay) / sqrt(", s$n, "))"
+    "            se_observed = sd(stat)",
+    if (s$stat == "mean") paste0(",\n            se_formula = sd(flights$dep_delay) / sqrt(", s$n, "))")
+    else ")\n# sd/sqrt(n) is the SE of the mean only: no formula for the median"
   )
 }
 code_sql = function(s) {

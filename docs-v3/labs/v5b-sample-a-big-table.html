@@ -143,7 +143,14 @@
         ]).then(function () { if (on) curve.transition().duration(200).attr('opacity', 1); });
       });
     },
-    readouts: function (s, d) { var st = statsFor(s, d); return { samples: st.length, center: mean(st), se_observed: sd(st), se_formula: d.pop_sd / Math.sqrt(s.n) }; },
+    readouts: function (s, d) {
+      var st = statsFor(s, d), r = { samples: st.length, center: mean(st), se_observed: sd(st) };
+      // sd/sqrt(n) is the SE of the MEAN: for the median there is no formula metric to set beside it
+      if (s.stat === 'mean') r.se_formula = d.pop_sd / Math.sqrt(s.n);
+      var row = document.querySelector('#metrics .lab-metric[data-key="se_formula"]');
+      if (row) row.style.display = s.stat === 'mean' ? '' : 'none';
+      return r;
+    },
     metrics: { el: document.getElementById('metrics'), spec: [{ key: 'se_observed', label: 'SE observed (min)', fmt: 2 }, { key: 'se_formula', label: 'SE = sd/sqrt(n)', fmt: 2 }, { key: 'center', label: 'centre of stats (min)', fmt: 2 }, { key: 'samples', label: 'samples', fmt: 0 }] },
     status: document.getElementById('status'), codeEl: document.getElementById('code'),
     statusText: function (s, r) { return r.samples + ' samples of n = ' + s.n + ' from 328,521 departures (336,776 rows; missing delays dropped)' + (s.stat === 'median' ? '. sd/sqrt(n) is the formula for the mean; medians of whole-minute delays are lumpy' : ''); },
@@ -151,7 +158,7 @@
       r: function (s) {
         return 'library(dplyr)\nlibrary(readr)\n\nflights = read_csv("data/flights.csv") %>%\n  select(dep_delay) %>%\n  filter(!is.na(dep_delay))\n\n' +
           'set.seed(' + SEED + ')\nstats = replicate(n = ' + s.reps + ', expr = {\n  flights %>%\n    slice_sample(n = ' + s.n + ', replace = ' + (s.replace ? 'TRUE' : 'FALSE') + ') %>%\n' +
-          '    summarize(stat = ' + s.stat + '(dep_delay)) %>%\n    pull(stat)\n})\n\ntibble(stat = stats) %>%\n  summarize(samples = n(), center = mean(stat),\n            se_observed = sd(stat),\n            se_formula = sd(flights$dep_delay) / sqrt(' + s.n + '))';
+          '    summarize(stat = ' + s.stat + '(dep_delay)) %>%\n    pull(stat)\n})\n\ntibble(stat = stats) %>%\n  summarize(samples = n(), center = mean(stat),\n            se_observed = sd(stat)' + (s.stat === 'mean' ? ',\n            se_formula = sd(flights$dep_delay) / sqrt(' + s.n + '))' : ')\n# sd/sqrt(n) is the SE of the mean only: no formula for the median');
       },
       sql: function (s) {
         return '-- one sample of ' + s.n + ' flights ' + (s.replace ? "(SQL draws without replacement; R's replace = TRUE has no LIMIT twin)" : 'without replacement') + '\n' +
