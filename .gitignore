@@ -6,3 +6,5 @@ data/bluebikes/bluebikes.sqlite
 .Renviron
 workshops/23C_dashboards/app_nycflights/rsconnect/
 .env
+# lab gate: fixture shots are scratch
+tests/labs/shots/_fixtures/

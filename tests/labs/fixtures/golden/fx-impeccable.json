@@ -1,0 +1,44 @@
+{
+  "lab": "fx-impeccable",
+  "page": "labs/fx-slop.html",
+  "generated_by": "hand-written fixture (values in labs/data/fx.json)",
+  "tolerance": 0.000001,
+  "expect_fail": [
+    "i"
+  ],
+  "states": [
+    {
+      "name": "all",
+      "state": {
+        "n": 5
+      },
+      "readouts": {
+        "n": 5,
+        "sum": 15.875,
+        "mean": 3.175,
+        "label": "first 5"
+      },
+      "code": {
+        "r": "x <- values[1:5]\nsum(x)\nmean(x)",
+        "sql": "SELECT SUM(v), AVG(v)\nFROM vals\nWHERE i <= 5;"
+      }
+    },
+    {
+      "name": "first2",
+      "state": {
+        "n": 2
+      },
+      "readouts": {
+        "n": 2,
+        "sum": 3.75,
+        "mean": 1.875,
+        "label": "first 2"
+      },
+      "code": {
+        "r": "x <- values[1:2]\nsum(x)\nmean(x)",
+        "sql": "SELECT SUM(v), AVG(v)\nFROM vals\nWHERE i <= 2;"
+      }
+    }
+  ],
+  "ack": []
+}
