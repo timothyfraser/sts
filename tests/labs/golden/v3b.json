@@ -1,0 +1,209 @@
+{
+  "lab": "v3b",
+  "page": "docs-v3/labs/v3b-groups-and-windows.html",
+  "generated_by": "tools/labs/prep/v3b.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "group": true,
+        "verb": "summarize",
+        "fn": "lag",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 8,
+        "value_sum": 1048.33333333333,
+        "na_out": 0,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  group_by(muni_code) %>%\n  summarize(mean_solar = mean(solar))",
+        "sql": "SELECT muni_code, AVG(solar) AS mean_solar\nFROM jp_solar\nGROUP BY muni_code;"
+      }
+    },
+    {
+      "name": "ungrouped_summary",
+      "state": {
+        "group": false,
+        "verb": "summarize",
+        "fn": "lag",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 1,
+        "value_sum": 131.041666666667,
+        "na_out": 0,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  summarize(mean_solar = mean(solar))",
+        "sql": "SELECT AVG(solar) AS mean_solar\nFROM jp_solar;"
+      }
+    },
+    {
+      "name": "reframe",
+      "state": {
+        "group": true,
+        "verb": "reframe",
+        "fn": "lag",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 24,
+        "value_sum": 12930.3333333333,
+        "na_out": 0,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  group_by(muni_code) %>%\n  reframe(stat = c(\"min\", \"mean\", \"max\"),\n          solar = c(min(solar), mean(solar), max(solar)))",
+        "sql": "SELECT muni_code, 'min' AS stat, MIN(solar) AS solar FROM jp_solar\nGROUP BY muni_code\nUNION ALL\nSELECT muni_code, 'mean', AVG(solar) FROM jp_solar\nGROUP BY muni_code\nUNION ALL\nSELECT muni_code, 'max', MAX(solar) FROM jp_solar\nGROUP BY muni_code;"
+      }
+    },
+    {
+      "name": "lag1",
+      "state": {
+        "group": true,
+        "verb": "mutate",
+        "fn": "lag",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 12541,
+        "na_out": 8,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  group_by(muni_code) %>%\n  mutate(solar_lag = lag(solar, n = 1)) %>%\n  ungroup()",
+        "sql": "SELECT *,\n  LAG(solar, 1) OVER w AS solar_lag\nFROM jp_solar\nWINDOW w AS (PARTITION BY muni_code ORDER BY date);"
+      }
+    },
+    {
+      "name": "lag1_leak",
+      "state": {
+        "group": false,
+        "verb": "mutate",
+        "fn": "lag",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 12580,
+        "na_out": 1,
+        "leaks": 7
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  mutate(solar_lag = lag(solar, n = 1))",
+        "sql": "SELECT *,\n  LAG(solar, 1) OVER w AS solar_lag\nFROM jp_solar\nWINDOW w AS (ORDER BY muni_code, date);"
+      }
+    },
+    {
+      "name": "lag3_leak",
+      "state": {
+        "group": false,
+        "verb": "mutate",
+        "fn": "lag",
+        "n": 3,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 12580,
+        "na_out": 3,
+        "leaks": 21
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  mutate(solar_lag = lag(solar, n = 3))",
+        "sql": "SELECT *,\n  LAG(solar, 3) OVER w AS solar_lag\nFROM jp_solar\nWINDOW w AS (ORDER BY muni_code, date);"
+      }
+    },
+    {
+      "name": "unordered",
+      "state": {
+        "group": true,
+        "verb": "mutate",
+        "fn": "lag",
+        "n": 1,
+        "order": false
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 12257,
+        "na_out": 8,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  group_by(muni_code) %>%\n  mutate(solar_lag = lag(solar, n = 1)) %>%\n  ungroup()",
+        "sql": "SELECT *,\n  LAG(solar, 1) OVER w AS solar_lag\nFROM jp_solar\nWINDOW w AS (PARTITION BY muni_code);"
+      }
+    },
+    {
+      "name": "cumsum",
+      "state": {
+        "group": true,
+        "verb": "mutate",
+        "fn": "cumsum",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 98937,
+        "na_out": 0,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  group_by(muni_code) %>%\n  mutate(solar_cumsum = cumsum(solar)) %>%\n  ungroup()",
+        "sql": "SELECT *,\n  SUM(solar) OVER w AS solar_cumsum\nFROM jp_solar\nWINDOW w AS (PARTITION BY muni_code ORDER BY date);"
+      }
+    },
+    {
+      "name": "cumsum_leak",
+      "state": {
+        "group": false,
+        "verb": "mutate",
+        "fn": "cumsum",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 696825,
+        "na_out": 0,
+        "leaks": 84
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  mutate(solar_cumsum = cumsum(solar))",
+        "sql": "SELECT *,\n  SUM(solar) OVER w AS solar_cumsum\nFROM jp_solar\nWINDOW w AS (ORDER BY muni_code, date);"
+      }
+    },
+    {
+      "name": "rolling",
+      "state": {
+        "group": true,
+        "verb": "mutate",
+        "fn": "rolling",
+        "n": 1,
+        "order": true
+      },
+      "readouts": {
+        "rows_out": 96,
+        "value_sum": 12455.6666666667,
+        "na_out": 16,
+        "leaks": 0
+      },
+      "code": {
+        "r": "result = jp_solar %>%\n  arrange(muni_code, date) %>%\n  group_by(muni_code) %>%\n  mutate(solar_roll3 = (solar + lag(solar, n = 1) + lag(solar, n = 2)) / 3) %>%\n  ungroup()",
+        "sql": "SELECT *,\n  (solar + LAG(solar, 1) OVER w + LAG(solar, 2) OVER w) / 3.0 AS solar_roll3\nFROM jp_solar\nWINDOW w AS (PARTITION BY muni_code ORDER BY date);"
+      }
+    }
+  ],
+  "ack": []
+}

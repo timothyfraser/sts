@@ -10,6 +10,9 @@
   #measure .lab-meas-row span:first-child { min-width: 6.5em; }
   #plot svg { cursor: crosshair; }
   .lab-side select { max-width: 100%; }
+  .v6b-note { margin: .4rem 0 0; font-size: .85rem; }
+  #metrics .lab-metric dd { overflow-wrap: normal; white-space: nowrap; }
+  @media (max-width: 480px) { #metrics .lab-metrics { grid-template-columns: 1fr; } }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="kit/lab.js"></script>
@@ -44,10 +47,11 @@
           <label>To <select id="m-b"><option value="">choose a polling place</option></select></label>
         </div>
         <div id="measure" aria-live="polite"></div></div>
-      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>the two marked polling places</li><li><i style="background:var(--b)"></i>buffer around each</li><li><i style="background:var(--bench-line)"></i>precincts and other polling places</li><li><i style="background:var(--bench-muted);opacity:.55"></i>dashed: the precincts in EPSG:26986 (the truth), for comparison</li></ul></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>the two marked polling places</li><li><i style="background:var(--b)"></i>buffer around each</li><li><i style="background:var(--y);opacity:.35"></i>the marked precinct (ward-precinct 0101), measured for area</li><li><i style="background:var(--bench-line)"></i>precincts and other polling places</li><li><i style="background:var(--bench-muted);opacity:.55"></i>dashed: the precincts in EPSG:26986 (the truth), for comparison</li></ul></div>
     </aside>
   </section>
   <div id="code"></div>
+  <p class="v6b-note">The R code is what built this lab's numbers. The PostGIS query is shown for comparison and was not run here.</p>
   <div class="lab-lcs">
     <section class="lab-lc" data-lc="1"><h2 class="lc-h">LC 01 · observe</h2><p class="lc-q">What distance does EPSG:4326 report between the two marked polling places, and what does EPSG:26986 report?</p>
       <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">About 0.05: EPSG:4326 reports degrees, EPSG:26986 reports 5,341 m</button><button class="lc-option" data-correct="true">About 5,345 m and 5,341 m: sf measures EPSG:4326 on the sphere, so both are metres and agree within 0.1%</button><button class="lc-option" data-correct="false">About 7,239 m and 5,341 m: EPSG:4326 inflates distance by a third</button></div>
@@ -60,7 +64,7 @@
     <section class="lab-lc" data-lc="3"><h2 class="lc-h">LC 03 · transfer</h2><p class="lc-q">A classmate computed service areas around polling places in EPSG:4326. What would you check, and what would you change?</p>
       <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Nothing: EPSG:4326 is the GPS standard, so it is always the most accurate</button><button class="lc-option" data-correct="false">Transform to EPSG:3857 so the units are metres, then buffer</button><button class="lc-option" data-correct="true">Check st_crs() and the buffer unit; st_transform() to EPSG:26986, buffer in metres, and compute areas there</button></div>
       <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Metres are necessary but not enough: look at the % error EPSG:3857 shows here.</div>
-      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Assert the CRS first (st_crs()), then st_transform(crs = 26986) and buffer with dist = 1000. EPSG:3857 has metre units but overstates this distance by 35.5% (and areas by about 84%), so it is not a fix.</div></section>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Assert the CRS first (st_crs()), then st_transform(crs = 26986) and buffer with dist = 1000. EPSG:3857 has metre units but overstates this distance by 35.5% (and the marked precinct's area by 83.3%: 11,500,206 m² against 6,274,258 m²), so it is not a fix.</div></section>
   </div>
 </main>
 <script>
@@ -196,7 +200,10 @@
       gGhost.selectAll('path').data(s.crs === 26986 ? [] : [0]).join('path').attr('fill', 'none')
         .attr('stroke', 'var(--bench-muted)').attr('stroke-opacity', 0.55).attr('stroke-width', 1).attr('stroke-dasharray', '3 3')
         .attr('d', pathOf([].concat.apply([], d.precincts), G));
-      var pre = gPre.selectAll('path').data(d.precincts).join('path').attr('fill', 'none').attr('stroke', 'var(--bench-line)').attr('stroke-width', 0.6);
+      var pre = gPre.selectAll('path').data(d.precincts).join('path')
+        .attr('fill', function (p, i) { return i === d.marked_i ? 'var(--y)' : 'none'; }).attr('fill-opacity', 0.3)
+        .attr('stroke', function (p, i) { return i === d.marked_i ? 'var(--y)' : 'var(--bench-line)'; })
+        .attr('stroke-width', function (p, i) { return i === d.marked_i ? 1.5 : 0.6; });
       var pts = gPts.selectAll('circle').data(d.places).join('circle')
         .attr('r', function (p) { return marked.indexOf(p) >= 0 ? 5 : 1.8; })
         .attr('fill', function (p) { return marked.indexOf(p) >= 0 ? 'var(--y)' : 'var(--bench-muted)'; });
@@ -222,12 +229,16 @@
       // Buffer reach in true metres: 0.01° of latitude = R·0.01·π/180; of longitude, times cos(latitude).
       var reach = s.buffer === 'degrees' ? 0.01 * D2R * 6371010 : 1000;
       return { crs: 'EPSG:' + s.crs, dist_m: dm, truth_m: tm, pct_err: r2(100 * (dm - tm) / tm, 3),
-        ew_m: r2(s.buffer === 'degrees' ? reach * Math.cos(d.pa.epsg4326[1] * D2R) : reach, 1), ns_m: r2(reach, 1) };
+        ew_m: r2(s.buffer === 'degrees' ? reach * Math.cos(d.pa.epsg4326[1] * D2R) : reach, 1), ns_m: r2(reach, 1),
+        // Area of the marked precinct: st_area() as the prep ran it for this CRS (the page cannot redo the ellipsoid).
+        area_m2: d.area[s.crs + '_' + s.buffer], truth_area_m2: d.area['26986_metres'],
+        area_pct_err: r2(100 * (d.area[s.crs + '_' + s.buffer] - d.area['26986_metres']) / d.area['26986_metres'], 3) };
     },
     metrics: { el: document.getElementById('metrics'), spec: [
       { key: 'crs', label: 'CRS' }, { key: 'dist_m', label: 'distance (m)', fmt: 2 },
       { key: 'truth_m', label: 'truth, EPSG:26986 (m)', fmt: 0 }, { key: 'pct_err', label: '% error', fmt: 3 },
-      { key: 'ew_m', label: 'buffer reach E–W (true m)', fmt: 0 }, { key: 'ns_m', label: 'buffer reach N–S (true m)', fmt: 0 }] },
+      { key: 'ew_m', label: 'buffer reach E–W (true m)', fmt: 0 }, { key: 'ns_m', label: 'buffer reach N–S (true m)', fmt: 0 },
+      { key: 'area_m2', label: 'precinct 0101 area (m²)', fmt: 0 }, { key: 'area_pct_err', label: 'area % error', fmt: 1 }] },
     status: document.getElementById('status'), codeEl: document.getElementById('code'),
     statusText: function (s, r) { return r.crs + ': ' + Lab.fmt(r.dist_m, 0) + ' m between the marked places (' + (r.pct_err >= 0 ? '+' : '') + Lab.fmt(r.pct_err, 1) + '%)'; },
     code: {
@@ -235,7 +246,8 @@
         var buf = s.buffer === 'degrees' ? 'st_buffer(dist = 0.01)   # planar: 0.01 of a DEGREE' :
           s.crs === 4326 ? 'st_buffer(dist = 1000)   # s2: metres on the sphere' : 'st_buffer(dist = 1000)   # 1 km in the CRS unit (metres)';
         return (s.buffer === 'degrees' ? 'sf_use_s2(FALSE)   # treat lon/lat as flat x/y\n\n' : '') +
-          'pts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = ' + s.crs + ')\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  ' + buf;
+          'pts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = ' + s.crs + ')\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  ' + buf +
+          '\n\na = precincts %>%\n  filter(ward_precinct == "0101") %>%\n  st_transform(crs = ' + s.crs + ') %>%\n  st_area()';
       },
       sql: function (s) {
         return 'SELECT ST_Distance(ST_Transform(a.geom, ' + s.crs + '),\n                   ST_Transform(b.geom, ' + s.crs + ')) AS d_crs,\n       ST_Distance(a.geom::geography, b.geom::geography) AS d_geography\nFROM polling_places a, polling_places b\nWHERE a.id = 1 AND b.id = 120;';

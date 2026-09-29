@@ -1,0 +1,119 @@
+{
+  "lab": "v2a",
+  "page": "docs-v3/labs/v2a-pivot-long-wide.html",
+  "generated_by": "tools/labs/prep/v2a.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "dir": "start",
+        "cols": "all",
+        "names_to": "name",
+        "values_to": "value"
+      },
+      "readouts": {
+        "rows": 20,
+        "cols": 5,
+        "cells": 100,
+        "lifeexp_rows": 20,
+        "aes_valid": 3,
+        "aes_list": "aes(x = year, y = lifeExp) | aes(x = gdpPercap, y = lifeExp) | aes(x = year, y = lifeExp, colour = country)"
+      },
+      "code": {
+        "r": "tab = gap\n\ntab",
+        "sql": "SELECT * FROM gap;"
+      }
+    },
+    {
+      "name": "long_all",
+      "state": {
+        "dir": "longer",
+        "cols": "all",
+        "names_to": "name",
+        "values_to": "value"
+      },
+      "readouts": {
+        "rows": 60,
+        "cols": 4,
+        "cells": 240,
+        "lifeexp_rows": 20,
+        "aes_valid": 1,
+        "aes_list": "aes(x = year, y = value, colour = name)"
+      },
+      "code": {
+        "r": "tab = gap %>%\n  pivot_longer(cols = c(lifeExp, pop, gdpPercap),\n               names_to = \"name\", values_to = \"value\")\n\ntab",
+        "sql": "SELECT country, year, 'lifeExp' AS name, lifeExp AS value FROM gap\nUNION ALL\nSELECT country, year, 'pop' AS name, pop AS value FROM gap\nUNION ALL\nSELECT country, year, 'gdpPercap' AS name, gdpPercap AS value FROM gap;"
+      }
+    },
+    {
+      "name": "long_pop_gdp",
+      "state": {
+        "dir": "longer",
+        "cols": "pop_gdp",
+        "names_to": "name",
+        "values_to": "value"
+      },
+      "readouts": {
+        "rows": 40,
+        "cols": 5,
+        "cells": 200,
+        "lifeexp_rows": 40,
+        "aes_valid": 3,
+        "aes_list": "aes(x = year, y = lifeExp) | aes(x = year, y = value, colour = name) | aes(x = year, y = lifeExp, colour = country)"
+      },
+      "code": {
+        "r": "tab = gap %>%\n  pivot_longer(cols = c(pop, gdpPercap),\n               names_to = \"name\", values_to = \"value\")\n\ntab",
+        "sql": "SELECT country, year, lifeExp, 'pop' AS name, pop AS value FROM gap\nUNION ALL\nSELECT country, year, lifeExp, 'gdpPercap' AS name, gdpPercap AS value FROM gap;"
+      }
+    },
+    {
+      "name": "long_named",
+      "state": {
+        "dir": "longer",
+        "cols": "all",
+        "names_to": "variable",
+        "values_to": "measure"
+      },
+      "readouts": {
+        "rows": 60,
+        "cols": 4,
+        "cells": 240,
+        "lifeexp_rows": 20,
+        "aes_valid": 1,
+        "aes_list": "aes(x = year, y = measure, colour = variable)"
+      },
+      "code": {
+        "r": "tab = gap %>%\n  pivot_longer(cols = c(lifeExp, pop, gdpPercap),\n               names_to = \"variable\", values_to = \"measure\")\n\ntab",
+        "sql": "SELECT country, year, 'lifeExp' AS variable, lifeExp AS measure FROM gap\nUNION ALL\nSELECT country, year, 'pop' AS variable, pop AS measure FROM gap\nUNION ALL\nSELECT country, year, 'gdpPercap' AS variable, gdpPercap AS measure FROM gap;"
+      }
+    },
+    {
+      "name": "wider_year",
+      "state": {
+        "dir": "wider",
+        "cols": "all",
+        "names_to": "name",
+        "values_to": "value"
+      },
+      "readouts": {
+        "rows": 5,
+        "cols": 5,
+        "cells": 25,
+        "lifeexp_rows": 5,
+        "aes_valid": 0,
+        "aes_list": ""
+      },
+      "code": {
+        "r": "tab = gap %>%\n  select(country, year, lifeExp) %>%\n  pivot_wider(names_from = year, values_from = lifeExp)\n\ntab",
+        "sql": "SELECT country,\n  MAX(CASE WHEN year = 1952 THEN lifeExp END) AS \"1952\",\n  MAX(CASE WHEN year = 1972 THEN lifeExp END) AS \"1972\",\n  MAX(CASE WHEN year = 1992 THEN lifeExp END) AS \"1992\",\n  MAX(CASE WHEN year = 2007 THEN lifeExp END) AS \"2007\"\nFROM gap\nGROUP BY country;"
+      }
+    }
+  ],
+  "ack": [
+    {
+      "rule": "design-system-radius",
+      "reason": "advisory only: the 4px select and 2px legend-swatch radii come from the shared kit stylesheet (kit/lab.css), which this lab may not edit; the page itself uses the 6px control token"
+    }
+  ]
+}

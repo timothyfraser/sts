@@ -1,0 +1,121 @@
+{
+  "lab": "v1b",
+  "ok": true,
+  "checked_at": "2026-09-29T06:22:48.305Z",
+  "results": [
+    {
+      "ok": true,
+      "check": "a",
+      "state": "-",
+      "msg": "0 console errors; first render 644 ms < 1500 ms"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "baseline",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "baseline",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "after_filter",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "after_filter",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "first_line",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "first_line",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "hard_coded",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "hard_coded",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "d",
+      "state": "-",
+      "msg": "3 learning checks: options mark chosen/correct/wrong, exactly one correct each, Hint and Reveal toggle"
+    },
+    {
+      "ok": true,
+      "check": "h",
+      "state": "-",
+      "msg": "data 47.8 KB <= 500.0 KB; JS 25.5 KB <= 150.0 KB"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-light",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-dark",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "e",
+      "state": "-",
+      "msg": "5 screenshots in tests/labs/shots/v1b/ (390-light, 390-dark, 1280-light, 1280-dark, 390-light-reduced)"
+    },
+    {
+      "ok": true,
+      "check": "i",
+      "state": "-",
+      "msg": "0 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v1b/impeccable.json"
+    }
+  ]
+}

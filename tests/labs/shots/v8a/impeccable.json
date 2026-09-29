@@ -26,54 +26,6 @@
       "snippet": "border-radius 2px on i is outside the DESIGN.md rounded scale",
       "advisory": true,
       "ignoreValue": "2px"
-    },
-    {
-      "antipattern": "design-system-font-size",
-      "name": "Font size outside DESIGN.md",
-      "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v8a/docs-v3/labs/v8a-where-to-compute.html",
-      "line": 12,
-      "snippet": "font-size: .8rem is off the DESIGN.md type ramp",
-      "advisory": true,
-      "ignoreValue": ".8rem"
-    },
-    {
-      "antipattern": "design-system-font-size",
-      "name": "Font size outside DESIGN.md",
-      "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v8a/docs-v3/labs/v8a-where-to-compute.html",
-      "line": 24,
-      "snippet": "font-size: .68rem is off the DESIGN.md type ramp",
-      "advisory": true,
-      "ignoreValue": ".68rem"
-    },
-    {
-      "antipattern": "design-system-font-size",
-      "name": "Font size outside DESIGN.md",
-      "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v8a/docs-v3/labs/v8a-where-to-compute.html",
-      "line": 43,
-      "snippet": "font-size: .7rem is off the DESIGN.md type ramp",
-      "advisory": true,
-      "ignoreValue": ".7rem"
-    },
-    {
-      "antipattern": "design-system-font-size",
-      "name": "Font size outside DESIGN.md",
-      "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v8a/docs-v3/labs/v8a-where-to-compute.html",
-      "line": 46,
-      "snippet": "font-size: .62rem is off the DESIGN.md type ramp",
-      "advisory": true,
-      "ignoreValue": ".62rem"
     }
   ]
 }

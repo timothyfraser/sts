@@ -33,6 +33,7 @@ golden_out = paste0("tests/labs/golden/", lab_id, ".json")
 ack        = list()
 crs_list   = c(4326, 3857, 26986)
 pair       = c(1, 120)   # the two marked polling places (ids), fixed on first publish
+marked_wp  = "0101"      # the marked precinct: the one polling place #1 serves
 
 # ---- 2. LOAD + REDUCE [CHANGE] -------------------------------------------------------------
 set.seed(seed)
@@ -57,18 +58,6 @@ pts_xy = map(crs_list, function(code) {
   xy   # full precision: the page recomputes distances from these exact numbers
 })
 names(pts_xy) = paste0("epsg", crs_list)
-page_data = list(
-  n_places  = nrow(polling_places),
-  pair      = pair,
-  places    = map(seq_len(nrow(polling_places)), function(i) {
-    c(list(id = polling_places$id[i], wp = polling_places$ward_precinct[i]),
-      map(pts_xy, function(xy) unname(xy[i, ])))
-  }),
-  precincts = rings
-)
-dir.create(dirname(file.path(root, data_out)), recursive = TRUE, showWarnings = FALSE)
-write_json(page_data, file.path(root, data_out), auto_unbox = TRUE, digits = NA)
-stopifnot(file.size(file.path(root, data_out)) <= 500 * 1024)
 
 # ---- 3. STATES [CHANGE] --------------------------------------------------------------------
 states = list(
@@ -93,7 +82,12 @@ code_r = function(s) {
     "d = st_distance(pts)[1, 2]\n",
     "\n",
     "zone = pts %>%\n",
-    "  ", buf
+    "  ", buf, "\n",
+    "\n",
+    "a = precincts %>%\n",
+    "  filter(ward_precinct == \"", marked_wp, "\") %>%\n",
+    "  st_transform(crs = ", s$crs, ") %>%\n",
+    "  st_area()"
   )
 }
 code_sql = function(s) {
@@ -109,6 +103,9 @@ code_sql = function(s) {
 # Truth = state plane (EPSG:26986) distance in metres.
 truth = polling_places %>% filter(id %in% pair) %>% st_transform(crs = 26986) %>% st_distance()
 truth = as.numeric(truth[1, 2])
+truth_area = precincts %>% filter(ward_precinct == marked_wp) %>% st_transform(crs = 26986) %>% st_area()
+truth_area = round(as.numeric(truth_area), 1)
+stopifnot(length(truth_area) == 1)
 readouts_from = function(s, env) {
   d = round(as.numeric(env$d), 2)   # centimetres: what the sidebar shows
   t = round(truth, 2)
@@ -119,18 +116,42 @@ readouts_from = function(s, env) {
   list(crs = paste0("EPSG:", s$crs), dist_m = d, truth_m = t,
        pct_err = round(100 * (d - t) / t, 3),
        ew_m = round(if (s$buffer == "degrees") reach * cos(lat * pi / 180) else reach, 1),
-       ns_m = round(reach, 1))
+       ns_m = round(reach, 1),
+       area_m2 = round(as.numeric(env$a), 1), truth_area_m2 = truth_area,
+       area_pct_err = round(100 * (round(as.numeric(env$a), 1) - truth_area) / truth_area, 3))
 }
 
 # ---- 5. RUN EACH STATE [KEEP] --------------------------------------------------------------
 golden_states = imap(states, function(s, name) {
   env = new.env(parent = globalenv())
   env$polling_places = polling_places
+  env$precincts = precincts
   suppressWarnings(suppressMessages(eval(parse(text = code_r(s)), envir = env)))
   sf_use_s2(TRUE)
   list(name = name, state = s, readouts = readouts_from(s, env),
        code = list(r = code_r(s), sql = code_sql(s)))
 })
+
+# The page reads each state's area from the data file (it cannot redo st_area() on the ellipsoid).
+area_lookup = list()
+for (g in golden_states) area_lookup[[paste0(g$state$crs, "_", g$state$buffer)]] = g$readouts$area_m2
+area_lookup = area_lookup[order(names(area_lookup))]
+
+page_data = list(
+  n_places  = nrow(polling_places),
+  pair      = pair,
+  places    = map(seq_len(nrow(polling_places)), function(i) {
+    c(list(id = polling_places$id[i], wp = polling_places$ward_precinct[i]),
+      map(pts_xy, function(xy) unname(xy[i, ])))
+  }),
+  precincts = rings,
+  marked_wp = marked_wp,
+  marked_i  = which(precincts$ward_precinct == marked_wp) - 1,   # 0-based index into precincts
+  area      = area_lookup   # st_area() of the marked precinct per CRS (keyed crs_buffer), from section 5
+)
+dir.create(dirname(file.path(root, data_out)), recursive = TRUE, showWarnings = FALSE)
+write_json(page_data, file.path(root, data_out), auto_unbox = TRUE, digits = NA)
+stopifnot(file.size(file.path(root, data_out)) <= 500 * 1024)
 
 # ---- 6. WRITE GOLDEN [KEEP] ----------------------------------------------------------------
 golden = list(

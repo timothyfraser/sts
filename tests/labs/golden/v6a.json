@@ -18,7 +18,7 @@
         "agg_rows": 297,
         "zero_rows": 0,
         "max_per_bg": 29,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = sites %>%\n  st_join(bg, join = st_intersects, left = TRUE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_intersects(bg, sites)) == 0)",
@@ -39,7 +39,7 @@
         "agg_rows": 296,
         "zero_rows": 0,
         "max_per_bg": 29,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = sites %>%\n  st_join(bg, join = st_intersects, left = FALSE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_intersects(bg, sites)) == 0)",
@@ -55,12 +55,12 @@
         "agg": "count"
       },
       "readouts": {
-        "rows_out": 1391,
-        "unmatched": 391,
+        "rows_out": 1384,
+        "unmatched": 384,
         "agg_rows": 680,
         "zero_rows": 384,
         "max_per_bg": 29,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = bg %>%\n  st_join(sites, join = st_intersects, left = TRUE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_intersects(bg, sites)) == 0)",
@@ -81,7 +81,7 @@
         "agg_rows": 296,
         "zero_rows": 0,
         "max_per_bg": 29,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = bg %>%\n  st_join(sites, join = st_intersects, left = FALSE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_intersects(bg, sites)) == 0)",
@@ -102,7 +102,7 @@
         "agg_rows": 297,
         "zero_rows": 0,
         "max_per_bg": 29,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = sites %>%\n  st_join(bg, join = st_within, left = TRUE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_contains(bg, sites)) == 0)",
@@ -118,12 +118,12 @@
         "agg": "count"
       },
       "readouts": {
-        "rows_out": 687,
-        "unmatched": 687,
+        "rows_out": 680,
+        "unmatched": 680,
         "agg_rows": 680,
         "zero_rows": 680,
         "max_per_bg": 0,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = bg %>%\n  st_join(sites, join = st_within, left = TRUE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_contains(bg, sites)) == 0)",
@@ -144,7 +144,7 @@
         "agg_rows": 297,
         "zero_rows": 0,
         "max_per_bg": 29,
-        "empty_bg": 390
+        "empty_bg": 383
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = sites %>%\n  st_join(bg, join = st_nearest_feature, left = TRUE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(!bg$geoid %in% bg$geoid[st_nearest_feature(sites, bg)])",
@@ -160,12 +160,12 @@
         "agg": "count"
       },
       "readouts": {
-        "rows_out": 687,
+        "rows_out": 680,
         "unmatched": 0,
         "agg_rows": 680,
         "zero_rows": 0,
-        "max_per_bg": 8,
-        "empty_bg": 390
+        "max_per_bg": 1,
+        "empty_bg": 383
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = bg %>%\n  st_join(sites, join = st_nearest_feature, left = TRUE)\n\n# the aggregate: sites per block group\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(!bg$geoid %in% bg$geoid[st_nearest_feature(sites, bg)])",
@@ -186,7 +186,7 @@
         "agg_rows": 563,
         "zero_rows": 0,
         "max_per_bg": 29,
-        "empty_bg": 391
+        "empty_bg": 384
       },
       "code": {
         "r": "# the join: one row per match (left = TRUE keeps the unmatched rows too)\njoined = sites %>%\n  st_join(bg, join = st_intersects, left = TRUE)\n\n# the aggregate: sites per block group and type\ncounts = joined %>%\n  as_tibble() %>%\n  group_by(geoid, type) %>%\n  summarize(count = sum(!is.na(id)), .groups = \"drop\")\n\n# block groups with no site at all\nempty = sum(lengths(st_intersects(bg, sites)) == 0)",
