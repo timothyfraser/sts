@@ -26,6 +26,8 @@
   .v7a-held{font:600 var(--v7a-fs)/1.4 var(--mono);color:var(--y);margin:6px 0 0}
   .v7a-note{font-size:var(--v7a-fs-s);color:var(--bench-muted);margin:4px 0 0}
   .v7a-page-note{color:var(--muted);margin:8px 0 0}
+  .v7a-metro{fill:none;stroke:var(--indigo);stroke-width:2;stroke-linejoin:round;pointer-events:none}
+  .v7a-metro-halo{fill:none;stroke:var(--bench-ink);stroke-width:4.5;stroke-opacity:.75;stroke-linejoin:round;pointer-events:none}
 </style>
 </head>
 <body data-lab="v7a">
@@ -59,7 +61,7 @@
       <div><h2>Metrics</h2><div id="metrics"></div></div>
       <div><h2>Legend</h2>
         <div class="v7a-scale"><span>0</span><span class="v7a-ramp" id="ramp"></span><span>20+ µg/m³</span></div>
-        <ul class="lab-legend" style="margin-top:6px"><li><i style="background:var(--bench-ink)"></i>sensor site</li><li><i style="border:2px solid var(--y);background:transparent"></i>held-out site with the largest error</li><li><i style="border:1px solid var(--bench-line);background:transparent"></i>empty cell</li></ul>
+        <ul class="lab-legend" style="margin-top:6px"><li><i style="background:var(--bench-ink)"></i>sensor site</li><li><i style="border:2px solid var(--y);background:transparent"></i>held-out site with the largest error</li><li><i style="border:1px solid var(--bench-line);background:transparent"></i>empty cell</li><li><i style="border:2px solid var(--indigo);box-shadow:0 0 0 1.5px var(--bench-ink);background:transparent"></i>metro boundary; cells outside it are dimmed</li></ul>
         <p class="v7a-note">Cells with a site show the aggregate; empty cells show the interpolated value.</p></div>
     </aside>
   </section>
@@ -84,7 +86,7 @@
 (function () {
   var AGG = { mean: 'value = mean(value, na.rm = TRUE)', max: 'value = max(value, na.rm = TRUE)', count: 'value = sum(!is.na(value))' };
   var SQLAGG = { mean: 'AVG(r.value)', max: 'MAX(r.value)', count: 'COUNT(r.value)' };
-  var D = null;                       // { sites, hours: [{datetime, values: {site_id: value}}] }
+  var D = null;                       // { sites, hours: [{datetime, values: {site_id: value}}], metro }
   var color = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, 20]).clamp(true);
   var first = true;
 
@@ -93,8 +95,16 @@
     var xs = D.sites.map(function (s) { return s.x; }), ys = D.sites.map(function (s) { return s.y; });
     var x0 = d3.min(xs), y0 = d3.min(ys);
     var nx = Math.ceil((d3.max(xs) - x0) / cs), ny = Math.ceil((d3.max(ys) - y0) / cs), cells = [];
-    for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) cells.push({ cell: j * nx + i + 1, i: i, j: j, x: x0 + i * cs, y: y0 + j * cs, cx: x0 + (i + 0.5) * cs, cy: y0 + (j + 0.5) * cs, vals: [] });
+    for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) cells.push({ cell: j * nx + i + 1, i: i, j: j, x: x0 + i * cs, y: y0 + j * cs, cx: x0 + (i + 0.5) * cs, cy: y0 + (j + 0.5) * cs, vals: [], inside: inMetro(x0 + (i + 0.5) * cs, y0 + (j + 0.5) * cs) });
     return { x0: x0, y0: y0, nx: nx, ny: ny, cs: cs, cells: cells };
+  }
+  function inRing(x, y, r) {             // ray casting: is (x, y) inside one ring
+    var ins = false;
+    for (var a = 0, b = r.length - 1; a < r.length; b = a++) if ((r[a][1] > y) !== (r[b][1] > y) && x < (r[b][0] - r[a][0]) * (y - r[a][1]) / (r[b][1] - r[a][1]) + r[a][0]) ins = !ins;
+    return ins;
+  }
+  function inMetro(x, y) {              // st_within(st_centroid(cell), metro): outer ring in, no hole in
+    return D.metro.coordinates.some(function (poly) { return inRing(x, y, poly[0]) && !poly.slice(1).some(function (h) { return inRing(x, y, h); }); });
   }
   function points(hour) { var h = D.hours[hour].values; return D.sites.map(function (s) { return { site_id: s.site_id, name: s.name, x: s.x, y: s.y, value: h[s.site_id] }; }); }
   function idw(px, py, pts, p, nmax) {   // gstat::idw(); nmax = 1 is nearest neighbour
@@ -139,15 +149,21 @@
     var k = (W - 2 * M) / (x1 - x0); H = Math.round((y1 - y0) * k + 2 * M);
     sx = function (x) { return M + (x - x0) * k; }; sy = function (y) { return H - M - (y - y0) * k; };
     svg = d3.select(stage).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
-      .attr('aria-label', 'Map of ' + D.sites.length + ' PM2.5 sensor sites in the New York City area over a square grid; cells are coloured by the aggregated or interpolated value');
-    gCells = svg.append('g'); gSites = svg.append('g'); gPulse = svg.append('g');
+      .attr('aria-label', 'Map of ' + D.sites.length + ' PM2.5 sensor sites in the New York City area over a square grid, with the metro boundary outlined and cells outside it dimmed; cells are coloured by the aggregated or interpolated value');
+    gCells = svg.append('g');
+    var mPath = 'M' + D.metro.coordinates.map(function (poly) { return poly.map(function (r) { return r.map(function (p) { return sx(p[0]).toFixed(1) + ',' + sy(p[1]).toFixed(1); }).join('L') + 'Z'; }).join('M'); }).join('M');
+    svg.append('path').attr('class', 'v7a-metro-halo').attr('d', mPath).attr('aria-hidden', 'true');   // light halo: readable on the dark bench and on dark cells
+    svg.append('path').attr('class', 'v7a-metro').attr('d', mPath).attr('aria-hidden', 'true');
+    gSites = svg.append('g'); gPulse = svg.append('g');
     gSites.selectAll('circle').data(D.sites).join('circle').attr('cx', function (s) { return sx(s.x); }).attr('cy', function (s) { return sy(s.y); })
       .attr('r', 3.5).attr('fill', 'var(--bench-ink)').attr('stroke', 'var(--indigo)').attr('stroke-width', 1);
     var box = document.getElementById('small');
     for (var q = 0; q < 4; q++) {
       var f = d3.select(box).append('figure'); var sw = 120, sh = Math.round(sw * H / W);
       var s2 = f.append('svg').attr('viewBox', '0 0 ' + sw + ' ' + sh).attr('role', 'img').attr('aria-label', 'Grid at a later hour');
-      small.push({ svg: s2, cap: f.append('figcaption'), k: sw / W });
+      s2.append('g');
+      s2.append('path').attr('class', 'v7a-metro').attr('d', mPath).attr('transform', 'scale(' + (sw / W) + ')');
+      small.push({ svg: s2.select('g'), cap: f.append('figcaption'), k: sw / W });
     }
   }
   function cellFill(c) { var v = c.n ? c.agg : c.pred; if (v == null) return 'transparent'; return c.n || true ? color(v) : 'transparent'; }
@@ -165,7 +181,7 @@
       .attr('x', function (c) { return sx(c.x) * k; }).attr('y', function (c) { return sy(c.y + g.cs) * k; })
       .attr('width', function (c) { return (sx(c.x + g.cs) - sx(c.x)) * k; }).attr('height', function (c) { return (sy(c.y) - sy(c.y + g.cs)) * k; })
       .attr('stroke', 'var(--bench-line)').attr('stroke-width', k < 1 ? 0.3 : 0.6)
-      .attr('fill-opacity', function (c) { return c.n ? 1 : (c.pred == null ? 0 : 0.78); });
+      .attr('fill-opacity', function (c) { return (c.n ? 1 : (c.pred == null ? 0 : 0.78)) * (c.inside ? 1 : 0.3); });
     if (!dur) { all.attr('fill', cellFill).attr('opacity', 1); return Promise.resolve(); }
     if (!ent.empty() && !gone.empty()) jobs.push(ent.transition().delay(90).duration(300).ease(d3.easeCubicOut).attr('opacity', 1).end().catch(function () {}));
     if (!rects.empty()) jobs.push(rects.transition().duration(dur).ease(d3.easeCubicOut).attr('fill', cellFill).end().catch(function () {}));
@@ -196,10 +212,10 @@
       evening: { cell_km: 5, agg: 'mean', method: 'idw', power: 2, hour: 18, loo: true }
     },
     load: function () {
-      return Promise.all([d3.csv('data/v7a_sites.csv', d3.autoType), d3.csv('data/v7a_readings.csv', function (r) { return { hour: +r.hour, datetime: r.datetime, site_id: r.site_id, value: +r.value }; })]).then(function (a) {
+      return Promise.all([d3.csv('data/v7a_sites.csv', d3.autoType), d3.csv('data/v7a_readings.csv', function (r) { return { hour: +r.hour, datetime: r.datetime, site_id: r.site_id, value: +r.value }; }), d3.json('data/v7a_metro.json')]).then(function (a) {
         var hours = [];
         a[1].forEach(function (r) { (hours[r.hour] = hours[r.hour] || { datetime: r.datetime, values: {} }).values[r.site_id] = r.value; });
-        D = { sites: a[0], hours: hours }; setup(); return D;
+        D = { sites: a[0], hours: hours, metro: a[2] }; setup(); return D;
       });
     },
     render: function (s) {
