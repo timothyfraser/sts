@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deploy anatomy</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<style>
+  .dp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .dp-step { display: grid; grid-template-columns: 2rem 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--bench-line); border-radius: 8px; background: var(--bench-panel); color: var(--bench-ink); }
+  .dp-step .n { font-family: var(--mono); color: var(--bench-muted); }
+  .dp-step .nm { font-weight: 600; }
+  .dp-step .st { font-family: var(--mono); font-size: 0.875rem; color: var(--bench-muted); }
+  .dp-step[data-s="ok"] { border-color: var(--bench-up); }
+  .dp-step[data-s="ok"] .st { color: var(--bench-up); }
+  .dp-step[data-s="fail"] { border-color: var(--bench-down); }
+  .dp-step[data-s="fail"] .st { color: var(--bench-down); }
+  .dp-step[data-s="skip"] { opacity: 0.55; }
+  .dp-step .log { grid-column: 2 / 4; font-family: var(--mono); font-size: 0.875rem; margin: 0; color: var(--bench-ink); overflow-wrap: anywhere; }
+  .dp-step .log[hidden] { display: none; }
+  .dp-timer { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--bench-line); border-radius: 8px; color: var(--bench-ink); background: var(--bench-panel); }
+  .dp-timer .bar { height: 10px; border-radius: 6px; background: var(--bench-line); margin-top: 6px; overflow: hidden; }
+  .dp-timer .fill { height: 100%; background: var(--y); width: 0; transform-origin: left; }
+  .dp-timer p { margin: 0; font-size: 0.875rem; }
+  .lab-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .lab-tools button { font: inherit; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--bench-line); background: var(--y); color: var(--y-ink); cursor: pointer; }
+  .lab-tools button:focus-visible { outline: 3px solid var(--b); outline-offset: 2px; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+</head>
+<body data-lab="v13b">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 13 · Deploying an API</p>
+    <h1>Deploy anatomy: from manifest to running API</h1>
+    <p class="lab-lo">Learning objective: trace a deployment from manifest.json to a running process on Posit Connect, and diagnose the common failures (missing package, missing env var, wrong entrypoint, cold start) from their log lines.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="stage">
+        <ol class="dp-steps" id="steps" aria-label="Deployment steps"></ol>
+        <div class="dp-timer" id="timer"><p id="timer-txt"></p><div class="bar" aria-hidden="true"><div class="fill" id="fill"></div></div></div>
+        <div class="lab-tools"><button type="button" id="replay">Replay deploy</button></div>
+      </div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Packages in manifest <select id="c-pkgs"><option value="all" selected>all five listed</option><option value="no_sf">sf missing</option></select></label>
+          <label>Env var ALLOWED_ORIGIN <select id="c-env"><option value="set" selected>set on Connect</option><option value="unset">never set</option><option value="default">unset, code defaults to *</option></select></label>
+          <label>Entrypoint <select id="c-entry"><option value="path" selected>exemplars/api-plumber/plumber.R</option><option value="wrong">plumber.R (not in bundle)</option><option value="wrapper">entrypoint.R wrapper</option></select></label>
+          <label>Min processes <select id="c-min"><option value="1" selected>1 (always warm)</option><option value="0">0 (scale to zero)</option></select></label>
+          <label>Request after idle <select id="c-idle"><option value="false" selected>no, process is running</option><option value="true">yes, sent after idle</option></select></label>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--bench-up)"></i>step passed</li><li><i style="background:var(--bench-down)"></i>step failed</li></ul></div>
+      <div><h2>manifest.json packages</h2><div id="table"></div></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">Set Packages in manifest to "sf missing". Which step turns red?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">restore packages, because sf could not be installed</button><button class="lc-option" data-correct="true">start process, because the manifest never asked for sf and library(sf) fails on launch</button><button class="lc-option" data-correct="false">health check, because /health returns 500</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Restore installs only what the manifest lists. Read the log line under the red step.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Start process turns red after 3 steps passed: restore succeeds because sf is not on the list, then the app dies with "there is no package called 'sf'".</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Set Min processes to 0 and Request after idle to "yes". What does the user experience?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">An error page, because the deploy failed</button><button class="lc-option" data-correct="true">A correct answer, but the first request waits about 8.6 s while a process starts</button><button class="lc-option" data-correct="false">The same 0.15 s response as always</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>All five steps stay green. Read "first response" and the timer.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>First response 8.55 s (8.4 s boot + 0.15 s). With min processes 1 it is 0.15 s; the deploy itself is healthy either way.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Why is a missing env var better failing loudly at start-up than returning a default?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Defaults are slower than errors</button><button class="lc-option" data-correct="true">The deploy fails in one visible place, instead of quietly serving wrong behaviour to users later</button><button class="lc-option" data-correct="false">Connect refuses to run apps that have defaults</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Set ALLOWED_ORIGIN to "never set", then to "unset, code defaults to *", and compare the two step strips.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Never set fails at start process with 3 steps passed and a log naming ALLOWED_ORIGIN. "Unset, code defaults to *" shows all five green, 0.15 s, and a 200 health check: the API now accepts every origin, and nothing on screen points at the missing variable.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var NEEDED = ['plumber', 'dplyr', 'readr', 'sf', 'jsonlite'], STEPS = ['bundle', 'upload', 'restore', 'start', 'health'];
+  var ENTRY = 'exemplars/api-plumber/plumber.R';
+  var D = null;
+  function shown(s) { return { path: ENTRY, wrong: 'plumber.R', wrapper: 'entrypoint.R' }[s.entry]; }
+  function manifestFor(s) {
+    var m = JSON.parse(JSON.stringify(D.manifest));
+    if (s.pkgs === 'no_sf') delete m.packages.sf;
+    if (s.entry === 'wrong') m.metadata.entrypoint = 'plumber.R';
+    if (s.entry === 'wrapper') { m.metadata.entrypoint = 'entrypoint.R'; m.files['entrypoint.R'] = { checksum: '' }; }
+    return m;
+  }
+  function diag(s) {
+    var m = manifestFor(s), failed = 'none';
+    var missing = NEEDED.filter(function (p) { return !(p in m.packages); });
+    if (!(m.metadata.entrypoint in m.files)) failed = 'upload';
+    else if (missing.length > 0) failed = 'start';
+    else if (s.env === 'unset') failed = 'start';
+    var ok = failed === 'none' ? 5 : STEPS.indexOf(failed);
+    var resp = failed !== 'none' ? 0 : (+s.min_procs === 0 && s.idle) ? D.timing.boot_s + D.timing.warm_s : D.timing.warm_s;
+    var log = failed === 'upload' ? D.logs.bad_entry : failed === 'start' ? (s.pkgs === 'no_sf' ? D.logs.no_sf : D.logs.no_env) : resp > 1 ? D.logs.cold : s.env === 'default' ? D.logs.silent : D.logs.ok;
+    return { failed: failed, ok: ok, resp: resp, log: log, missing: missing, manifest: m };
+  }
+  var stepEls = [];
+  var ol = document.getElementById('steps');
+  STEPS.forEach(function (n, i) {
+    var li = document.createElement('li'); li.className = 'dp-step'; li.dataset.s = 'skip';
+    li.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="nm">' + ['Bundle files', 'Upload and read manifest', 'Restore packages', 'Start process', 'Health check'][i] + '</span><span class="st">waiting</span><p class="log" hidden></p>';
+    ol.appendChild(li); stepEls.push(li);
+  });
+  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'pkg', label: 'package' }, { key: 'ver', label: 'version' }, { key: 'listed', label: 'in manifest' }], { label: 'Packages the app needs', key: function (r) { return r.pkg; } });
+  var first = true;
+  function paint(i, kind, r) {
+    var li = stepEls[i]; li.dataset.s = kind;
+    li.querySelector('.st').textContent = { ok: 'passed', fail: 'FAILED', skip: 'not reached' }[kind];
+    var lg = li.querySelector('.log'); lg.hidden = kind !== 'fail'; lg.textContent = kind === 'fail' ? r.log : '';
+  }
+  function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+  function render(s, d) {
+    D = d; var r = diag(s), anim = !first && !Lab.motion.reduced();
+    var timerTxt = document.getElementById('timer-txt'), fill = document.getElementById('fill');
+    var cold = r.failed === 'none' && r.resp > 1;
+    timerTxt.textContent = r.failed !== 'none' ? 'Cold-start timer: no process ever answered.' : cold ? 'Cold-start timer: first request waited ' + r.resp.toFixed(2) + ' s for a process to boot.' : 'Cold-start timer: first request answered in ' + r.resp.toFixed(2) + ' s (warm).';
+    var pct = r.failed !== 'none' ? 0 : Math.min(100, r.resp / (D.timing.boot_s + D.timing.warm_s) * 100);
+    tb.update(D.needed.map(function (p) { return { pkg: p, ver: D.manifest.packages[p].description.Version, listed: (p in r.manifest.packages) ? 'yes' : 'MISSING' }; }));
+    function endStates() {
+      STEPS.forEach(function (n, i) { paint(i, r.failed === 'none' || i < r.ok ? 'ok' : i === r.ok ? 'fail' : 'skip', r); });
+      fill.style.width = pct + '%';
+    }
+    if (!anim) { endStates(); return Promise.resolve(); }
+    STEPS.forEach(function (n, i) { paint(i, 'skip', r); stepEls[i].querySelector('.st').textContent = 'waiting'; });
+    fill.style.width = '0%';
+    var chain = Promise.resolve();
+    STEPS.forEach(function (n, i) {
+      chain = chain.then(function () {
+        if (r.failed !== 'none' && i > r.ok) return;
+        var bad = r.failed !== 'none' && i === r.ok;
+        paint(i, bad ? 'fail' : 'ok', r);
+        return Lab.motion.animate(stepEls[i], bad ? { opacity: [1, 0.35, 1, 0.35, 1] } : { opacity: [0.6, 1] }, { duration: bad ? 0.5 : 0.18 });
+      });
+    });
+    return chain.then(function () { endStates(); return Lab.motion.animate(fill, { width: [0 + '%', pct + '%'] }, { duration: 0.35 }); });
+  }
+  var spec = [
+    { key: 'steps_ok', label: 'steps passed (of 5)', fmt: 0 },
+    { key: 'failed_step', label: 'failed step' },
+    { key: 'first_response_s', label: 'first response (s)', fmt: function (v) { return v === 0 ? 'none' : v.toFixed(2); } }
+  ];
+  var lab = Lab.create({
+    id: 'v13b', initial: { pkgs: 'all', env: 'set', entry: 'path', min_procs: 1, idle: false },
+    states: {
+      baseline: { pkgs: 'all', env: 'set', entry: 'path', min_procs: 1, idle: false },
+      missing_pkg: { pkgs: 'no_sf', env: 'set', entry: 'path', min_procs: 1, idle: false },
+      missing_env: { pkgs: 'all', env: 'unset', entry: 'path', min_procs: 1, idle: false },
+      wrong_entry: { pkgs: 'all', env: 'set', entry: 'wrong', min_procs: 1, idle: false },
+      wrapper: { pkgs: 'all', env: 'set', entry: 'wrapper', min_procs: 1, idle: false },
+      cold_start: { pkgs: 'all', env: 'set', entry: 'path', min_procs: 0, idle: true },
+      min0_warm: { pkgs: 'all', env: 'set', entry: 'path', min_procs: 0, idle: false },
+      silent_default: { pkgs: 'all', env: 'default', entry: 'path', min_procs: 1, idle: false }
+    },
+    load: function () { return fetch('data/v13b.json').then(function (r) { return r.json(); }); },
+    render: render,
+    readouts: function (s, d) { D = d; var r = diag(s); return { steps_ok: r.ok, failed_step: r.failed, first_response_s: r.resp, log_line: r.log }; },
+    metrics: { el: document.getElementById('metrics'), spec: spec },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.log_line; },
+    code: { r: function (s) {
+      var ev = s.env === 'set', dflt = s.env === 'default';
+      return '# manifestme.R  (writes manifest.json)\n' + (s.pkgs === 'no_sf' ? '# manifest written before library(sf) was added: sf is not recorded\n' : '') +
+        'rsconnect::writeManifest(\n  appMode = "api",\n  appPrimaryDoc = "' + shown(s) + '"\n)\n\n' +
+        '# deployme.R  (bundle, upload, restore, start)\nrsconnect::deployAPI(api = ".", appPrimaryDoc = "' + shown(s) + '")\n' +
+        (ev ? '# Connect Vars: ALLOWED_ORIGIN is set\n' : '# Connect Vars: ALLOWED_ORIGIN was never set\n') +
+        (dflt ? '# plumber.R reads it with a silent default:\n#   origin = Sys.getenv("ALLOWED_ORIGIN", unset = "*")\n' : '') +
+        '# Connect Runtime: min processes = ' + s.min_procs + '\n\n' +
+        '# testme.R  (health check)\nhttr2::request(paste0(base, "/health")) %>%\n  httr2::req_perform()\n\n' +
+        '# what Connect does with this bundle\nmanifest = fromJSON("manifest.json")\nneeded = c("plumber", "dplyr", "readr", "sf", "jsonlite")\n' +
+        'env_vars = ' + (ev ? 'c(ALLOWED_ORIGIN = "https://sts.example.edu")' : dflt ? 'c(ALLOWED_ORIGIN = "*")   # unset on Connect: the code\'s default fills it in' : 'character(0)') + '\n' +
+        'min_processes = ' + s.min_procs + '\nidle = ' + (s.idle ? 'TRUE' : 'FALSE') + '\n\n' +
+        'failed = case_when(\n  !(manifest$metadata$entrypoint %in% names(manifest$files)) ~ "upload",\n' +
+        '  length(setdiff(needed, names(manifest$packages))) > 0 ~ "start",\n  !("ALLOWED_ORIGIN" %in% names(env_vars)) ~ "start",\n  TRUE ~ "none"\n)\n\n' +
+        'steps = c("bundle", "upload", "restore", "start", "health")\ntibble(\n  steps_ok = if (failed == "none") 5 else match(failed, steps) - 1,\n  failed_step = failed,\n' +
+        '  first_response_s = case_when(\n    failed != "none" ~ 0,\n    min_processes == 0 & idle ~ 8.4 + 0.15,\n    TRUE ~ 0.15\n  )\n)';
+    } },
+    onState: function (s) {
+      document.getElementById('c-pkgs').value = s.pkgs; document.getElementById('c-env').value = s.env;
+      document.getElementById('c-entry').value = s.entry; document.getElementById('c-min').value = String(s.min_procs);
+      document.getElementById('c-idle').value = String(!!s.idle);
+    }
+  });
+  lab.ready.then(function () { return lab.setState({}); }).then(function () { first = false; });
+  document.getElementById('c-pkgs').addEventListener('change', function (e) { lab.setState({ pkgs: e.target.value }); });
+  document.getElementById('c-env').addEventListener('change', function (e) { lab.setState({ env: e.target.value }); });
+  document.getElementById('c-entry').addEventListener('change', function (e) { lab.setState({ entry: e.target.value }); });
+  document.getElementById('c-min').addEventListener('change', function (e) { lab.setState({ min_procs: +e.target.value }); });
+  document.getElementById('c-idle').addEventListener('change', function (e) { lab.setState({ idle: e.target.value === 'true' }); });
+  document.getElementById('replay').addEventListener('click', function () { first = false; lab.setState({}); });
+})();
+</script>
+</body>
+</html>

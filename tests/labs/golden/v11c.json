@@ -1,0 +1,104 @@
+{
+  "lab": "v11c",
+  "page": "docs-v3/labs/v11c-od-flows.html",
+  "generated_by": "tools/labs/prep/v11c.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "zone": "county",
+        "min_flow": 100,
+        "direction": "gross",
+        "top_n": 20
+      },
+      "readouts": {
+        "pairs_kept": 343,
+        "flow_kept": 504641.9,
+        "share_kept": 0.986759147613345,
+        "top_corridor": "12086 -> 12011"
+      },
+      "code": {
+        "r": "od = flows %>%\n  group_by(origin_zone = origin, dest_zone = dest) %>%\n  summarise(flow = sum(flow), .groups = \"drop\") %>%\n  filter(origin_zone != dest_zone)\n\nkept = od %>%\n  filter(flow >= 100) %>%\n  arrange(desc(flow))\n\nkept %>%\n  summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))\n\nkept %>% slice_head(n = 20)  # the corridors drawn on the map",
+        "sql": "WITH od AS (\n  SELECT origin AS origin_zone, dest AS dest_zone, SUM(flow) AS flow\n  FROM flows\n  WHERE origin <> dest\n  GROUP BY origin, dest\n)\nSELECT origin_zone, dest_zone, flow\nFROM od\nWHERE flow >= 100\nORDER BY flow DESC;"
+      }
+    },
+    {
+      "name": "net",
+      "state": {
+        "zone": "county",
+        "min_flow": 100,
+        "direction": "net",
+        "top_n": 20
+      },
+      "readouts": {
+        "pairs_kept": 85,
+        "flow_kept": 26598.65,
+        "share_kept": 0.814052919185845,
+        "top_corridor": "01069 -> 01067"
+      },
+      "code": {
+        "r": "od = flows %>%\n  group_by(origin_zone = origin, dest_zone = dest) %>%\n  summarise(flow = sum(flow), .groups = \"drop\") %>%\n  filter(origin_zone != dest_zone)\n\n# net flow: subtract the reverse corridor (a self-join)\nod = od %>%\n  left_join(od, by = c(\"origin_zone\" = \"dest_zone\", \"dest_zone\" = \"origin_zone\"),\n            suffix = c(\"\", \"_back\")) %>%\n  mutate(flow = flow - coalesce(flow_back, 0)) %>%\n  filter(flow > 0) %>%\n  select(origin_zone, dest_zone, flow)\n\nkept = od %>%\n  filter(flow >= 100) %>%\n  arrange(desc(flow))\n\nkept %>%\n  summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))\n\nkept %>% slice_head(n = 20)  # the corridors drawn on the map",
+        "sql": "WITH od AS (\n  SELECT origin AS origin_zone, dest AS dest_zone, SUM(flow) AS flow\n  FROM flows\n  WHERE origin <> dest\n  GROUP BY origin, dest\n),\nnet AS (\n  SELECT a.origin_zone, a.dest_zone, a.flow - COALESCE(b.flow, 0) AS flow\n  FROM od a\n  LEFT JOIN od b ON a.origin_zone = b.dest_zone AND a.dest_zone = b.origin_zone\n  WHERE a.flow - COALESCE(b.flow, 0) > 0\n)\nSELECT origin_zone, dest_zone, flow\nFROM net\nWHERE flow >= 100\nORDER BY flow DESC;"
+      }
+    },
+    {
+      "name": "region",
+      "state": {
+        "zone": "state",
+        "min_flow": 100,
+        "direction": "gross",
+        "top_n": 20
+      },
+      "readouts": {
+        "pairs_kept": 5,
+        "flow_kept": 6467.85,
+        "share_kept": 0.994097982708934,
+        "top_corridor": "FL -> GA"
+      },
+      "code": {
+        "r": "od = flows %>%\n  group_by(origin_zone = origin_state, dest_zone = dest_state) %>%\n  summarise(flow = sum(flow), .groups = \"drop\") %>%\n  filter(origin_zone != dest_zone)\n\nkept = od %>%\n  filter(flow >= 100) %>%\n  arrange(desc(flow))\n\nkept %>%\n  summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))\n\nkept %>% slice_head(n = 20)  # the corridors drawn on the map",
+        "sql": "WITH od AS (\n  SELECT origin_state AS origin_zone, dest_state AS dest_zone, SUM(flow) AS flow\n  FROM flows\n  WHERE origin_state <> dest_state\n  GROUP BY origin_state, dest_state\n)\nSELECT origin_zone, dest_zone, flow\nFROM od\nWHERE flow >= 100\nORDER BY flow DESC;"
+      }
+    },
+    {
+      "name": "region_net",
+      "state": {
+        "zone": "state",
+        "min_flow": 100,
+        "direction": "net",
+        "top_n": 20
+      },
+      "readouts": {
+        "pairs_kept": 3,
+        "flow_kept": 419.85,
+        "share_kept": 1,
+        "top_corridor": "GA -> AL"
+      },
+      "code": {
+        "r": "od = flows %>%\n  group_by(origin_zone = origin_state, dest_zone = dest_state) %>%\n  summarise(flow = sum(flow), .groups = \"drop\") %>%\n  filter(origin_zone != dest_zone)\n\n# net flow: subtract the reverse corridor (a self-join)\nod = od %>%\n  left_join(od, by = c(\"origin_zone\" = \"dest_zone\", \"dest_zone\" = \"origin_zone\"),\n            suffix = c(\"\", \"_back\")) %>%\n  mutate(flow = flow - coalesce(flow_back, 0)) %>%\n  filter(flow > 0) %>%\n  select(origin_zone, dest_zone, flow)\n\nkept = od %>%\n  filter(flow >= 100) %>%\n  arrange(desc(flow))\n\nkept %>%\n  summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))\n\nkept %>% slice_head(n = 20)  # the corridors drawn on the map",
+        "sql": "WITH od AS (\n  SELECT origin_state AS origin_zone, dest_state AS dest_zone, SUM(flow) AS flow\n  FROM flows\n  WHERE origin_state <> dest_state\n  GROUP BY origin_state, dest_state\n),\nnet AS (\n  SELECT a.origin_zone, a.dest_zone, a.flow - COALESCE(b.flow, 0) AS flow\n  FROM od a\n  LEFT JOIN od b ON a.origin_zone = b.dest_zone AND a.dest_zone = b.origin_zone\n  WHERE a.flow - COALESCE(b.flow, 0) > 0\n)\nSELECT origin_zone, dest_zone, flow\nFROM net\nWHERE flow >= 100\nORDER BY flow DESC;"
+      }
+    },
+    {
+      "name": "strict",
+      "state": {
+        "zone": "county",
+        "min_flow": 1000,
+        "direction": "gross",
+        "top_n": 10
+      },
+      "readouts": {
+        "pairs_kept": 115,
+        "flow_kept": 413991.35,
+        "share_kept": 0.809504227939253,
+        "top_corridor": "12086 -> 12011"
+      },
+      "code": {
+        "r": "od = flows %>%\n  group_by(origin_zone = origin, dest_zone = dest) %>%\n  summarise(flow = sum(flow), .groups = \"drop\") %>%\n  filter(origin_zone != dest_zone)\n\nkept = od %>%\n  filter(flow >= 1000) %>%\n  arrange(desc(flow))\n\nkept %>%\n  summarise(pairs_kept = n(), flow_kept = sum(flow), share_kept = sum(flow) / sum(od$flow))\n\nkept %>% slice_head(n = 10)  # the corridors drawn on the map",
+        "sql": "WITH od AS (\n  SELECT origin AS origin_zone, dest AS dest_zone, SUM(flow) AS flow\n  FROM flows\n  WHERE origin <> dest\n  GROUP BY origin, dest\n)\nSELECT origin_zone, dest_zone, flow\nFROM od\nWHERE flow >= 1000\nORDER BY flow DESC;"
+      }
+    }
+  ],
+  "ack": []
+}

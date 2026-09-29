@@ -1,0 +1,191 @@
+{
+  "lab": "v10b",
+  "page": "docs-v3/labs/v10b-k-hop-neighbours.html",
+  "generated_by": "tools/labs/prep/v10b.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "seed": "B32005",
+        "k": 2,
+        "dedupe": true,
+        "min_w": 80
+      },
+      "readouts": {
+        "neighbours": 8,
+        "join_rows": 14,
+        "kept_rows": 9,
+        "ring_1": 3,
+        "ring_2": 5,
+        "ring_3": 0,
+        "ring_4": 0,
+        "rows_1": 3,
+        "rows_2": 11,
+        "rows_3": 0,
+        "rows_4": 0
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 80)\n\nfrontier = tibble(node = \"B32005\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:2) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  frontier = frontier %>% distinct(node)\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"B32005\", order = 2)\nrings = reached %>%\n  filter(node != \"B32005\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 2, nodes = \"B32005\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'B32005', 0\n  UNION\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 2 AND e.weight >= 80\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'B32005' THEN node END) AS neighbours\nFROM walk;"
+      }
+    },
+    {
+      "name": "one_hop",
+      "state": {
+        "seed": "B32005",
+        "k": 1,
+        "dedupe": true,
+        "min_w": 80
+      },
+      "readouts": {
+        "neighbours": 3,
+        "join_rows": 3,
+        "kept_rows": 3,
+        "ring_1": 3,
+        "ring_2": 0,
+        "ring_3": 0,
+        "ring_4": 0,
+        "rows_1": 3,
+        "rows_2": 0,
+        "rows_3": 0,
+        "rows_4": 0
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 80)\n\nfrontier = tibble(node = \"B32005\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:1) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  frontier = frontier %>% distinct(node)\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"B32005\", order = 1)\nrings = reached %>%\n  filter(node != \"B32005\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 1, nodes = \"B32005\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'B32005', 0\n  UNION\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 1 AND e.weight >= 80\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'B32005' THEN node END) AS neighbours\nFROM walk;"
+      }
+    },
+    {
+      "name": "k3_dedupe",
+      "state": {
+        "seed": "B32005",
+        "k": 3,
+        "dedupe": true,
+        "min_w": 80
+      },
+      "readouts": {
+        "neighbours": 16,
+        "join_rows": 40,
+        "kept_rows": 23,
+        "ring_1": 3,
+        "ring_2": 5,
+        "ring_3": 8,
+        "ring_4": 0,
+        "rows_1": 3,
+        "rows_2": 11,
+        "rows_3": 26,
+        "rows_4": 0
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 80)\n\nfrontier = tibble(node = \"B32005\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:3) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  frontier = frontier %>% distinct(node)\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"B32005\", order = 3)\nrings = reached %>%\n  filter(node != \"B32005\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 3, nodes = \"B32005\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'B32005', 0\n  UNION\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 3 AND e.weight >= 80\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'B32005' THEN node END) AS neighbours\nFROM walk;"
+      }
+    },
+    {
+      "name": "k3_raw",
+      "state": {
+        "seed": "B32005",
+        "k": 3,
+        "dedupe": false,
+        "min_w": 80
+      },
+      "readouts": {
+        "neighbours": 16,
+        "join_rows": 72,
+        "kept_rows": 72,
+        "ring_1": 3,
+        "ring_2": 5,
+        "ring_3": 8,
+        "ring_4": 0,
+        "rows_1": 3,
+        "rows_2": 11,
+        "rows_3": 58,
+        "rows_4": 0
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 80)\n\nfrontier = tibble(node = \"B32005\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:3) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  # dedupe off: every walk is kept, repeats and all\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"B32005\", order = 3)\nrings = reached %>%\n  filter(node != \"B32005\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 3, nodes = \"B32005\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'B32005', 0\n  UNION ALL\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 3 AND e.weight >= 80\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'B32005' THEN node END) AS neighbours\nFROM walk;"
+      }
+    },
+    {
+      "name": "k4_raw",
+      "state": {
+        "seed": "B32005",
+        "k": 4,
+        "dedupe": false,
+        "min_w": 80
+      },
+      "readouts": {
+        "neighbours": 17,
+        "join_rows": 311,
+        "kept_rows": 311,
+        "ring_1": 3,
+        "ring_2": 5,
+        "ring_3": 8,
+        "ring_4": 1,
+        "rows_1": 3,
+        "rows_2": 11,
+        "rows_3": 58,
+        "rows_4": 239
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 80)\n\nfrontier = tibble(node = \"B32005\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:4) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  # dedupe off: every walk is kept, repeats and all\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"B32005\", order = 4)\nrings = reached %>%\n  filter(node != \"B32005\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 4, nodes = \"B32005\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'B32005', 0\n  UNION ALL\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 4 AND e.weight >= 80\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'B32005' THEN node END) AS neighbours\nFROM walk;"
+      }
+    },
+    {
+      "name": "dense_raw",
+      "state": {
+        "seed": "B32005",
+        "k": 4,
+        "dedupe": false,
+        "min_w": 20
+      },
+      "readouts": {
+        "neighbours": 24,
+        "join_rows": 57772,
+        "kept_rows": 57772,
+        "ring_1": 18,
+        "ring_2": 6,
+        "ring_3": 0,
+        "ring_4": 0,
+        "rows_1": 18,
+        "rows_2": 251,
+        "rows_3": 3685,
+        "rows_4": 53818
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 20)\n\nfrontier = tibble(node = \"B32005\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:4) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  # dedupe off: every walk is kept, repeats and all\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"B32005\", order = 4)\nrings = reached %>%\n  filter(node != \"B32005\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 4, nodes = \"B32005\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'B32005', 0\n  UNION ALL\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 4 AND e.weight >= 20\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'B32005' THEN node END) AS neighbours\nFROM walk;"
+      }
+    },
+    {
+      "name": "other_seed",
+      "state": {
+        "seed": "D32016",
+        "k": 2,
+        "dedupe": true,
+        "min_w": 80
+      },
+      "readouts": {
+        "neighbours": 16,
+        "join_rows": 32,
+        "kept_rows": 20,
+        "ring_1": 6,
+        "ring_2": 10,
+        "ring_3": 0,
+        "ring_4": 0,
+        "rows_1": 6,
+        "rows_2": 26,
+        "rows_3": 0,
+        "rows_4": 0
+      },
+      "code": {
+        "r": "links = edges %>%\n  filter(weight >= 80)\n\nfrontier = tibble(node = \"D32016\")\nreached = tibble(node = character(), hop = integer())\nhop_rows = integer()\nhop_kept = integer()\nfor (hop in 1:2) {\n  frontier = frontier %>%\n    inner_join(links, by = c(\"node\" = \"from\"), relationship = \"many-to-many\") %>%\n    select(node = to)\n  hop_rows[hop] = nrow(frontier)\n  frontier = frontier %>% distinct(node)\n  hop_kept[hop] = nrow(frontier)\n  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\ng = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n# tidygraph: morph(to_local_neighborhood, node = \"D32016\", order = 2)\nrings = reached %>%\n  filter(node != \"D32016\") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\nring = function(h) sum(rings$n[rings$hop == h])\n\ntibble(neighbours = ego_size(g, order = 2, nodes = \"D32016\", mindist = 1),\n       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))",
+        "sql": "WITH RECURSIVE walk(node, hop) AS (\n  SELECT 'D32016', 0\n  UNION\n  SELECT e.\"to\", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e.\"from\" = w.node\n  WHERE w.hop < 2 AND e.weight >= 80\n)\nSELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> 'D32016' THEN node END) AS neighbours\nFROM walk;"
+      }
+    }
+  ],
+  "ack": []
+}

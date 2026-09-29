@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Centrality at scale</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .rank li { display: grid; grid-template-columns: 4.2em 1fr 4.6em; align-items: center; gap: 8px; font-family: var(--mono); font-size: 14px; color: var(--bench-ink); }
+  .rank .bar { height: 10px; background: var(--y); transform-origin: left center; transition: transform 300ms cubic-bezier(.22,1,.36,1); }
+  #plot { display: flex; align-items: center; }
+  #plot > svg { flex: 1; }
+  .rank .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .rank li.is-rise .bar { background: var(--b); }
+  .removed-bar { font-family: var(--mono); font-size: 14px; color: var(--bench-ink); margin: 6px 0 0; }
+  .code-note { font-size: 14px; color: var(--ink); margin: 6px 0 0; }
+  @media (prefers-reduced-motion: reduce) { .rank .bar { transition: none; } }
+</style>
+</head>
+<body data-lab="v10a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 10 · Measuring networks</p>
+    <h1>Centrality at scale: who matters, by which measure</h1>
+    <p class="lab-lo">Learning objective: Compute and compare degree, strength, betweenness and closeness, and see how removing a node changes rankings.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="plot"></div>
+      <div id="status"></div>
+      <p class="removed-bar" id="removed" aria-live="polite">Removed stations: none</p>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Centrality measure <select id="c-measure"><option value="degree">Degree (strength when weighted)</option><option value="betweenness" selected>Betweenness</option><option value="closeness">Closeness</option></select></label>
+          <div role="group" aria-label="Edge weights" class="lab-seg" id="c-w"><button type="button" data-v="false" aria-pressed="true">Unweighted</button><button type="button" data-v="true" aria-pressed="false">Weighted by rides</button></div>
+          <label>Remove a station <select id="c-remove"><option value="none" selected>None</option></select></label>
+          <label>Top k <select id="c-k"><option value="5" selected>5</option><option value="10">10</option></select></label>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Ranking</h2><ol class="rank" id="rank" aria-label="Stations ranked by the chosen measure"></ol></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>station, size = chosen measure; ring = top k</li><li><i style="background:var(--b)"></i>station whose betweenness rose most after the removal</li><li><i style="background:var(--bench-line)"></i>edge (30 or more rides both ways, July 2021 rush hours)</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <p class="code-note">The R tab uses igraph; tidygraph's centrality_degree(), centrality_betweenness() and centrality_closeness() call these same functions. Weighted betweenness and closeness treat 1 / rides as the distance, so busy links are short.</p>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">At baseline (unweighted betweenness), which station has the highest betweenness?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">D32024, the station with the most rides (highest strength)</button><button class="lc-option" data-correct="true">D32016</button><button class="lc-option" data-correct="false">B32000</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "top station" in the sidebar, or the first bar in the ranking. The biggest circle on the map is the same station.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>D32016, with betweenness of about 42.3: it lies on more shortest paths between other stations than any other. D32024 has the most rides (strength 2,124) but comes second on betweenness.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Remove D32016. Which station's betweenness rises most, and what happens to the average path length?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">D32024 rises most, and the average path gets shorter because there is one station fewer</button><button class="lc-option" data-correct="true">B32010 rises most (about +13.1), and the average path grows from 1.68 to about 1.76 hops</button><button class="lc-option" data-correct="false">Nothing changes: the other stations keep their scores</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Watch "biggest rise" and "avg path (hops)" in the sidebar; the blue bar marks the station that picked up the most detours.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>The 18 edges through D32016 disappear, so trips that passed through it reroute. B32010 picks up the most (about +13.1 betweenness), D32024 becomes the new top (about 36.7), and the mean shortest path rises from 1.68 to about 1.76 hops.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Why can a station with modest degree still have high betweenness, and what does that mean for a bike-share operator?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">It cannot: betweenness is just degree rescaled, so the rankings always agree</button><button class="lc-option" data-correct="true">Betweenness counts shortest paths that pass through a station, so a station that bridges two otherwise poorly linked clusters scores high with few links; an operator should keep it stocked and treat an outage there as a network-wide risk</button><button class="lc-option" data-correct="false">Because weighted edges inflate betweenness for stations with many rides</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare the Degree and Betweenness rankings: the order changes, because degree counts neighbours while betweenness counts the paths a station sits on.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Degree counts links; betweenness counts the shortest paths between other stations that run through a station. A bridge between clusters can have few links and still carry many paths. Removing D32016 here pushed about 13 extra units of betweenness onto B32010 and lengthened trips, which is what an operator sees when a bridge station is empty or closed.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // ---- graph maths: mirrors igraph degree(), strength(), betweenness(), closeness(), mean_distance() ----
+  var EPS = 1e-10;
+  function graph(d, remove) {
+    var codes = d.nodes.map(function (r) { return r.code; }).filter(function (c) { return c !== remove; });
+    var ix = new Map(codes.map(function (c, i) { return [c, i]; }));
+    var adj = codes.map(function () { return []; }), edges = [];
+    d.edges.forEach(function (e) {
+      if (e.from === remove || e.to === remove) return;
+      var a = ix.get(e.from), b = ix.get(e.to);
+      adj[a].push({ j: b, w: e.weight }); adj[b].push({ j: a, w: e.weight }); edges.push(e);
+    });
+    return { codes: codes, adj: adj, edges: edges };
+  }
+  // single-source shortest paths (Dijkstra; unit lengths when !weighted); returns dist, sigma, preds, order
+  function sssp(g, s, weighted) {
+    var n = g.codes.length, dist = new Array(n).fill(Infinity), sig = new Array(n).fill(0), P = g.codes.map(function () { return []; });
+    var done = new Array(n).fill(false), order = [];
+    dist[s] = 0; sig[s] = 1;
+    for (;;) {
+      var u = -1, best = Infinity;
+      for (var i = 0; i < n; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
+      if (u < 0) break;
+      done[u] = true; order.push(u);
+      g.adj[u].forEach(function (e) {
+        var nd = dist[u] + (weighted ? 1 / e.w : 1), v = e.j;
+        if (done[v]) return;
+        var tol = EPS * Math.max(1, Math.abs(nd));
+        if (nd < dist[v] - tol) { dist[v] = nd; sig[v] = sig[u]; P[v] = [u]; }
+        else if (Math.abs(nd - dist[v]) <= tol) { sig[v] += sig[u]; P[v].push(u); }
+      });
+    }
+    return { dist: dist, sig: sig, P: P, order: order };
+  }
+  function scores(g, measure, weighted) {
+    var n = g.codes.length, out = new Array(n).fill(0);
+    if (measure === 'degree') {
+      g.adj.forEach(function (a, i) { out[i] = weighted ? a.reduce(function (t, e) { return t + e.w; }, 0) : a.length; });
+    } else if (measure === 'betweenness') {
+      for (var s = 0; s < n; s++) {
+        var r = sssp(g, s, weighted), delta = new Array(n).fill(0);
+        for (var k = r.order.length - 1; k >= 0; k--) {
+          var w = r.order[k];
+          r.P[w].forEach(function (v) { delta[v] += r.sig[v] / r.sig[w] * (1 + delta[w]); });
+          if (w !== s) out[w] += delta[w];
+        }
+      }
+      out = out.map(function (v) { return v / 2; });
+    } else {
+      for (var s2 = 0; s2 < n; s2++) {
+        var r2 = sssp(g, s2, weighted), tot = 0, cnt = 0;
+        r2.dist.forEach(function (v, j) { if (j !== s2 && v < Infinity) { tot += v; cnt++; } });
+        out[s2] = cnt ? 1 / tot : NaN;
+      }
+    }
+    var m = {}; g.codes.forEach(function (c, i) { m[c] = out[i]; }); return m;
+  }
+  function meanDistance(g) {
+    var tot = 0, cnt = 0;
+    for (var s = 0; s < g.codes.length; s++) sssp(g, s, false).dist.forEach(function (v, j) { if (j !== s && v < Infinity) { tot += v; cnt++; } });
+    return cnt ? tot / cnt : NaN;
+  }
+  function cmpCode(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+  function ranked(m) {
+    return Object.keys(m).map(function (c) { return { code: c, score: m[c] }; })
+      .sort(function (a, b) {
+        // an isolated station has no reachable neighbours: closeness is NaN (igraph also gives NaN); rank it last
+        var fa = isFinite(a.score), fb = isFinite(b.score);
+        if (fa !== fb) return fa ? -1 : 1;
+        return (fa ? (b.score - a.score) : 0) || cmpCode(a.code, b.code);
+      });
+  }
+  var cache = new Map();
+  function compute(s, d) {
+    var key = JSON.stringify([s.measure, s.weighted, s.remove]);
+    if (cache.has(key)) return cache.get(key);
+    var g = graph(d, s.remove), sc = scores(g, s.measure, s.weighted), rk = ranked(sc);
+    var rise = { code: 'none', value: 0 };
+    if (s.remove !== 'none') {
+      var before = scores(graph(d, 'none'), 'betweenness', s.weighted), after = scores(g, 'betweenness', s.weighted);
+      var dl = Object.keys(after).map(function (c) { return { code: c, score: after[c] - before[c] }; })
+        .sort(function (a, b) { return (b.score - a.score) || cmpCode(a.code, b.code); });
+      rise = { code: dl[0].code, value: dl[0].score };
+    }
+    var out = { g: g, scores: sc, rank: rk, apl: meanDistance(g), rise: rise };
+    cache.set(key, out); return out;
+  }
+
+  // ---- visual: stations on their lon/lat (equirectangular at Boston's latitude) ----
+  var stage = document.getElementById('plot');
+  var W = Math.max(300, stage.clientWidth || 560), H = W < 520 ? 300 : 400, M = 28, PHONE = W < 520;
+  var svg = d3.select(stage).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H)
+    .attr('role', 'img').attr('aria-label', 'Map of 25 Bluebikes stations in Boston; circle size shows the chosen centrality measure');
+  var gEdge = svg.append('g'), gNode = svg.append('g'), gLab = svg.append('g');
+  var px, py, first = true, lastKey = null;
+  var rankEl = document.getElementById('rank');
+
+  var lab = Lab.create({
+    id: 'v10a', initial: { measure: 'betweenness', weighted: false, remove: 'none', k: 5 },
+    states: {
+      baseline: { measure: 'betweenness', weighted: false, remove: 'none', k: 5 },
+      removed: { measure: 'betweenness', weighted: false, remove: 'D32016', k: 5 },
+      degree: { measure: 'degree', weighted: false, remove: 'none', k: 5 },
+      strength: { measure: 'degree', weighted: true, remove: 'none', k: 5 },
+      closeness_w: { measure: 'closeness', weighted: true, remove: 'none', k: 10 },
+      removed_w: { measure: 'betweenness', weighted: true, remove: 'D32016', k: 5 }
+    },
+    load: function () {
+      return Promise.all([d3.csv('data/v10a_nodes.csv', d3.autoType), d3.csv('data/v10a_edges.csv', d3.autoType)]).then(function (a) {
+        var d = { nodes: a[0], edges: a[1] };
+        var xe = d3.extent(d.nodes, function (r) { return r.lon; }), ye = d3.extent(d.nodes, function (r) { return r.lat; });
+        var k = Math.cos(d3.mean(ye) * Math.PI / 180);
+        // fit the SVG height to the stations' own aspect, so the map fills its stage without an empty band
+        H = Math.round(Math.max(PHONE ? 220 : 300, Math.min(PHONE ? W * 1.1 : 480, (W - 2 * M) * (ye[1] - ye[0]) / ((xe[1] - xe[0]) * k) + 2 * M)));
+        svg.attr('viewBox', '0 0 ' + W + ' ' + H);
+        var sc = Math.min((W - 2 * M) / ((xe[1] - xe[0]) * k), (H - 2 * M) / (ye[1] - ye[0]));
+        var cx = (xe[0] + xe[1]) / 2, cy = (ye[0] + ye[1]) / 2;
+        px = function (v) { return W / 2 + (v - cx) * k * sc; };
+        py = function (v) { return H / 2 - (v - cy) * sc; };
+        var pos = new Map(d.nodes.map(function (r) { return [r.code, r]; }));
+        var wmax = d3.max(d.edges, function (e) { return e.weight; });
+        gEdge.selectAll('line').data(d.edges, function (e) { return e.from + e.to; }).join('line')
+          .attr('x1', function (e) { return px(pos.get(e.from).lon); }).attr('y1', function (e) { return py(pos.get(e.from).lat); })
+          .attr('x2', function (e) { return px(pos.get(e.to).lon); }).attr('y2', function (e) { return py(pos.get(e.to).lat); })
+          .attr('stroke', 'var(--bench-line)').attr('stroke-width', function (e) { return 0.6 + 2.4 * Math.sqrt(e.weight / wmax); }).attr('stroke-opacity', 0.55);
+        gNode.selectAll('circle').data(d.nodes, function (r) { return r.code; }).join('circle')
+          .attr('cx', function (r) { return px(r.lon); }).attr('cy', function (r) { return py(r.lat); }).attr('r', 4)
+          .attr('fill', 'var(--y)').attr('stroke-width', 2);
+        var sel = document.getElementById('c-remove');
+        d.nodes.forEach(function (r) { var o = document.createElement('option'); o.value = r.code; o.textContent = r.code; sel.appendChild(o); });
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var c = compute(s, d), key = JSON.stringify(s), ms = (first || key === lastKey || Lab.motion.reduced()) ? 0 : 320; first = false; lastKey = key;
+      var vals = c.rank.map(function (r) { return r.score; }).filter(function (v) { return isFinite(v); });
+      var vmax = d3.max(vals) || 1, rS = d3.scaleSqrt().domain([0, vmax]).range([2.5, W < 520 ? 14 : 20]);
+      var top = new Set(c.rank.slice(0, s.k).map(function (r) { return r.code; }));
+      var lines = gEdge.selectAll('line').transition().duration(ms)
+        .attr('stroke-opacity', function (e) { return (e.from === s.remove || e.to === s.remove) ? 0 : 0.55; });
+      var dots = gNode.selectAll('circle').transition().duration(ms).ease(d3.easeCubicOut)
+        .attr('r', function (r) { return r.code === s.remove ? 3 : rS(c.scores[r.code] || 0); })
+        .attr('fill', function (r) { return r.code === s.remove ? 'none' : r.code === c.rise.code ? 'var(--b)' : 'var(--y)'; })
+        .attr('fill-opacity', function (r) { return top.has(r.code) ? 0.95 : 0.55; })
+        .attr('stroke', function (r) { return r.code === s.remove ? 'var(--bench-muted)' : top.has(r.code) ? 'var(--bench-ink)' : 'none'; });
+      var placed = [], labs = PHONE ? [] : c.rank.slice(0, Math.min(s.k, 5)).filter(function (r) {
+        if (!isFinite(r.score)) return false;
+        var n = d.nodes.find(function (q) { return q.code === r.code; }), x = px(n.lon), y = py(n.lat);
+        var hit = placed.some(function (p) { return Math.abs(p[0] - x) < 58 && Math.abs(p[1] - y) < 13; });
+        if (!hit) placed.push([x, y]); return !hit;
+      });
+      gLab.selectAll('text').data(labs, function (r) { return r.code; }).join('text')
+        .attr('font-size', 11).attr('fill', 'var(--bench-ink)').attr('font-family', 'var(--mono)')
+        .attr('x', function (r) { var n = d.nodes.find(function (q) { return q.code === r.code; }); return Math.min(W - 52, px(n.lon) + rS(r.score) + 3); })
+        .attr('y', function (r) { var n = d.nodes.find(function (q) { return q.code === r.code; }); return py(n.lat) + 4; })
+        .text(function (r) { return r.code; });
+      document.getElementById('removed').textContent = 'Removed stations: ' + (s.remove === 'none' ? 'none' : s.remove + ' (' + (d.edges.length - c.g.edges.length) + ' edges gone)');
+      // ranking bars: rows keyed by station, reordered with FLIP
+      var rows = c.rank.slice(0, s.k), dig = s.measure === 'closeness' ? 3 : s.measure === 'degree' ? 0 : 1;
+      var flipEls = Array.prototype.slice.call(rankEl.children);
+      var mutate = function () {
+        var have = new Map(flipEls.map(function (li) { return [li.dataset.code, li]; }));
+        rankEl.textContent = '';
+        rows.forEach(function (r) {
+          var li = have.get(r.code) || document.createElement('li');
+          if (!li.dataset.code) { li.dataset.code = r.code; li.innerHTML = '<span></span><span class="bar"></span><span class="num"></span>'; }
+          li.children[0].textContent = r.code;
+          li.children[1].style.transform = 'scaleX(' + Math.max(0.02, isFinite(r.score) ? r.score / vmax : 0) + ')';
+          li.children[2].textContent = isFinite(r.score) ? Lab.fmt(r.score, dig) : 'n/a';
+          li.classList.toggle('is-rise', r.code === c.rise.code);
+          rankEl.appendChild(li);
+        });
+      };
+      var fl = ms ? Lab.motion.flip(flipEls, mutate) : (mutate(), Promise.resolve());
+      var p = ms ? Promise.all([dots.end().catch(function () {}), lines.end().catch(function () {})]) : Promise.resolve();
+      return Promise.all([p, fl]);
+    },
+    // readouts mirror the panel: top = arrange(desc(score), code) %>% slice_head(n = k); apl = mean_distance(g, weights = NA)
+    readouts: function (s, d) {
+      var c = compute(s, d), top = c.rank.slice(0, s.k);
+      return { top_code: top[0].code, top_score: top[0].score, k_codes: top.map(function (r) { return r.code; }).join(' '),
+        apl: c.apl, n_nodes: c.g.codes.length, n_edges: c.g.edges.length, rise_code: c.rise.code, rise_value: c.rise.value };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'top_code', label: 'top station' }, { key: 'top_score', label: 'top score', fmt: 3 },
+      { key: 'apl', label: 'avg path (hops)', fmt: 3 }, { key: 'n_edges', label: 'edges', fmt: 0 },
+      { key: 'rise_code', label: 'biggest rise' }, { key: 'rise_value', label: 'betweenness rise', fmt: 2 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.n_nodes + ' stations, ' + r.n_edges + ' edges; top by ' + (s.measure === 'degree' && s.weighted ? 'strength' : s.measure) + ': ' + r.top_code; },
+    code: {
+      r: function (s) {
+        var w = s.weighted ? '1 / E(g)$weight' : 'NA';
+        var line = s.measure === 'degree' ? (s.weighted ? 'scores = strength(g, weights = E(g)$weight)' : 'scores = degree(g)') : 'scores = ' + s.measure + '(g, weights = ' + w + ')';
+        return 'g = graph_from_data_frame(edges, directed = FALSE, vertices = nodes)\n' +
+          (s.remove !== 'none' ? 'g = delete_vertices(g, "' + s.remove + '")\n' : '') + line + '\n\n' +
+          'top = tibble(code = names(scores), score = scores) %>%\n  arrange(desc(score), code) %>%\n  slice_head(n = ' + s.k + ')\n\n' +
+          'apl = mean_distance(g, weights = NA)';
+      },
+      sql: function (s) {
+        var wh = s.remove !== 'none' ? '  WHERE "from" <> \'' + s.remove + '\' AND "to" <> \'' + s.remove + '\'\n' : '';
+        return 'SELECT code, COUNT(*) AS degree, SUM(weight) AS strength\nFROM (\n  SELECT "from" AS code, weight FROM edges\n' + wh +
+          '  UNION ALL\n  SELECT "to" AS code, weight FROM edges\n' + wh + ') AS ends\nGROUP BY code\nORDER BY ' + (s.weighted ? 'strength' : 'degree') + ' DESC, code\nLIMIT ' + s.k + ';';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-measure').value = s.measure;
+      document.getElementById('c-remove').value = s.remove;
+      document.getElementById('c-k').value = String(s.k);
+      document.querySelectorAll('#c-w button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === String(s.weighted))); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-measure').addEventListener('change', function (e) { lab.setState({ measure: e.target.value }); });
+  document.getElementById('c-remove').addEventListener('change', function (e) { lab.setState({ remove: e.target.value }); });
+  document.getElementById('c-k').addEventListener('change', function (e) { lab.setState({ k: +e.target.value }); });
+  document.querySelectorAll('#c-w button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ weighted: b.dataset.v === 'true' }); }); });
+})();
+</script>
+</body>
+</html>

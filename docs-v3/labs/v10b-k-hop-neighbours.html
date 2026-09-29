@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Counting k-hop neighbours</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<style>
+  .hop-1{background:var(--y)} .hop-2{background:var(--b)} .hop-3{background:var(--seq-5)} .hop-4{background:var(--g)}
+  #table .lab-table th,#table .lab-table td{padding:4px 5px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+</head>
+<body data-lab="v10b">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 10 · Network analytics</p>
+    <h1>Counting neighbours: k hops as repeated joins</h1>
+    <p class="lab-lo">Learning objective: Count k-hop neighbours and see that each hop is a self-join whose cost grows fast.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="plot"></div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Seed station <select id="c-seed"></select></label>
+          <div role="group" aria-label="Hops k" class="lab-seg" id="c-k"><button type="button" data-v="1" aria-pressed="false">k = 1</button><button type="button" data-v="2" aria-pressed="true">2</button><button type="button" data-v="3" aria-pressed="false">3</button><button type="button" data-v="4" aria-pressed="false">4</button></div>
+          <div role="group" aria-label="Dedupe each hop" class="lab-seg" id="c-dd"><button type="button" data-v="true" aria-pressed="true">Dedupe on</button><button type="button" data-v="false" aria-pressed="false">Dedupe off</button></div>
+          <label>Keep links with at least (rides) <select id="c-minw"><option value="1">1</option><option value="20">20</option><option value="50">50</option><option value="80" selected>80</option><option value="120">120</option></select></label>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i class="hop-1"></i>first reached at hop 1</li><li><i class="hop-2"></i>hop 2</li><li><i class="hop-3"></i>hop 3</li><li><i class="hop-4"></i>hop 4</li><li><i style="background:var(--bench-line)"></i>not reached / link kept</li></ul></div>
+      <div><h2>Rows produced by the join</h2><div id="counter" aria-live="polite"></div></div>
+      <div><h2>Neighbours per hop</h2><div id="table"></div></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">At baseline (seed B32005, links of 80 or more rides, k = 2, dedupe on), how many stations are within 2 hops of the seed?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">5, the stations in the hop 2 ring</button><button class="lc-option" data-correct="true">8</button><button class="lc-option" data-correct="false">14, one per row the joins produced</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>"Within 2 hops" counts hop 1 and hop 2 together, and counts stations, not join rows. Read "neighbours within k".</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>8: 3 stations at hop 1 plus 5 new ones at hop 2, which is ego_size(g, order = 2, mindist = 1). The two joins produced 14 rows (3 + 11) because some hop 2 rows land on stations already found, including the seed itself.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Set k = 3 and turn Dedupe off. How many intermediate rows does the recursive join produce, against how many distinct neighbours?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">16 rows for 16 neighbours: each row is one new station</button><button class="lc-option" data-correct="true">72 rows for 16 neighbours; with dedupe on it keeps 23 rows</button><button class="lc-option" data-correct="false">72 rows, and 72 neighbours, because dedupe off counts each walk as a neighbour</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare "join rows" and "neighbours within k". Turning dedupe off changes the rows, never the set of stations reached.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Without dedupe the three joins make 3 + 11 + 58 = 72 rows, one per walk, yet they reach the same 16 stations. With dedupe on, each hop keeps only distinct stations, so the joins make 40 rows and keep 23. At k = 4 the raw walk count jumps to 311 for 17 stations; drop the threshold to 20 rides and it is 57,772 rows for 24 stations.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Why does counting neighbours in a database need DISTINCT or a visited set, and what does that cost at scale?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">It does not: a join never repeats a row, so COUNT(*) is already the neighbour count</button><button class="lc-option" data-correct="true">Each self-join multiplies rows by the average degree, re-walking stations already found; DISTINCT or a visited set keeps the frontier small, but it needs a sort or hash of every row at every hop</button><button class="lc-option" data-correct="false">DISTINCT is only for tidy output; it has no effect on how much work the joins do</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Set threshold 20, k = 4, dedupe off, and read the join counter per hop. Then switch dedupe on.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Without dedupe the rows grow roughly as degree to the power k (18, 251, 3,685, 53,818 here) while only 24 stations exist. DISTINCT, SQL's UNION or a visited set collapses each frontier to at most one row per station, so the next join starts small. The price is a hash or sort over each hop's rows and memory for the visited set, which at millions of nodes is why graph databases and igraph keep BFS state instead of re-joining.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // walk() mirrors the R panel: links = edges filtered by weight; per hop, frontier inner_join links on from,
+  // join rows counted, then distinct(node) if dedupe. Frontier holds multiplicities so raw walks are not listed.
+  function walk(s, d) {
+    var adj = new Map();
+    d.edges.forEach(function (r) { if (r.weight >= s.min_w) { if (!adj.has(r.from)) adj.set(r.from, []); adj.get(r.from).push(r.to); } });
+    var front = new Map([[s.seed, 1]]), first = new Map(), rows = [0, 0, 0, 0], kept = [0, 0, 0, 0];
+    for (var h = 1; h <= s.k; h++) {
+      var nx = new Map(), jr = 0;
+      front.forEach(function (m, node) { (adj.get(node) || []).forEach(function (t) { jr += m; nx.set(t, (nx.get(t) || 0) + m); }); });
+      rows[h - 1] = jr;
+      if (s.dedupe) nx.forEach(function (m, t) { nx.set(t, 1); });
+      var kp = 0; nx.forEach(function (m) { kp += m; }); kept[h - 1] = kp;
+      nx.forEach(function (m, t) { if (t !== s.seed && !first.has(t)) first.set(t, h); });
+      front = nx;
+    }
+    return { adj: adj, first: first, rows: rows, kept: kept };
+  }
+  function calc(s, d) {
+    var w = walk(s, d), ring = [0, 0, 0, 0];
+    w.first.forEach(function (h) { ring[h - 1] += 1; });
+    return { neighbours: w.first.size, join_rows: d3.sum(w.rows), kept_rows: d3.sum(w.kept),
+      ring_1: ring[0], ring_2: ring[1], ring_3: ring[2], ring_4: ring[3],
+      rows_1: w.rows[0], rows_2: w.rows[1], rows_3: w.rows[2], rows_4: w.rows[3] };
+  }
+  var HOP = ['var(--bench-ink)', 'var(--y)', 'var(--b)', 'var(--seq-5)', 'var(--g)'];
+
+  var stage = document.getElementById('plot');
+  var W = Math.max(300, stage.clientWidth || 560), H = W < 520 ? W : Math.min(520, W * 0.8), M = 30;
+  var svg = d3.select('#plot').append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'Bluebikes stations coloured by the hop at which the search from the seed first reaches them');
+  svg.append('defs').append('clipPath').attr('id', 'v10b-clip').append('rect').attr('width', W).attr('height', H);
+  var gHalo = svg.append('g').attr('clip-path', 'url(#v10b-clip)'), gEdge = svg.append('g'), gNode = svg.append('g'), gLab = svg.append('g');
+  var CW = 280, CH = 132;
+  var cz = d3.select('#counter').append('svg').attr('viewBox', '0 0 ' + CW + ' ' + CH).attr('width', '100%').attr('role', 'img')
+    .attr('aria-label', 'Rows produced by the join at each hop, and rows kept after dedupe');
+  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'hop', label: 'hop', num: true, fmt: 0 }, { key: 'new', label: 'new', num: true, fmt: 0 },
+    { key: 'rows', label: 'join rows', num: true, fmt: 0 }, { key: 'kept', label: 'kept', num: true, fmt: 0 }, { key: 'codes', label: 'first reached' }], { label: 'Neighbours per hop' });
+  var px, py, pos, first = true, lastKey = null;
+  var S0 = { seed: 'B32005', k: 2, dedupe: true, min_w: 80 };
+  var lab = Lab.create({
+    id: 'v10b', initial: S0,
+    states: {
+      baseline: { seed: 'B32005', k: 2, dedupe: true, min_w: 80 },
+      one_hop: { seed: 'B32005', k: 1, dedupe: true, min_w: 80 },
+      k3_dedupe: { seed: 'B32005', k: 3, dedupe: true, min_w: 80 },
+      k3_raw: { seed: 'B32005', k: 3, dedupe: false, min_w: 80 },
+      k4_raw: { seed: 'B32005', k: 4, dedupe: false, min_w: 80 },
+      dense_raw: { seed: 'B32005', k: 4, dedupe: false, min_w: 20 },
+      other_seed: { seed: 'D32016', k: 2, dedupe: true, min_w: 80 }
+    },
+    load: function () {
+      return Promise.all([d3.csv('data/v10b_edges.csv', d3.autoType), d3.csv('data/v9a_nodes.csv', d3.autoType)]).then(function (a) {
+        var d = { edges: a[0], nodes: a[1] };
+        var sel = document.getElementById('c-seed');
+        d.nodes.slice().sort(function (x, y) { return x.code < y.code ? -1 : 1; }).forEach(function (r) {
+          var o = document.createElement('option'); o.value = r.code; o.textContent = r.code; if (r.code === S0.seed) o.selected = true; sel.appendChild(o);
+        });
+        var xe = d3.extent(d.nodes, function (r) { return r.lon; }), ye = d3.extent(d.nodes, function (r) { return r.lat; });
+        var k = Math.cos(d3.mean(ye) * Math.PI / 180), sc = Math.min((W - 2 * M) / ((xe[1] - xe[0]) * k), (H - 2 * M) / (ye[1] - ye[0]));
+        var cxm = (xe[0] + xe[1]) / 2, cym = (ye[0] + ye[1]) / 2;
+        px = function (v) { return W / 2 + (v - cxm) * k * sc; };
+        py = function (v) { return H / 2 - (v - cym) * sc; };
+        pos = new Map(d.nodes.map(function (r) { return [r.code, [px(r.lon), py(r.lat)]]; }));
+        gNode.selectAll('circle').data(d.nodes, function (r) { return r.code; }).join('circle')
+          .attr('cx', function (r) { return pos.get(r.code)[0]; }).attr('cy', function (r) { return pos.get(r.code)[1]; })
+          .attr('r', 4).attr('fill', 'var(--bench-line)').attr('stroke', 'var(--bench-panel)');
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var key = JSON.stringify([s.seed, s.k, s.dedupe, s.min_w]);
+      var w = walk(s, d), ms = (first || key === lastKey || Lab.motion.reduced()) ? 0 : 320; first = false; lastKey = key;
+      var sp = pos.get(s.seed), tw = [];
+      function hopOf(c) { return c === s.seed ? 0 : (w.first.get(c) || -1); }
+      function dl(h) { return ms ? Math.max(0, h - 1) * ms * 1.1 : 0; }
+      // links kept by the threshold, one line per pair; links that the search walked are coloured by hop
+      var lk = d.edges.filter(function (r) { return r.weight >= s.min_w && r.from < r.to; });
+      function edgeHop(r) { var a = hopOf(r.from), b = hopOf(r.to); if (a < 0 || b < 0) return -1; var h = Math.max(a, b); return Math.abs(a - b) <= 1 && h <= s.k && h > 0 ? h : -1; }
+      var ln = gEdge.selectAll('line').data(lk, function (r) { return r.from + '|' + r.to; });
+      ln.exit().remove();
+      var le = ln.enter().append('line').attr('stroke-linecap', 'round')
+        .attr('x1', function (r) { return pos.get(r.from)[0]; }).attr('y1', function (r) { return pos.get(r.from)[1]; })
+        .attr('x2', function (r) { return pos.get(r.to)[0]; }).attr('y2', function (r) { return pos.get(r.to)[1]; })
+        .merge(ln).attr('stroke', 'var(--bench-line)').attr('stroke-width', 1).attr('stroke-opacity', 0.5);
+      le.filter(function (r) { return edgeHop(r) > 0; }).transition().duration(ms).delay(function (r) { return dl(edgeHop(r)); })
+        .attr('stroke', function (r) { return HOP[edgeHop(r)]; }).attr('stroke-opacity', 0.75).attr('stroke-width', 1.6);
+      // rings: one halo per hop around the seed, radius = distance to the farthest station first reached at that hop
+      var rings = d3.range(1, s.k + 1).map(function (h) {
+        var r = 0; w.first.forEach(function (hh, c) { if (hh === h) { var p = pos.get(c); r = Math.max(r, Math.hypot(p[0] - sp[0], p[1] - sp[1])); } });
+        var cap = Math.hypot(Math.max(sp[0], W - sp[0]), Math.max(sp[1], H - sp[1]));
+        return { h: h, r: Math.min(r + 8, cap) };
+      }).filter(function (o) { return o.r > 8; });
+      var hl = gHalo.selectAll('circle').data(rings, function (o) { return o.h; });
+      hl.exit().remove();
+      var ht = hl.enter().append('circle').attr('fill', 'none').attr('stroke-dasharray', '3 4').attr('r', ms ? 0 : function (o) { return o.r; })
+        .merge(hl).attr('cx', sp[0]).attr('cy', sp[1]).attr('stroke', function (o) { return HOP[o.h]; }).attr('stroke-opacity', 0.55)
+        .transition().duration(ms).delay(function (o) { return dl(o.h); }).ease(d3.easeCubicOut).attr('r', function (o) { return o.r; });
+      tw.push(ht);
+      var nt = gNode.selectAll('circle').attr('fill', 'var(--bench-line)').attr('r', 4)
+        .filter(function (r) { return hopOf(r.code) >= 0; })
+        .transition().duration(ms * 0.6).delay(function (r) { return dl(hopOf(r.code)) + (ms ? ms * 0.5 : 0); })
+        .attr('fill', function (r) { return HOP[hopOf(r.code)]; }).attr('r', function (r) { return r.code === s.seed ? 7 : 5; });
+      tw.push(nt);
+      var cx0 = 0, cy0 = 0, nn = 0;
+      d.nodes.forEach(function (r) { var p = pos.get(r.code), dd = Math.hypot(p[0] - sp[0], p[1] - sp[1]); if (r.code !== s.seed && dd < 60) { cx0 += p[0] - sp[0]; cy0 += p[1] - sp[1]; nn++; } });
+      var lx = nn ? -cx0 / nn : 1, ly = nn ? -cy0 / nn : -1, ll = Math.hypot(lx, ly) || 1; lx /= ll; ly /= ll;
+      var tx = sp[0] + lx * 14, ty = sp[1] + ly * 14 + 4, anc = lx < -0.3 ? 'end' : lx > 0.3 ? 'start' : 'middle';
+      if (anc === 'start' && tx > W - 80) anc = 'end'; if (anc === 'end' && tx < 80) anc = 'start';
+      ty = Math.max(12, Math.min(H - 4, ty));
+      gLab.selectAll('text').data([s.seed]).join('text').attr('font-size', 11).attr('font-weight', 600).attr('fill', 'var(--bench-ink)')
+        .attr('stroke', 'var(--bench-panel)').attr('stroke-width', 3).attr('paint-order', 'stroke').attr('stroke-linejoin', 'round')
+        .attr('text-anchor', anc).attr('x', tx).attr('y', ty).text('seed ' + s.seed);
+      // join counter: per hop, rows produced (bar) and rows kept (tick), log scale so the explosion stays on screen
+      var mx = Math.max(10, d3.max(w.rows) || 1), ys = d3.scaleLog().domain([1, mx]).range([0, CW - 120]).clamp(true);
+      var data = [0, 1, 2, 3].map(function (i) { return { i: i, rows: w.rows[i], kept: w.kept[i], on: i < s.k }; });
+      cz.selectAll('text.h').data(data).join('text').attr('class', 'h').attr('font-size', 11).attr('fill', 'var(--bench-ink)')
+        .attr('x', 0).attr('y', function (o) { return 20 + o.i * 30; }).text(function (o) { return 'hop ' + (o.i + 1); });
+      cz.selectAll('rect.bg').data(data).join('rect').attr('class', 'bg').attr('x', 44).attr('y', function (o) { return 10 + o.i * 30; })
+        .attr('height', 14).attr('width', CW - 120).attr('fill', 'var(--bench-line)').attr('opacity', 0.25);
+      var bars = cz.selectAll('rect.bar').data(data).join('rect').attr('class', 'bar').attr('x', 44).attr('y', function (o) { return 10 + o.i * 30; })
+        .attr('height', 14).attr('fill', 'var(--y)');
+      if (ms) bars.attr('width', 0);
+      var bt = bars.transition().duration(ms).delay(function (o) { return dl(o.i + 1); }).ease(d3.easeCubicOut)
+        .attr('width', function (o) { return o.rows > 0 ? Math.max(2, ys(Math.max(1, o.rows))) : 0; });
+      tw.push(bt);
+      cz.selectAll('rect.kept').data(data).join('rect').attr('class', 'kept').attr('x', function (o) { return 44 + (o.kept > 0 ? ys(Math.max(1, o.kept)) : 0) - 1; })
+        .attr('y', function (o) { return 8 + o.i * 30; }).attr('width', 3).attr('height', 18).attr('fill', 'var(--b)').attr('opacity', function (o) { return o.on && s.dedupe ? 1 : 0; });
+      cz.selectAll('text.v').data(data).join('text').attr('class', 'v').attr('font-size', 11).attr('fill', 'var(--bench-ink)').attr('font-family', 'var(--mono)')
+        .attr('x', CW).attr('text-anchor', 'end').attr('y', function (o) { return 21 + o.i * 30; })
+        .text(function (o) { return o.on ? d3.format(',')(o.rows) + (s.dedupe ? ' → ' + d3.format(',')(o.kept) : '') : '·'; });
+      cz.selectAll('text.cap').data([0]).join('text').attr('class', 'cap').attr('font-size', 10).attr('fill', 'var(--bench-ink)').attr('x', 0).attr('y', CH - 4)
+        .text(s.dedupe ? 'bar: join rows (log scale) · tick: kept after distinct' : 'bar: join rows (log scale) · dedupe off: all kept');
+      var trows = [];
+      for (var h = 1; h <= s.k; h++) {
+        var codes = []; w.first.forEach(function (hh, c) { if (hh === h) codes.push(c); }); codes.sort();
+        trows.push({ id: h, hop: h, new: codes.length, rows: w.rows[h - 1], kept: w.kept[h - 1], codes: codes.slice(0, 1).join(' ') + (codes.length > 1 ? ' +' + (codes.length - 1) : '') });
+      }
+      var dn = ms ? Promise.all(tw.map(function (t) { return t.end().catch(function () {}); })) : Promise.resolve();
+      return Promise.all([dn, tb.update(trows)]);
+    },
+    readouts: function (s, d) { return calc(s, d); },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'neighbours', label: 'neighbours within k', fmt: 0 }, { key: 'join_rows', label: 'join rows (all hops)', fmt: 0 },
+      { key: 'kept_rows', label: 'rows kept', fmt: 0 }, { key: 'ring_1', label: 'hop 1 ring', fmt: 0 },
+      { key: 'ring_2', label: 'hop 2 ring', fmt: 0 }, { key: 'ring_3', label: 'hop 3 ring', fmt: 0 },
+      { key: 'ring_4', label: 'hop 4 ring', fmt: 0 }, { key: 'rows_4', label: 'hop 4 join rows', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.neighbours + ' stations within ' + s.k + ' hop' + (s.k > 1 ? 's' : '') + ' of ' + s.seed + '; the joins produced ' + d3.format(',')(r.join_rows) + ' rows'; },
+    code: {
+      r: function (s) {
+        return 'links = edges %>%\n  filter(weight >= ' + s.min_w + ')\n\n' +
+          'frontier = tibble(node = "' + s.seed + '")\n' +
+          'reached = tibble(node = character(), hop = integer())\n' +
+          'hop_rows = integer()\nhop_kept = integer()\n' +
+          'for (hop in 1:' + s.k + ') {\n' +
+          '  frontier = frontier %>%\n' +
+          '    inner_join(links, by = c("node" = "from"), relationship = "many-to-many") %>%\n' +
+          '    select(node = to)\n' +
+          '  hop_rows[hop] = nrow(frontier)\n' +
+          (s.dedupe ? '  frontier = frontier %>% distinct(node)\n' : '  # dedupe off: every walk is kept, repeats and all\n') +
+          '  hop_kept[hop] = nrow(frontier)\n' +
+          '  reached = bind_rows(reached, tibble(node = frontier$node, hop = hop))\n}\n\n' +
+          'g = graph_from_data_frame(links, directed = FALSE, vertices = nodes)\n' +
+          '# tidygraph: morph(to_local_neighborhood, node = "' + s.seed + '", order = ' + s.k + ')\n' +
+          'rings = reached %>%\n  filter(node != "' + s.seed + '") %>%\n  group_by(node) %>%\n  summarize(hop = min(hop)) %>%\n  count(hop)\n' +
+          'ring = function(h) sum(rings$n[rings$hop == h])\n\n' +
+          'tibble(neighbours = ego_size(g, order = ' + s.k + ', nodes = "' + s.seed + '", mindist = 1),\n' +
+          '       join_rows = sum(hop_rows), kept_rows = sum(hop_kept),\n' +
+          '       ring_1 = ring(1), ring_2 = ring(2), ring_3 = ring(3), ring_4 = ring(4),\n' +
+          '       rows_1 = hop_rows[1], rows_2 = coalesce(hop_rows[2], 0L),\n' +
+          '       rows_3 = coalesce(hop_rows[3], 0L), rows_4 = coalesce(hop_rows[4], 0L))';
+      },
+      sql: function (s) {
+        return 'WITH RECURSIVE walk(node, hop) AS (\n  SELECT \'' + s.seed + '\', 0\n' + (s.dedupe ? '  UNION\n' : '  UNION ALL\n') +
+          '  SELECT e."to", w.hop + 1\n  FROM walk w\n  JOIN edges e ON e."from" = w.node\n' +
+          '  WHERE w.hop < ' + s.k + ' AND e.weight >= ' + s.min_w + '\n)\n' +
+          'SELECT COUNT(*) - 1 AS kept_rows,\n       COUNT(DISTINCT CASE WHEN node <> \'' + s.seed + '\' THEN node END) AS neighbours\nFROM walk;';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-seed').value = s.seed;
+      document.getElementById('c-minw').value = String(s.min_w);
+      document.querySelectorAll('#c-k button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === String(s.k))); });
+      document.querySelectorAll('#c-dd button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === String(s.dedupe))); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-seed').addEventListener('change', function (e) { lab.setState({ seed: e.target.value }); });
+  document.getElementById('c-minw').addEventListener('change', function (e) { lab.setState({ min_w: +e.target.value }); });
+  document.querySelectorAll('#c-k button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ k: +b.dataset.v }); }); });
+  document.querySelectorAll('#c-dd button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ dedupe: b.dataset.v === 'true' }); }); });
+})();
+</script>
+</body>
+</html>

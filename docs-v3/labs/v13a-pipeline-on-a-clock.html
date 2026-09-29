@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A pipeline on a clock</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<style>
+  .v13-gauge{display:flex;flex-direction:column;gap:6px}
+  .v13-gauge-track{height:10px;border-radius:999px;background:var(--bench-line);overflow:hidden}
+  .v13-gauge-fill{height:100%;background:var(--b);transform-origin:left center}
+  .v13-gauge-fill.is-stale{background:var(--bench-down)}
+  .v13-gauge p{margin:0;font-size:12px;color:var(--bench-muted)}
+  .v13-next{font:12px/1.5 var(--mono);color:var(--bench-ink);margin:0;padding:0;list-style:none}
+  .v13-next .v13-t{white-space:nowrap}
+  .v13-next b{color:var(--bench-muted);font-weight:500}
+  .v13-cron{font:600 14px var(--mono);color:var(--y)}
+  .v13-codenote{margin:6px 0 0;font-size:14px;color:var(--ink)}
+  .v13-pending{margin:4px 0 0;font-size:14px;color:var(--bench-ink)}
+  .v13-rows h2{margin-top:12px}
+  .v13-builder{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+</head>
+<body data-lab="v13a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 13 · Scheduling a pipeline</p>
+    <h1>A pipeline on a clock: cron, pg_cron and freshness</h1>
+    <p class="lab-lo">Learning objective: Schedule ingest, refresh and serve steps, read cron expressions, and reason about freshness, failure and idempotent reruns.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="plot"></div>
+      <div id="status"></div>
+      <div class="v13-rows"><h2>Rows in the table over the day</h2><div id="rows"></div><p class="v13-pending" id="pending"></p></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Ingest cron <select id="c-ingest">
+            <option value="0 * * * *" selected>0 * * * * (every hour)</option>
+            <option value="*/30 * * * *">*/30 * * * * (every 30 min)</option>
+            <option value="0 */6 * * *">0 */6 * * * (every 6 hours)</option>
+          </select></label>
+          <div><span>Refresh cron builder: <span class="v13-cron" id="c-refresh-out">15 */3 * * *</span></span>
+            <div class="v13-builder">
+              <label>At minute <select id="c-rmin"><option value="0">0</option><option value="15" selected>15</option><option value="30">30</option><option value="45">45</option></select></label>
+              <label>Every N hours <select id="c-rstep"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="6">6</option></select></label>
+            </div></div>
+          <label>Inject a failure <select id="c-fail"><option value="none" selected>none</option><option value="13:00">ingest crashes at 13:00</option></select></label>
+          <div><span>Rerun policy</span>
+            <div role="group" aria-label="Rerun policy" class="lab-seg" id="c-policy"><button type="button" data-v="append" aria-pressed="false">Append</button><button type="button" data-v="upsert" aria-pressed="true">Upsert</button></div></div>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>API freshness</h2>
+        <div class="v13-gauge"><div class="v13-gauge-track"><div class="v13-gauge-fill" id="gauge"></div></div><p id="gauge-text"></p><p id="gauge-worst"></p></div></div>
+      <div><h2>Next 5 runs after 10:00</h2><ul class="v13-next" id="next5"></ul></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>ingest run</li><li><i style="background:var(--b)"></i>view refresh</li><li><i style="background:var(--bench-down)"></i>failed run</li><li><i style="background:var(--bench-up)"></i>retry</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <p class="v13-codenote">The SQL tab (pg_cron and <code>INSERT ... ON CONFLICT</code>) is shown, not run here: the R tab is the code that produced every number on this page.</p>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">When does the job <code>15 */3 * * *</code> next run after 10:00?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">10:15, because it runs at minute 15</button><button class="lc-option" data-correct="true">12:15</button><button class="lc-option" data-correct="false">13:15, three hours after 10:00</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden><code>*/3</code> in the hour field means hours 0, 3, 6, 9, 12, ... counted from midnight, not from now. Read the refresh lane in "Next 5 runs".</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>12:15. The hour field fires at 0, 3, 6, 9, 12, 15, 18, 21, so after 10:00 the next hour is 12, at minute 15. The lab's "next refresh" metric reads 12:15.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Inject a failure at 13:00 and rerun with <em>append</em>. What happens to the row count?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">It drops by 38: the failed hour is lost</button><button class="lc-option" data-correct="true">It rises from 912 to 950: 38 duplicate rows</button><button class="lc-option" data-correct="false">It stays at 912: a retry only fills the gap</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>The crash comes after the write but before the watermark moves, so the retry loads the same batch again. Watch "duplicate rows".</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>The 13:00 batch (38 sites) is written, the job crashes, and the 13:05 retry appends it again: 912 rows become 950, with 38 duplicates. Switch to upsert and it stays at 912 with 0 duplicates.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Why should an ingest job be idempotent, and how does an upsert make it so?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">So it runs faster; an upsert skips rows it has already seen</button><button class="lc-option" data-correct="false">It does not matter if the scheduler never retries a failed job</button><button class="lc-option" data-correct="true">Schedulers retry and people rerun jobs; an upsert keyed on (site, time) overwrites the same row, so running twice leaves the table as running once</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare the table after the fail + append state with fail + upsert. Which one looks like the day with no failure?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Failures and reruns are normal on a clock. With <code>ON CONFLICT (aqs_id_full, datetime) DO UPDATE</code> (or <code>rows_upsert()</code> in R) the 13:05 retry rewrites the same 38 rows, so the table keeps 912 rows and 0 duplicates, exactly the no-failure day.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // cronRuns() mirrors cron_runs() in the R panel: minutes after midnight (minute + hour fields).
+  function field(x, n) {
+    var out = [], i;
+    if (x === '*') { for (i = 0; i < n; i++) out.push(i); return out; }
+    if (x.indexOf('*/') === 0) { var k = +x.slice(2); for (i = 0; i < n; i += k) out.push(i); return out; }
+    return x.split(',').map(Number);
+  }
+  function cronRuns(cron) {
+    var f = cron.split(' '), mins = field(f[0], 60), hrs = field(f[1], 24), out = [];
+    hrs.forEach(function (h) { mins.forEach(function (m) { out.push(h * 60 + m); }); });
+    return out.sort(function (a, b) { return a - b; });
+  }
+  function hm(t) { return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
+  function toMin(s) { return +s.slice(0, 2) * 60 + +s.slice(3, 5); }
+
+  // simulate() mirrors the R loop: events sorted by (t, job); ingest loads minute in (watermark, t].
+  function simulate(s, feed) {
+    var runs = cronRuns(s.ingest), failAt = null;
+    if (s.fail !== 'none') { var min = toMin(s.fail); failAt = runs.filter(function (r) { return r >= min; })[0]; runs = runs.concat([failAt + 5]).sort(function (a, b) { return a - b; }); }
+    var refreshes = cronRuns(s.refresh);
+    var events = runs.map(function (t) { return { t: t, job: 'ingest' }; }).concat(refreshes.map(function (t) { return { t: t, job: 'refresh' }; }))
+      .sort(function (a, b) { return a.t - b.t || (a.job < b.job ? -1 : 1); });
+    var table = [], keys = new Map(), wm = -1, maxMin = null, served = null, served18 = null, worst = 0;
+    events.forEach(function (e) {
+      if (served !== null) worst = Math.max(worst, e.t - served);
+      if (e.job === 'ingest') {
+        var batch = feed.filter(function (r) { return r.minute > wm && r.minute <= e.t; });
+        e.rows = batch.length;
+        batch.forEach(function (r) {
+          var k = r.aqs_id_full + '|' + r.datetime;
+          if (s.policy === 'upsert' && keys.has(k)) { table[keys.get(k)] = r; return; }
+          keys.set(k, table.length); table.push(r);
+          if (maxMin === null || r.minute > maxMin) maxMin = r.minute;
+        });
+        e.cum = table.length;
+        e.failed = e.t === failAt; e.retry = failAt !== null && e.t === failAt + 5;
+        if (!e.failed) wm = e.t;
+      } else { served = maxMin; e.served = served; }
+      if (e.t <= 18 * 60) served18 = served;
+    });
+    return { runs: runs, refreshes: refreshes, events: events, rows: table.length, distinct: keys.size, served18: served18, worst: worst, wm: wm, failAt: failAt };
+  }
+
+  var el = document.getElementById('plot');
+  var W = Math.max(300, el.clientWidth || 560), H = W < 520 ? 230 : 260, M = { t: 34, r: 14, b: 34, l: 64 };
+  var svg = d3.select('#plot').append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'A 24-hour timeline: ingest runs and view refreshes as blocks, with a playhead');
+  var x = d3.scaleLinear().domain([0, 1440]).range([M.l, W - M.r]);
+  var lanes = { ingest: M.t + 30, refresh: M.t + 100 }, BH = 34;
+  svg.append('g').attr('transform', 'translate(0,' + (H - M.b) + ')')
+    .call(d3.axisBottom(x).tickValues(W < 520 ? [0, 360, 720, 1080, 1440] : d3.range(0, 1441, 180)).tickFormat(function (t) { return hm(t); }));
+  svg.selectAll('.domain, .tick line').attr('stroke', 'var(--bench-line)');
+  svg.selectAll('.tick text').attr('fill', 'var(--bench-muted)').attr('font-size', 12);
+  [['ingest', 'ingest'], ['refresh', 'refresh']].forEach(function (l) {
+    svg.append('text').attr('x', 6).attr('y', lanes[l[0]] + 4).attr('fill', 'var(--bench-muted)').attr('font-size', 12).text(l[1]);
+    svg.append('line').attr('x1', M.l).attr('x2', W - M.r).attr('y1', lanes[l[0]]).attr('y2', lanes[l[0]]).attr('stroke', 'var(--bench-line)');
+  });
+  svg.append('line').attr('x1', x(1080)).attr('x2', x(1080)).attr('y1', M.t - 6).attr('y2', H - M.b).attr('stroke', 'var(--bench-muted)').attr('stroke-dasharray', '3 3');
+  svg.append('text').attr('x', x(1080)).attr('y', M.t - 10).attr('text-anchor', 'middle').attr('fill', 'var(--bench-muted)').attr('font-size', 12).text('API read 18:00');
+  var gBlocks = svg.append('g');
+  var head = svg.append('line').attr('y1', M.t).attr('y2', H - M.b).attr('stroke', 'var(--y)').attr('stroke-width', 2).attr('x1', x(1440)).attr('x2', x(1440));
+  var callout = svg.append('text').attr('text-anchor', 'middle').attr('fill', 'var(--bench-ink)').attr('font-size', 12).attr('y', lanes.ingest - BH / 2 - 5);
+
+  // linked view: rows in the table after each ingest, as a step line over the same 24-hour axis
+  var rEl = document.getElementById('rows'), RH = 150, RM = { t: 22, r: 14, b: 28, l: 64 };
+  var rsvg = d3.select('#rows').append('svg').attr('viewBox', '0 0 ' + W + ' ' + RH).attr('role', 'img')
+    .attr('aria-label', 'Step line: rows in the table after each ingest run across the day');
+  var ry = d3.scaleLinear().domain([0, 1000]).range([RH - RM.b, RM.t]);
+  rsvg.append('g').attr('transform', 'translate(0,' + (RH - RM.b) + ')')
+    .call(d3.axisBottom(x).tickValues(W < 520 ? [0, 360, 720, 1080, 1440] : d3.range(0, 1441, 180)).tickFormat(function (t) { return hm(t); }));
+  rsvg.append('g').attr('transform', 'translate(' + RM.l + ',0)').call(d3.axisLeft(ry).tickValues([0, 500, 1000]));
+  rsvg.selectAll('.domain, .tick line').attr('stroke', 'var(--bench-line)');
+  rsvg.selectAll('.tick text').attr('fill', 'var(--bench-muted)').attr('font-size', 12);
+  var rPath = rsvg.append('path').attr('fill', 'none').attr('stroke', 'var(--y)').attr('stroke-width', 2);
+  var rNote = rsvg.append('text').attr('fill', 'var(--bench-ink)').attr('font-size', 12).attr('y', RM.t - 8);
+  var lastKey = null, feedCount = 0;
+
+  function fill(e) { return e.failed ? 'var(--bench-down)' : e.retry ? 'var(--bench-up)' : e.job === 'ingest' ? 'var(--y)' : 'var(--b)'; }
+
+  var lab = Lab.create({
+    id: 'v13a', initial: { ingest: '0 * * * *', refresh: '15 */3 * * *', fail: 'none', policy: 'upsert' },
+    states: {
+      baseline:    { ingest: '0 * * * *', refresh: '15 */3 * * *', fail: 'none', policy: 'upsert' },
+      fail_append: { ingest: '0 * * * *', refresh: '15 */3 * * *', fail: '13:00', policy: 'append' },
+      fail_upsert: { ingest: '0 * * * *', refresh: '15 */3 * * *', fail: '13:00', policy: 'upsert' },
+      slow_ingest: { ingest: '0 */6 * * *', refresh: '0 * * * *', fail: 'none', policy: 'upsert' }
+    },
+    load: function () {
+      return d3.csv('data/v13a.csv', function (r) { return { aqs_id_full: r.aqs_id_full, datetime: r.datetime, minute: +r.minute, value: +r.value }; })
+        .then(function (d) { feedCount = d.length; return d; });
+    },
+    render: function (s, d) {
+      var key = JSON.stringify(s), sim = simulate(s, d);
+      // motion only when the state actually changed: the first paint and a re-sync land in the end state
+      var ms = (lastKey === null || key === lastKey || Lab.motion.reduced()) ? 0 : 900;
+      lastKey = key;
+      var bw = Math.max(2, x(12) - x(0));
+      var sel = gBlocks.selectAll('rect').data(sim.events, function (e) { return e.job + e.t + (e.retry ? 'r' : ''); });
+      sel.exit().transition().duration(ms ? 150 : 0).attr('opacity', 0).remove();
+      var all = sel.enter().append('rect').attr('opacity', ms ? 0 : 1).merge(sel)
+        .attr('x', function (e) { return x(e.t) - bw / 2; }).attr('width', bw)
+        .attr('y', function (e) { return lanes[e.job] - BH / 2 + (e.retry ? 8 : 0); }).attr('height', function (e) { return e.retry ? BH - 8 : BH; })
+        .attr('rx', 2).attr('fill', fill).attr('transform', null);
+      var jobs = [];
+      if (ms) {
+        // the playhead sweeps the day; each block lights up as the clock reaches it
+        jobs.push(head.attr('x1', x(0)).attr('x2', x(0)).transition().duration(ms).ease(d3.easeLinear).attr('x1', x(1440)).attr('x2', x(1440)).end().catch(function () {}));
+        all.attr('opacity', 0.2);
+        jobs.push(all.transition().delay(function (e) { return e.t / 1440 * ms; }).duration(120).attr('opacity', 1).end().catch(function () {}));
+        // the failed block shakes, then its retry appears
+        var failed = all.filter(function (e) { return e.failed; });
+        if (!failed.empty()) {
+          jobs.push(failed.transition().delay(sim.failAt / 1440 * ms + 120).duration(60).attr('transform', 'translate(-4,0)')
+            .transition().duration(60).attr('transform', 'translate(4,0)').transition().duration(60).attr('transform', 'translate(-3,0)')
+            .transition().duration(60).attr('transform', null).end().catch(function () {}));
+        }
+      } else { all.attr('opacity', 1); head.attr('x1', x(1440)).attr('x2', x(1440)); }
+      // callout names the crash and its retry on the timeline
+      callout.attr('x', sim.failAt === null ? -99 : Math.min(W - 90, Math.max(M.l + 80, x(sim.failAt))))
+        .text(sim.failAt === null ? '' : hm(sim.failAt) + ' crash, retry ' + hm(sim.failAt + 5));
+      // rows view: a step up at every ingest; an append rerun is a visible extra jump
+      var pts = [[0, 0]];
+      sim.events.forEach(function (e) { if (e.job === 'ingest') pts.push([e.t, e.cum]); });
+      pts.push([1440, sim.rows]);
+      rPath.attr('d', d3.line().x(function (p) { return x(p[0]); }).y(function (p) { return ry(p[1]); }).curve(d3.curveStepAfter)(pts));
+      var dup = sim.rows - sim.distinct, re = sim.events.filter(function (e) { return e.retry; })[0],
+        fe = sim.events.filter(function (e) { return e.failed; })[0];
+      rNote.attr('x', re ? Math.min(W - 200, Math.max(M.l, x(re.t) - 100)) : M.l)
+        .text(re ? 'rerun at ' + hm(re.t) + ': +' + (re.cum - fe.cum) + ' rows, ' + dup + ' duplicated' : sim.rows + ' rows, no reruns');
+      if (ms) {
+        var len = rPath.node().getTotalLength();
+        rPath.attr('stroke-dasharray', len + ' ' + len).attr('stroke-dashoffset', len);
+        jobs.push(rPath.transition().duration(ms).ease(d3.easeLinear).attr('stroke-dashoffset', 0).end().catch(function () {}));
+      } else { rPath.attr('stroke-dasharray', null).attr('stroke-dashoffset', null); }
+      // freshness gauge: 0 min = full, 6 h or more = empty
+      var fr = 1080 - sim.served18, frac = Math.max(0, 1 - fr / 360);
+      var g = document.getElementById('gauge');
+      g.style.transition = ms ? 'transform 300ms cubic-bezier(.22,1,.36,1)' : 'none';
+      g.style.transform = 'scaleX(' + frac.toFixed(3) + ')';
+      g.classList.toggle('is-stale', fr > 120);
+      document.getElementById('gauge-text').textContent = 'At 18:00 the API serves readings through ' + hm(sim.served18) + ', ' + fr + ' min old';
+      document.getElementById('gauge-worst').textContent = 'Worst over the day: ' + sim.worst + ' min old, just before a run';
+      var waiting = d.filter(function (r) { return r.minute > sim.wm; }).length;
+      document.getElementById('pending').textContent = waiting === 0 ? 'Every hour of the day is loaded by the last ingest run.'
+        : sim.rows + ' rows, not ' + (sim.rows + waiting) + ': the last ingest runs at ' + hm(sim.wm) + ', so the ' + waiting + ' readings from hours ' + (Math.floor(sim.wm / 60) + 1) + '-23 load at the next 00:00 run.';
+      // the next 5 runs after 10:00, carried past midnight into the next day (marked +1 d)
+      var after = function (arr) { var cell = function (t) { return '<span class="v13-t">' + t + '</span>'; };
+        var out = arr.filter(function (t) { return t > 600; }).slice(0, 5).map(function (t) { return cell(hm(t)); }), i = 0;
+        while (out.length < 5 && arr.length) { out.push(cell(hm(arr[i % arr.length]) + (i < arr.length ? ' +1 d' : ' +2 d'))); i++; }
+        return out.join(' '); };
+      document.getElementById('next5').innerHTML = '<li><b>ingest </b>' + after(cronRuns(s.ingest)) + '</li><li><b>refresh</b> ' + after(sim.refreshes) + '</li>';
+      document.getElementById('c-refresh-out').textContent = s.refresh;
+      return Promise.all(jobs);
+    },
+    readouts: function (s, d) {
+      var sim = simulate(s, d), nx = sim.refreshes.filter(function (t) { return t > 600; })[0];
+      return { ingest_runs: sim.runs.length, rows_in_table: sim.rows, duplicate_rows: sim.rows - sim.distinct, freshness_min: 1080 - sim.served18, worst_staleness_min: sim.worst, next_refresh: hm(nx) };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'rows_in_table', label: 'rows in table', fmt: 0 }, { key: 'duplicate_rows', label: 'duplicate rows', fmt: 0 },
+      { key: 'freshness_min', label: 'staleness at 18:00 (min)', fmt: 0 }, { key: 'worst_staleness_min', label: 'worst staleness over the day (min)', fmt: 0 }, { key: 'ingest_runs', label: 'ingest runs', fmt: 0 },
+      { key: 'next_refresh', label: 'next refresh' }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.rows_in_table + ' rows from a ' + feedCount + '-reading day, ' + r.duplicate_rows + ' duplicated'; },
+    code: {
+      r: function (s) {
+        var failing = s.fail !== 'none';
+        return "# .github/workflows/ingest.yml  (GitHub Actions reads cron in UTC)\n# on:\n#   schedule:\n" +
+          "#     - cron: '" + s.ingest + "'   # ingest\n#     - cron: '" + s.refresh + "'   # refresh the API view\n\n" +
+          "# minutes after midnight when a cron string fires (minute + hour fields)\ncron_runs = function(cron) {\n" +
+          '  f = strsplit(cron, " ")[[1]]\n  field = function(x, n) {\n    if (x == "*") return(0:(n - 1))\n' +
+          '    if (startsWith(x, "*/")) return(seq(0, n - 1, by = as.integer(substring(x, 3))))\n' +
+          '    as.integer(strsplit(x, ",")[[1]])\n  }\n  sort(as.vector(outer(field(f[1], 60), field(f[2], 24) * 60, `+`)))\n}\n\n' +
+          'ingest = function(table, batch) {\n' +
+          (s.policy === 'upsert' ? '  rows_upsert(table, batch, by = c("aqs_id_full", "datetime"))   # idempotent\n' : '  bind_rows(table, batch)   # append: a rerun adds the batch again\n') +
+          '}\n\nruns = cron_runs("' + s.ingest + '")\n' +
+          (failing ? 'fail_at = min(runs[runs >= ' + toMin(s.fail) + '])   # first run at or after ' + s.fail + ' crashes\nruns = sort(c(runs, fail_at + 5))                 # the scheduler retries 5 minutes later\n' : '') +
+          'refreshes = cron_runs("' + s.refresh + '")\n' +
+          'events = bind_rows(tibble(t = runs, job = "ingest"), tibble(t = refreshes, job = "refresh")) %>%\n  arrange(t, job)\n\n' +
+          'table = feed[0, ]\nwatermark = -1       # last minute safely loaded\nserved = NA          # newest reading the API view can see\nserved_at_18 = NA\n' +
+          'worst = 0           # worst staleness seen at any run, over the day\n' +
+          'for (i in seq_len(nrow(events))) {\n  t = events$t[i]\n  if (!is.na(served)) worst = max(worst, t - served)   # how old the API is just before this run\n  if (events$job[i] == "ingest") {\n' +
+          '    batch = feed %>% filter(minute > watermark, minute <= t)\n    table = ingest(table, batch)\n' +
+          (failing ? '    if (t != fail_at) watermark = t   # the crash comes after the write, before the watermark\n' : '    watermark = t\n') +
+          '  } else {\n    served = if (nrow(table) > 0) max(table$minute) else NA\n  }\n  if (t <= 18 * 60) served_at_18 = served\n}\n\n' +
+          'tibble(\n  ingest_runs   = length(runs),\n  rows_in_table = nrow(table),\n' +
+          '  duplicate_rows = nrow(table) - nrow(distinct(table, aqs_id_full, datetime)),\n' +
+          '  freshness_min = 18 * 60 - served_at_18,     # API staleness at 18:00\n' +
+          '  worst_staleness_min = worst,               # worst API staleness over the day\n' +
+          '  next_refresh  = sprintf("%02d:%02d", min(refreshes[refreshes > 600]) %/% 60, min(refreshes[refreshes > 600]) %% 60)\n)';
+      },
+      sql: function (s) {
+        return "-- pg_cron: the database runs its own clock (times in UTC)\n" +
+          "SELECT cron.schedule('ingest-air', '" + s.ingest + "', $$CALL ingest_air()$$);\n" +
+          "SELECT cron.schedule('refresh-api', '" + s.refresh + "',\n  $$REFRESH MATERIALIZED VIEW CONCURRENTLY api_latest$$);\n\n" +
+          "-- inside ingest_air(): load the batch staged since the watermark\nINSERT INTO readings (aqs_id_full, datetime, value)\nSELECT aqs_id_full, datetime, value FROM staging" +
+          (s.policy === 'upsert' ? '\nON CONFLICT (aqs_id_full, datetime)\n  DO UPDATE SET value = EXCLUDED.value;   -- upsert: a rerun is a no-op' : ';   -- append: a rerun inserts the same rows again') +
+          '\n\n-- next 5 runs: SELECT jobname, schedule FROM cron.job;';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-ingest').value = s.ingest;
+      var f = s.refresh.split(' ');
+      document.getElementById('c-rmin').value = f[0];
+      document.getElementById('c-rstep').value = f[1] === '*' ? '1' : f[1].slice(2);
+      document.getElementById('c-fail').value = s.fail;
+      document.querySelectorAll('#c-policy button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.policy)); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  function buildRefresh() { var m = document.getElementById('c-rmin').value, k = document.getElementById('c-rstep').value; return m + (k === '1' ? ' *' : ' */' + k) + ' * * *'; }
+  document.getElementById('c-ingest').addEventListener('change', function (e) { lab.setState({ ingest: e.target.value }); });
+  ['c-rmin', 'c-rstep'].forEach(function (id) { document.getElementById(id).addEventListener('change', function () { lab.setState({ refresh: buildRefresh() }); }); });
+  document.getElementById('c-fail').addEventListener('change', function (e) { lab.setState({ fail: e.target.value }); });
+  document.querySelectorAll('#c-policy button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ policy: b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>
