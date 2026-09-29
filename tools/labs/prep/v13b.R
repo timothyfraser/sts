@@ -50,7 +50,8 @@ logs = list(
   no_sf     = "Error in library(sf) : there is no package called 'sf'",
   no_env    = "Error: ALLOWED_ORIGIN is not set; refusing to start",
   bad_entry = "Error: Unable to locate primary document 'plumber.R' in the bundle",
-  cold      = "No running process for this content; starting one (min_processes = 0)"
+  cold      = "No running process for this content; starting one (min_processes = 0)",
+  silent    = "GET /health 200 in 0.15s (no error: every origin allowed, Access-Control-Allow-Origin: *)"
 )
 timing = list(boot_s = 8.4, warm_s = 0.15)
 step_names = c("bundle", "upload", "restore", "start", "health")
@@ -61,7 +62,7 @@ stopifnot(file.size(file.path(root, data_out)) <= 500 * 1024)
 data = fromJSON(file.path(root, data_out), simplifyVector = FALSE)   # the bytes the page fetches
 
 # ---- 3. STATES -----------------------------------------------------------------------------
-# pkgs: all | no_sf ; env: set | unset ; entry: path | wrong | wrapper ; min_procs: 1 | 0 ; idle: FALSE | TRUE
+# pkgs: all | no_sf ; env: set | unset | default ; entry: path | wrong | wrapper ; min_procs: 1 | 0 ; idle: FALSE | TRUE
 base_state = list(pkgs = "all", env = "set", entry = "path", min_procs = 1, idle = FALSE)
 mk = function(...) modifyList(base_state, list(...))
 states = list(
@@ -71,7 +72,8 @@ states = list(
   wrong_entry = mk(entry = "wrong"),
   wrapper     = mk(entry = "wrapper"),
   cold_start  = mk(min_procs = 0, idle = TRUE),
-  min0_warm   = mk(min_procs = 0, idle = FALSE)
+  min0_warm   = mk(min_procs = 0, idle = FALSE),
+  silent_default = mk(env = "default")
 )
 
 # The manifest this state ships (pure data preparation; the page does the same with the JSON).
@@ -85,7 +87,10 @@ manifest_for = function(s) {
   }
   m
 }
-env_for = function(s) if (s$env == "set") c(ALLOWED_ORIGIN = "https://sts.example.edu") else character(0)
+env_for = function(s) switch(s$env,
+  set     = c(ALLOWED_ORIGIN = "https://sts.example.edu"),
+  unset   = character(0),
+  default = c(ALLOWED_ORIGIN = "*"))
 
 # ---- 4. PANEL CODE -------------------------------------------------------------------------
 # Three helper scripts (shown, not run) followed by the diagnosis (run for real, below).
@@ -101,6 +106,7 @@ scripts_r = function(s) {
     "# deployme.R  (bundle, upload, restore, start)\n",
     "rsconnect::deployAPI(api = \".\", appPrimaryDoc = \"", entry_shown(s), "\")\n",
     if (s$env == "set") "# Connect Vars: ALLOWED_ORIGIN is set\n" else "# Connect Vars: ALLOWED_ORIGIN was never set\n",
+    if (s$env == "default") "# plumber.R reads it with a silent default:\n#   origin = Sys.getenv(\"ALLOWED_ORIGIN\", unset = \"*\")\n" else "",
     "# Connect Runtime: min processes = ", s$min_procs, "\n\n",
     "# testme.R  (health check)\n",
     "httr2::request(paste0(base, \"/health\")) %>%\n",
@@ -113,7 +119,8 @@ diagnose_r = function(s) {
     "# what Connect does with this bundle\n",
     "manifest = fromJSON(\"manifest.json\")\n",
     "needed = c(\"plumber\", \"dplyr\", \"readr\", \"sf\", \"jsonlite\")\n",
-    "env_vars = ", if (length(ev) == 0) "character(0)" else "c(ALLOWED_ORIGIN = \"https://sts.example.edu\")", "\n",
+    "env_vars = ", if (length(ev) == 0) "character(0)" else paste0("c(ALLOWED_ORIGIN = \"", ev[["ALLOWED_ORIGIN"]], "\")"),
+    if (s$env == "default") "   # unset on Connect: the code's default fills it in" else "", "\n",
     "min_processes = ", s$min_procs, "\n",
     "idle = ", if (s$idle) "TRUE" else "FALSE", "\n\n",
     "failed = case_when(\n",
@@ -141,6 +148,7 @@ log_for = function(s, result) {
   else if (result$failed_step == "start" && s$pkgs == "no_sf") data$logs$no_sf
   else if (result$failed_step == "start") data$logs$no_env
   else if (result$first_response_s > 1) data$logs$cold
+  else if (s$env == "default") data$logs$silent
   else data$logs$ok
 }
 
