@@ -1,0 +1,185 @@
+{
+  "lab": "v9b",
+  "page": "docs-v3/labs/v9b-indexes-and-bundles.html",
+  "generated_by": "tools/labs/prep/v9b.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "query": "station",
+        "index": false,
+        "partition": false,
+        "mview": false,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 5191203,
+        "pages_scanned": 38171,
+        "bytes_read": 312696832,
+        "bytes_row_store": 312696832,
+        "bytes_col_store": 62294436,
+        "trips": 509713
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"tally_rush_edges\") %>%\n  filter(start_code == \"A32010\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "EXPLAIN ANALYZE\nSELECT sum(count) AS trips\nFROM tally_rush_edges\nWHERE start_code = 'A32010';"
+      }
+    },
+    {
+      "name": "station_index",
+      "state": {
+        "query": "station",
+        "index": true,
+        "partition": false,
+        "mview": false,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 103398,
+        "pages_scanned": 764,
+        "bytes_read": 6258688,
+        "bytes_row_store": 6258688,
+        "bytes_col_store": 1240776,
+        "trips": 509713
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"tally_rush_edges\") %>%\n  filter(start_code == \"A32010\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "CREATE INDEX edges_start_idx\n  ON tally_rush_edges (start_code);\n\nEXPLAIN ANALYZE\nSELECT sum(count) AS trips\nFROM tally_rush_edges\nWHERE start_code = 'A32010';"
+      }
+    },
+    {
+      "name": "month_scan",
+      "state": {
+        "query": "month",
+        "index": false,
+        "partition": false,
+        "mview": false,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 5191203,
+        "pages_scanned": 38171,
+        "bytes_read": 312696832,
+        "bytes_row_store": 312696832,
+        "bytes_col_store": 41529624,
+        "trips": 397661
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"tally_rush_edges\") %>%\n  filter(day >= \"2019-09-01\", day < \"2019-10-01\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "EXPLAIN ANALYZE\nSELECT sum(count) AS trips\nFROM tally_rush_edges\nWHERE day >= '2019-09-01' AND day < '2019-10-01';"
+      }
+    },
+    {
+      "name": "month_index",
+      "state": {
+        "query": "month",
+        "index": true,
+        "partition": false,
+        "mview": false,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 5191203,
+        "pages_scanned": 38171,
+        "bytes_read": 312696832,
+        "bytes_row_store": 312696832,
+        "bytes_col_store": 41529624,
+        "trips": 397661
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"tally_rush_edges\") %>%\n  filter(day >= \"2019-09-01\", day < \"2019-10-01\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "CREATE INDEX edges_start_idx\n  ON tally_rush_edges (start_code);\n\nEXPLAIN ANALYZE\nSELECT sum(count) AS trips\nFROM tally_rush_edges\nWHERE day >= '2019-09-01' AND day < '2019-10-01';"
+      }
+    },
+    {
+      "name": "month_partition",
+      "state": {
+        "query": "month",
+        "index": false,
+        "partition": true,
+        "mview": false,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 131483,
+        "pages_scanned": 967,
+        "bytes_read": 7921664,
+        "bytes_row_store": 7921664,
+        "bytes_col_store": 1051864,
+        "trips": 397661
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"edges_by_month\") %>%\n  filter(day >= \"2019-09-01\", day < \"2019-10-01\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "CREATE TABLE edges_by_month (LIKE tally_rush_edges)\n  PARTITION BY RANGE (day);\nCREATE TABLE edges_2019_09 PARTITION OF edges_by_month\n  FOR VALUES FROM ('2019-09-01') TO ('2019-10-01');\n\nEXPLAIN ANALYZE\nSELECT sum(count) AS trips\nFROM edges_by_month\nWHERE day >= '2019-09-01' AND day < '2019-10-01';"
+      }
+    },
+    {
+      "name": "total_postgres",
+      "state": {
+        "query": "total",
+        "index": false,
+        "partition": false,
+        "mview": false,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 5191203,
+        "pages_scanned": 38171,
+        "bytes_read": 312696832,
+        "bytes_row_store": 312696832,
+        "bytes_col_store": 20764812,
+        "trips": 15039491
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"tally_rush_edges\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "EXPLAIN ANALYZE\nSELECT sum(count) AS trips\nFROM tally_rush_edges;"
+      }
+    },
+    {
+      "name": "total_duckdb",
+      "state": {
+        "query": "total",
+        "index": false,
+        "partition": false,
+        "mview": false,
+        "engine": "duckdb"
+      },
+      "readouts": {
+        "rows_scanned": 5191203,
+        "pages_scanned": 43,
+        "bytes_read": 20764812,
+        "bytes_row_store": 312696832,
+        "bytes_col_store": 20764812,
+        "trips": 15039491
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(duckdb)\nlibrary(dplyr)\n\ncon = dbConnect(duckdb::duckdb())\n\ncon %>%\n  tbl(\"tally_rush_edges\") %>%\n  summarize(trips = sum(count, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "SELECT sum(count) AS trips\nFROM tally_rush_edges;"
+      }
+    },
+    {
+      "name": "total_mview",
+      "state": {
+        "query": "total",
+        "index": false,
+        "partition": false,
+        "mview": true,
+        "engine": "postgres"
+      },
+      "readouts": {
+        "rows_scanned": 22414,
+        "pages_scanned": 110,
+        "bytes_read": 901120,
+        "bytes_row_store": 901120,
+        "bytes_col_store": 89656,
+        "trips": 15039491
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(RPostgres)\nlibrary(dplyr)\n\ncon = dbConnect(RPostgres::Postgres(), dbname = \"bluebikes\")\n\ncon %>%\n  tbl(\"trips_by_station_month\") %>%\n  summarize(trips = sum(trips, na.rm = TRUE)) %>%\n  collect()",
+        "sql": "CREATE MATERIALIZED VIEW trips_by_station_month AS\n  SELECT start_code, substr(day, 1, 7) AS month, sum(count) AS trips\n  FROM tally_rush_edges\n  GROUP BY start_code, month;\n\nEXPLAIN ANALYZE\nSELECT sum(trips) AS trips\nFROM trips_by_station_month;"
+      }
+    }
+  ],
+  "ack": []
+}
