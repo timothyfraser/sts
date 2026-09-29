@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:45837/labs/v3b-groups-and-windows.html",
+    "url": "http://127.0.0.1:36017/labs/v3b-groups-and-windows.html",
     "type": "document",
     "status": 200,
-    "bytes": 19196
+    "bytes": 19563
   },
   {
-    "url": "http://127.0.0.1:45837/assets/sts.css",
+    "url": "http://127.0.0.1:36017/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:45837/labs/kit/lab.css",
+    "url": "http://127.0.0.1:36017/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7050
   },
   {
-    "url": "http://127.0.0.1:45837/labs/kit/lab.js",
+    "url": "http://127.0.0.1:36017/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:45837/labs/data/v3b.csv",
+    "url": "http://127.0.0.1:36017/labs/data/v3b.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 1873

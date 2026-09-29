@@ -9,11 +9,10 @@
 <script src="kit/lab.js"></script>
 <style>
   .v3b-cell rect{stroke:var(--bench-line);stroke-width:.5}
-  .v3b-cell text{font-family:var(--mono);font-size:11px;letter-spacing:-.02em;fill:var(--bench-ink)}
-  .v3b-lane-label{font-family:var(--mono);font-size:11px;fill:var(--bench-muted)}
+  .v3b-cell text{font-family:var(--mono);font-size:12px;letter-spacing:-.02em;fill:var(--bench-ink)}
+  .v3b-lane-label{font-family:var(--mono);font-size:12px;fill:var(--bench-muted)}
   .v3b-arrow{fill:none;stroke:var(--bench-ink);stroke-width:1.6;stroke-opacity:.75}
   .v3b-arrow.is-leak{stroke:var(--bench-down);stroke-width:2.4;stroke-opacity:1}
-  @media (max-width:620px){.v3b-cell text{font-size:10px}}
   .lab-seg button:disabled{opacity:.38;cursor:not-allowed;text-decoration:line-through}
   .lab-controls label.is-off,.v3b-row.is-off>span{color:var(--bench-muted)}
   .lab-controls select:disabled{opacity:.38;cursor:not-allowed}
@@ -23,7 +22,7 @@
 <body data-lab="v3b">
 <main class="lab-page">
   <header class="lab-head">
-    <p class="eyebrow">Chapter 3 · grouped data and window functions</p>
+    <p class="eyebrow">Chapter 3 · Grouped data and window functions</p>
     <h1>Groups, summaries and lags</h1>
     <p class="lab-lo"><strong>Learning objective:</strong> Distinguish summarise, mutate and reframe on grouped data, and compute lags within groups without leaking across group boundaries.</p>
   </header>
@@ -120,7 +119,7 @@
   }
   // ---- the bench: one lane per municipality, rows stacked inside the lane in result order.
   var stage = document.getElementById('plot');
-  var W = Math.max(300, stage.clientWidth || 560), COLS = W < 620 ? 4 : 8, CH = 20, TOP = 22, LANE_H = TOP + 12 * CH + 14;
+  var W = Math.max(300, stage.clientWidth || 560), COLS = W < 620 ? 2 : 8, CH = 20, TOP = 22, LANE_H = TOP + 12 * CH + 14;
   var H = LANE_H * (8 / COLS), LW = W / COLS;
   var svg = d3.select(stage).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
     .attr('aria-label', 'Rows of the solar table in one lane per municipality; summaries collapse lanes, window functions draw arrows from the row they read');
@@ -165,6 +164,9 @@
       var arrows = [];
       if (s.verb === 'mutate') out.forEach(function (o) { (o.srcs || []).slice(0, 1).forEach(function (r) { arrows.push({ key: o.key, from: pos[r.muni_code + '|' + r.date], to: pos[o.key], leak: o.leak }); }); });
       var path = function (a) { var x1 = a.from.x + a.from.w - 2, y1 = a.from.y + CH / 2 - 1, x2 = a.to.x + a.to.w - 2, y2 = a.to.y + CH / 2 - 1;
+        if (a.leak) { // a leak leaves its lane: route it through the gutters and the band under the source lane, never across a value
+          var g1 = a.from.x + a.from.w + 3, g2 = a.to.x + a.to.w + 3, yb = Math.floor(a.from.y / LANE_H) * LANE_H + TOP + 12 * CH + 4;
+          return 'M' + x1 + ',' + y1 + 'L' + g1 + ',' + y1 + 'L' + g1 + ',' + yb + 'L' + g2 + ',' + yb + 'L' + g2 + ',' + y2 + 'L' + (x2 + 1) + ',' + y2; }
         var bend = Math.min(18, 6 + Math.abs(y2 - y1) / 6); return 'M' + x1 + ',' + y1 + 'C' + (x1 + bend) + ',' + y1 + ' ' + (x2 + bend) + ',' + y2 + ' ' + (x2 + 1) + ',' + y2; };
       var ar = gArrows.selectAll('path').data(arrows, function (a) { return a.key; });
       ar.exit().remove();
