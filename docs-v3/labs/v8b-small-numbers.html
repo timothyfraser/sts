@@ -118,7 +118,7 @@
   fsvg.append('g').attr('transform', 'translate(0,' + (H - M.b) + ')').call(d3.axisBottom(x).tickValues([100, 1000, 10000]).tickFormat(d3.format(',')));
   fsvg.append('g').attr('transform', 'translate(' + M.l + ',0)').call(d3.axisLeft(y).tickValues([0, 1, 2, 5, 10, 20, 30]));
   fsvg.append('text').attr('x', W - M.r).attr('y', H - 4).attr('text-anchor', 'end').text('residents (log)');
-  fsvg.append('text').attr('x', M.l + 4).attr('y', M.t + 10).text('per 1,000');
+  fsvg.append('text').attr('x', M.l + 4).attr('y', M.t + 10).text('per 1,000 (sqrt scale)');
   var plot = fsvg.append('g').attr('clip-path', 'url(#v8b-clip)');
   var gCity = plot.append('line').attr('class', 'city'), gLim = plot.append('g'), gWh = plot.append('g'), gDots = plot.append('g');
   var line = d3.line().x(function (p) { return x(p[0]); }).y(function (p) { return y(p[1]); });
