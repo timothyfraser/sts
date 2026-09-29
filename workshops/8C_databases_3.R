@@ -63,7 +63,7 @@ cityyears %>% glimpse()
 db = dbConnect(drv = RSQLite::SQLite(), "data/jp_solar.sqlite")
 
 # Let's write our table to file.
-dbWriteTable(conn = db, name = "cityyears", value = units)
+dbWriteTable(conn = db, name = "cityyears", value = cityyears)
 
 # List tables in database
 dbListTables(db)
@@ -111,7 +111,7 @@ db
 dbListTables(db)
 
 # Let's write our table to file.
-dbWriteTable(conn = db, name = "cityyears", value = units)
+dbWriteTable(conn = db, name = "cityyears", value = cityyears)
 
 # Check tables!
 dbListTables(db)

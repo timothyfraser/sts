@@ -896,7 +896,7 @@ gg = ggplot() +
   coord_sf(xlim = c(-79.5, -72), ylim = c(40.5, 45), expand = FALSE) 
 
 
-ggsave(gg, filename = "workshops/18c_visual_gg.png",
+ggsave(gg, filename = "workshops/18C_visual_gg.png",
        dpi = 300, width = 8, height = 6)
 
 browseURL("workshops/18C_visual_gg.png")
