@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Small numbers, big swings</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .v8b-views { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  @media (max-width: 720px) { .v8b-views { grid-template-columns: minmax(0, 1fr); } }
+  .v8b-views figure { margin: 0; min-width: 0; }
+  .v8b-views figcaption { color: var(--bench-muted); font-size: 13px; margin: 0 0 4px; }
+  .v8b-views svg { display: block; width: 100%; height: auto; }
+  #map path.poly { fill: var(--y); stroke: var(--bench-line); stroke-width: 0.6; }
+  #map path.poly.is-off { fill: var(--bench-panel); fill-opacity: 1; }
+  #map path.poly.is-leader { stroke: var(--b); stroke-width: 2.5; }
+  .v8b-funnel .limit { fill: none; stroke: var(--bench-muted); stroke-width: 1.4; }
+  .v8b-funnel .limit.l998 { stroke-dasharray: 5 4; }
+  .v8b-funnel .city { stroke: var(--bench-muted); stroke-width: 1; }
+  .v8b-funnel .whisker { stroke: var(--y); stroke-width: 1.2; opacity: 0.75; }
+  .v8b-funnel circle.dot { fill: var(--y); stroke: var(--indigo); stroke-width: 0.8; }
+  .v8b-funnel circle.dot.is-leader { fill: var(--b); stroke: var(--bench-ink); stroke-width: 1.4; }
+  .v8b-funnel text { fill: var(--bench-muted); font-size: 12px; }
+  .v8b-funnel .domain, .v8b-funnel .tick line { stroke: var(--bench-line); }
+  #table tr[data-key="Cell 149"] td { color: var(--b); font-weight: 600; }
+</style>
+</head>
+<body data-lab="v8b">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 8 · rates and uncertainty by area</p>
+    <h1>Small numbers, big swings</h1>
+    <p class="lab-lo"><strong>Learning objective.</strong> Explain why rates in small areas are noisy, attach intervals to area estimates, and see shrinkage toward the mean.</p>
+    <p class="lab-note">The areas here are 73 one-kilometre grid cells covering Boston, not block groups: the census table in this data is keyed to the grid, so each cell carries its own population.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage">
+        <div class="v8b-views">
+          <figure><figcaption>Sites per 1,000 residents, 1 km cells</figcaption><div id="map"></div></figure>
+          <figure><figcaption>Funnel plot: rate against population</figcaption><div id="funnel" class="v8b-funnel"></div></figure>
+        </div>
+      </div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <div role="group" aria-label="Metric" class="lab-seg" id="c-metric"><button type="button" data-v="raw" aria-pressed="true">Raw rate</button><button type="button" data-v="ci" aria-pressed="false">Rate + 95% CI</button><button type="button" data-v="shrunk" aria-pressed="false">Shrunk rate</button></div>
+          <label>Minimum population <select id="c-pop"><option value="1" selected>1</option><option value="500">500</option><option value="2000">2,000</option></select></label>
+          <div role="group" aria-label="Sort the table by" class="lab-seg" id="c-sort"><button type="button" data-v="rate" aria-pressed="true">By rate</button><button type="button" data-v="pop" aria-pressed="false">By population</button></div>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>a cell (brighter = higher rate)</li><li><i style="background:var(--b)"></i>raw-rate leader</li><li><i style="background:var(--bench-muted)"></i>city rate and funnel limits (solid 95%, dashed 99.8%)</li></ul></div>
+      <div><h2>Top 10 cells</h2><div id="table"></div></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h2>LC 01 · observe</h2><p class="lc-q">At baseline, which cell has the highest raw rate, and what is its population?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">Cell 93, with 1,467 residents</button><button class="lc-option" data-correct="true">Cell 149, with 71 residents</button><button class="lc-option" data-correct="false">Cell 162, with 10,060 residents</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "top cell" and "its population" in the sidebar, or the first row of the table.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Cell 149: 2 sites for 71 residents is 28.2 per 1,000, about 13 times the city rate of 2.14. Two sites is a tiny count, so its 95% interval runs from 3.4 to 101.8.</div></section>
+    <section class="lab-lc" data-lc="2"><h2>LC 02 · intervene</h2><p class="lc-q">Turn on "Shrunk rate". Where does Cell 149 move in the ranking, and why?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">It stays first: shrinkage lowers every rate by the same amount</button><button class="lc-option" data-correct="true">It drops to 9th: with only 71 residents its rate is mostly noise, so it is pulled hard toward the city rate</button><button class="lc-option" data-correct="false">It drops out of the table because shrinkage removes small cells</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Watch "raw leader's rank" and the blue point in the funnel. How far does a point move compared with a large cell?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>It drops from 1st to 9th. The shrink weight is A / (A + m / pop): with pop = 71 the weight is small, so its estimate moves most of the way to the city rate, while Cell 93 (1,467 residents) keeps more of its own rate and becomes the leader at 4.6.</div></section>
+    <section class="lab-lc" data-lc="3"><h2>LC 03 · transfer</h2><p class="lc-q">A health department ranks 300 towns by overdose rate. Why is a funnel plot a better first screen than the ranked table?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Because it drops the small towns, which are always wrong</button><button class="lc-option" data-correct="false">Because a ranked table cannot hold 300 rows</button><button class="lc-option" data-correct="true">Because it compares each rate with the spread expected at that population, so a small town is flagged only if it is outside its own limit</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>The limits in the funnel are wide on the left and narrow on the right. What does that say about a rate from a small population?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>A ranked table puts the noisiest (smallest) areas at the top and bottom by chance. The funnel's limits widen as population falls, so here only 4 of 61 cells sit above the 99.8% limit, and those are the ones worth a closer look.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // ---- statistics, mirroring the R panel code --------------------------------------------
+  // Poisson CDF P(X <= k | lambda)
+  function ppois(k, lam) { if (k < 0) return 0; var t = Math.exp(-lam), s = t; for (var i = 1; i <= k; i++) { t *= lam / i; s += t; } return s; }
+  // Root of a decreasing function of lambda by bisection (the CDF falls as lambda grows).
+  function solve(f, target) { var lo = 0, hi = 1000; for (var i = 0; i < 200; i++) { var mid = (lo + hi) / 2; if (f(mid) > target) lo = mid; else hi = mid; } return (lo + hi) / 2; }
+  // qchisq(0.025, 2k) / 2 and qchisq(0.975, 2(k + 1)) / 2: the exact Poisson 95% limits for a count k.
+  function lowerCount(k) { return k === 0 ? 0 : solve(function (l) { return ppois(k - 1, l); }, 0.975); }
+  function upperCount(k) { return solve(function (l) { return ppois(k, l); }, 0.025); }
+
+  function compute(s, d) {
+    var r = d.filter(function (a) { return a.pop >= s.min_pop; }).map(function (a) {
+      return { id: a.cell, cell: a.cell, neighborhood: a.neighborhood, pop: a.pop, sites: a.sites,
+        rate: a.sites / a.pop * 1000, lower: lowerCount(a.sites) / a.pop * 1000, upper: upperCount(a.sites) / a.pop * 1000 };
+    });
+    var S = 0, P = 0; r.forEach(function (a) { S += a.sites; P += a.pop; });
+    var m = S / P;
+    r.forEach(function (a) { a.hi95 = (m + 1.96 * Math.sqrt(m / a.pop)) * 1000; a.hi998 = (m + 3.09 * Math.sqrt(m / a.pop)) * 1000; });
+    var s2 = 0; r.forEach(function (a) { s2 += a.pop * Math.pow(a.sites / a.pop - m, 2); }); s2 /= P;
+    var A = Math.max(s2 - m / (P / r.length), 0);
+    r.forEach(function (a) { a.weight = A / (A + m / a.pop); a.shrunk = (m + a.weight * (a.sites / a.pop - m)) * 1000; });
+    var leader = r.reduce(function (b, a) { return a.rate > b.rate ? a : b; }, r[0]).cell;
+    var key = s.metric === 'shrunk' ? 'shrunk' : 'rate';
+    var ranked = r.map(function (a, i) { return [a, i]; }).sort(function (x, y) { return (y[0][key] - x[0][key]) || (x[1] - y[1]); }).map(function (x) { return x[0]; });
+    var top10 = s.sort === 'pop' ? ranked.map(function (a, i) { return [a, i]; }).sort(function (x, y) { return (y[0].pop - x[0].pop) || (x[1] - y[1]); }).map(function (x) { return x[0]; }).slice(0, 10) : ranked.slice(0, 10);
+    var L = ranked.filter(function (a) { return a.cell === leader; })[0];
+    return { all: r, ranked: ranked, top10: top10, m: m, key: key, leader: leader,
+      readouts: { n_areas: r.length, city_rate: m * 1000, top_cell: ranked[0].cell, top_value: ranked[0][key], top_pop: ranked[0].pop,
+        leader_rank: ranked.indexOf(L) + 1, leader_lower: L.lower, leader_upper: L.upper,
+        n_above_998: r.filter(function (a) { return a.rate > a.hi998; }).length } };
+  }
+
+  // ---- views --------------------------------------------------------------------------------
+  var reduced = Lab.motion.reduced;
+  var mapEl = document.getElementById('map'), funEl = document.getElementById('funnel');
+  var W = Math.max(280, funEl.clientWidth || 320), H = Math.round(W * 0.82), M = { t: 14, r: 12, b: 36, l: 40 };
+  var fsvg = d3.select(funEl).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'Funnel plot of each cell\'s rate against its population, with the city rate and 95% and 99.8% control limits');
+  var x = d3.scaleLog().domain([50, 20000]).range([M.l, W - M.r]);
+  var y = d3.scaleSqrt().domain([0, 32]).range([H - M.b, M.t]).clamp(true);
+  fsvg.append('defs').append('clipPath').attr('id', 'v8b-clip').append('rect').attr('x', M.l).attr('y', M.t).attr('width', W - M.l - M.r).attr('height', H - M.t - M.b);
+  fsvg.append('g').attr('transform', 'translate(0,' + (H - M.b) + ')').call(d3.axisBottom(x).tickValues([100, 1000, 10000]).tickFormat(d3.format(',')));
+  fsvg.append('g').attr('transform', 'translate(' + M.l + ',0)').call(d3.axisLeft(y).tickValues([0, 1, 2, 5, 10, 20, 30]));
+  fsvg.append('text').attr('x', W - M.r).attr('y', H - 4).attr('text-anchor', 'end').text('residents (log)');
+  fsvg.append('text').attr('x', M.l + 4).attr('y', M.t + 10).text('per 1,000');
+  var plot = fsvg.append('g').attr('clip-path', 'url(#v8b-clip)');
+  var gCity = plot.append('line').attr('class', 'city'), gLim = plot.append('g'), gWh = plot.append('g'), gDots = plot.append('g');
+  var line = d3.line().x(function (p) { return x(p[0]); }).y(function (p) { return y(p[1]); });
+  var pops = d3.range(0, 101).map(function (i) { return 50 * Math.pow(400, i / 100); });
+
+  var mapObj = null, tb = Lab.table(document.getElementById('table'), [],
+    [{ key: 'cell', label: 'cell' }, { key: 'pop', label: 'residents', num: true, fmt: 0 }, { key: 'value', label: 'per 1,000', num: true, fmt: 2 }],
+    { label: 'Top 10 cells for the current metric' });
+  var first = true;
+
+  function render(s, d) {
+    var c = compute(s, d), ms = (first || reduced()) ? 0 : 320, byId = new Map(c.all.map(function (a) { return [a.cell, a]; }));
+    // Map: fill opacity by the current metric on a sqrt scale; filtered-out cells go dark.
+    var op = d3.scaleSqrt().domain([0, 8]).range([0.08, 0.95]).clamp(true);
+    var polys = mapObj.svg.selectAll("path.poly")
+      .classed('is-off', function (f) { return !byId.has(f.properties.id); })
+      .classed('is-leader', function (f) { return f.properties.id === c.leader; });
+    polys.transition().duration(ms).attr('fill-opacity', function (f) { var a = byId.get(f.properties.id); return a ? op(a[c.key]) : 1; });
+    // Funnel: the city line and the control limits draw in; points move to the current metric.
+    gCity.transition().duration(ms).attr('x1', M.l).attr('x2', W - M.r).attr('y1', y(c.m * 1000)).attr('y2', y(c.m * 1000));
+    var lims = [[1.96, 'l95'], [3.09, 'l998'], [-1.96, 'l95'], [-3.09, 'l998']].map(function (z) {
+      return { k: z[0] + '', cls: z[1], pts: pops.map(function (p) { return [p, Math.max(0, (c.m + z[0] * Math.sqrt(c.m / p)) * 1000)]; }) };
+    });
+    var lp = gLim.selectAll('path').data(lims, function (l) { return l.k; }).join('path').attr('class', function (l) { return 'limit ' + l.cls; }).attr('d', function (l) { return line(l.pts); });
+    var draws = [];
+    if (ms && s.min_pop !== (render.lastPop || s.min_pop)) {
+      lp.each(function () { var n = this.getTotalLength(); this.style.strokeDasharray = n; this.style.strokeDashoffset = n; });
+      draws.push(lp.transition().duration(500).ease(d3.easeCubicOut).style('stroke-dashoffset', 0).end().catch(function () {}).then(function () { lp.style('stroke-dasharray', null).style('stroke-dashoffset', null); }));
+    }
+    render.lastPop = s.min_pop;
+    var wh = gWh.selectAll('line').data(s.metric === 'ci' ? c.all : [], function (a) { return a.cell; });
+    wh.exit().transition().duration(ms * 0.6).attr('y1', function (a) { return y(a.rate); }).attr('y2', function (a) { return y(a.rate); }).remove();
+    wh.enter().append('line').attr('class', 'whisker').attr('x1', function (a) { return x(a.pop); }).attr('x2', function (a) { return x(a.pop); })
+      .attr('y1', function (a) { return y(a.rate); }).attr('y2', function (a) { return y(a.rate); })
+      .merge(wh).transition().duration(ms).attr('y1', function (a) { return y(a.lower); }).attr('y2', function (a) { return y(a.upper); });
+    var dots = gDots.selectAll('circle').data(c.all, function (a) { return a.cell; });
+    dots.exit().transition().duration(ms * 0.65).attr('r', 0).remove();
+    var all = dots.enter().append('circle').attr('r', first ? 3.5 : 0).attr('cx', function (a) { return x(a.pop); }).attr('cy', function (a) { return y(a.rate); }).merge(dots)
+      .attr('class', function (a) { return 'dot' + (a.cell === c.leader ? ' is-leader' : ''); });
+    all.sort(function (a, b) { return (a.cell === c.leader) - (b.cell === c.leader); });
+    var t = all.transition().duration(ms).delay(function (a) { return ms ? Math.max(0, 180 - 40 * Math.log10(a.pop)) : 0; }).ease(d3.easeCubicOut).attr('r', function (a) { return a.cell === c.leader ? 5 : 3.5; }).attr('cy', function (a) { return y(a[c.key]); });
+    first = false;
+    var done = ms ? t.end().catch(function () {}) : Promise.resolve();
+    return Promise.all([done].concat(draws, [tb.update(c.top10.map(function (a) { return { id: a.cell, cell: a.cell, pop: a.pop, value: a[c.key] }; }))]));
+  }
+
+  var lab = Lab.create({
+    id: 'v8b', initial: { metric: 'raw', min_pop: 1, sort: 'rate' },
+    states: {
+      baseline: { metric: 'raw', min_pop: 1, sort: 'rate' }, ci: { metric: 'ci', min_pop: 1, sort: 'rate' },
+      shrunk: { metric: 'shrunk', min_pop: 1, sort: 'rate' }, min500: { metric: 'raw', min_pop: 500, sort: 'rate' },
+      by_pop: { metric: 'shrunk', min_pop: 2000, sort: 'pop' }
+    },
+    load: function () {
+      return Promise.all([d3.csv('data/v8b.csv', d3.autoType), d3.json('data/v8b-grid.geojson')]).then(function (res) {
+        mapObj = Lab.map(mapEl, res[1], { width: 360, height: 330, label: 'Map of Boston 1 km grid cells shaded by sites per 1,000 residents' });
+        mapObj.render({});
+        return res[0];
+      });
+    },
+    render: render,
+    readouts: function (s, d) { return compute(s, d).readouts; },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'top_cell', label: 'top cell' }, { key: 'top_value', label: 'its rate per 1,000', fmt: 2 }, { key: 'top_pop', label: 'its population', fmt: 0 },
+      { key: 'leader_rank', label: 'raw leader\'s rank', fmt: 0 }, { key: 'city_rate', label: 'city rate per 1,000', fmt: 2 },
+      { key: 'n_above_998', label: 'cells above 99.8% limit', fmt: 0 }, { key: 'n_areas', label: 'cells kept', fmt: 0 } ] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.n_areas + ' of 73 cells kept · raw leader 95% CI ' + r.leader_lower.toFixed(1) + ' to ' + r.leader_upper.toFixed(1); },
+    // code.r builds EXACTLY the string code_r() builds in the prep script.
+    code: { r: function (s) {
+      var value = s.metric === 'shrunk' ? 'shrunk' : 'rate';
+      return '# sites per 1,000 residents, with an exact Poisson 95% interval\n' +
+        'ranked = areas %>%\n  filter(pop >= ' + s.min_pop + ') %>%\n' +
+        '  mutate(rate  = sites / pop * 1000,\n         lower = qchisq(0.025, 2 * sites) / 2 / pop * 1000,\n         upper = qchisq(0.975, 2 * (sites + 1)) / 2 / pop * 1000)\n\n' +
+        '# funnel plot: the city rate and its 95% / 99.8% control limits at each population\n' +
+        'm = sum(ranked$sites) / sum(ranked$pop)\nranked = ranked %>%\n  mutate(hi95 = (m + 1.96 * sqrt(m / pop)) * 1000,\n         hi998 = (m + 3.09 * sqrt(m / pop)) * 1000)\n' +
+        (s.metric === 'shrunk' ? '\n# empirical Bayes: pull each rate toward m, harder when pop is small\n' +
+          'r = ranked$sites / ranked$pop\ns2 = sum(ranked$pop * (r - m)^2) / sum(ranked$pop)\nA = max(s2 - m / mean(ranked$pop), 0)\n' +
+          'ranked = ranked %>%\n  mutate(weight = A / (A + m / pop),\n         shrunk = (m + weight * (sites / pop - m)) * 1000)\n' : '') +
+        '\nleader = ranked$cell[which.max(ranked$rate)]\nranked = ranked %>%\n  arrange(desc(' + value + '))\n' +
+        'top10 = ranked %>%\n  arrange(desc(' + (s.sort === 'pop' ? 'pop' : value) + ')) %>%\n  head(10)\n\n' +
+        'ranked %>%\n  summarize(n_areas = n(), city_rate = m * 1000,\n            top_cell = first(cell), top_value = first(' + value + '), top_pop = first(pop),\n' +
+        '            leader_rank = which(cell == leader),\n            leader_lower = lower[cell == leader], leader_upper = upper[cell == leader],\n' +
+        '            n_above_998 = sum(rate > hi998))';
+    } },
+    onState: function (s) {
+      document.getElementById('c-pop').value = String(s.min_pop);
+      [['c-metric', s.metric], ['c-sort', s.sort]].forEach(function (g) { document.querySelectorAll('#' + g[0] + ' button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === g[1])); }); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-pop').addEventListener('change', function (e) { lab.setState({ min_pop: +e.target.value }); });
+  document.querySelectorAll('#c-metric button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ metric: b.dataset.v }); }); });
+  document.querySelectorAll('#c-sort button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ sort: b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>
