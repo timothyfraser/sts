@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sampling a network</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .v9c-views { display: grid; gap: 12px; }
+  .v9c-views svg { display: block; width: 100%; height: auto; }
+  .v9c-cap { margin: 0; font-size: 0.85rem; color: var(--bench-muted); }
+  .v9c-note { margin: 4px 0 0; font-size: 0.85rem; color: var(--bench-muted); }
+  #c-seed:disabled { opacity: 0.55; cursor: not-allowed; }
+</style>
+</head>
+<body data-lab="v9c">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 9 · Comparable samples of a network</p>
+    <h1>Sampling a network: what your sample hides</h1>
+    <p class="lab-lo"><strong>Learning objective:</strong> Compare node, edge and snowball samples of a network and see how each biases degree and density.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage v9c-views">
+        <div id="net"></div>
+        <p class="v9c-cap">Hurricane Dorian evacuation flows between county subdivisions, one time slice (30 Aug 2019, 8 am). Sampled counties and flows are lit.</p>
+        <div id="hist"></div>
+      </div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <div role="group" aria-label="Sampling method" class="lab-seg" id="c-method"><button type="button" data-v="node" aria-pressed="true">Random nodes</button><button type="button" data-v="edge" aria-pressed="false">Random edges</button><button type="button" data-v="snowball" aria-pressed="false">Snowball</button></div>
+          <label>Sample fraction <select id="c-frac"><option value="0.1">10%</option><option value="0.2" selected>20%</option><option value="0.3">30%</option><option value="0.5">50%</option></select></label>
+          <label>Random seed <select id="c-seed" aria-describedby="seed-note"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <p class="v9c-note" id="seed-note">Snowball starts from the marked county, so the seed does not change it, and it can only reach counties linked to that county (209 at most).</p>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>in the sample</li><li><i style="background:var(--bench-line)"></i>population only</li><li><i style="background:var(--b)"></i>marked county (snowball seed)</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">At a 20% random-node sample (seed 1), what is the sample mean degree vs the true mean degree?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">About 4.0 in both: a random sample is unbiased</button><button class="lc-option" data-correct="true">About 0.52 in the sample vs about 3.97 in the population</button><button class="lc-option" data-correct="false">About 0.79 in the sample, because 20% of 3.97 is 0.79</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "sample mean degree" and "true mean degree" in the Metrics panel at baseline.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>0.52 vs 3.97, a bias of about −87%. An edge survives a node sample only if BOTH its counties are drawn, so roughly 0.2 × 0.2 = 4% of flows survive while 20% of counties do. Degree is cut far more than proportionally.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Switch to snowball sampling from the marked county. Which way does mean degree move and why?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">It falls further, because snowball samples are smaller</button><button class="lc-option" data-correct="false">It stays at the random-node value, because the fraction is the same</button><button class="lc-option" data-correct="true">It rises to about the true value or above, because a snowball follows edges and keeps a connected neighbourhood</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Watch the delta on "sample mean degree" and where the lit counties sit on the map.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Mean degree rises from 0.52 to 4.19 (+6% against the truth), and density jumps to about +435%: the snowball keeps 85 counties that are all near each other, so nearly every flow among them survives. It fixes degree but overstates how tightly knit the network is.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">You must compare evacuation flows between two storms, each with a sample. Which sampling method would you use, and why?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Snowball from each storm's hardest-hit county, because it keeps the most flows</button><button class="lc-option" data-correct="true">The same random method (nodes or edges) at the same fraction for both storms, so each storm's sample carries the same, known bias</button><button class="lc-option" data-correct="false">Whatever method gives each storm the highest density</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Change the seed under each method. Which bias stays stable, and which depends on where you start?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Comparable samples need the same design. A random node or edge sample at a fixed fraction biases every storm the same way, so differences between storms are real. A snowball's bias depends on the start county, which differs between storms.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var D, byKey = {}, W, H, HW, HH, px, py, lines, dots, bars;
+  var net = d3.select('#net'), hist = d3.select('#hist');
+  function stateKey(s) { return s.method + '|' + s.frac + '|' + (s.method === 'snowball' ? 1 : s.seed); }
+  // Harden: a state outside the precomputed grid (hand-edited URL, bad harness call) falls back to the baseline sample, never a blank page.
+  function sample(s) { return byKey[stateKey(s)] || byKey['node|0.2|1']; }
+  // Mirrors the panel code: stats = tibble(n_nodes, n_edges) %>% mutate(mean_degree, density)
+  function stats(s) {
+    var k = sample(s), n = k.nodes.length, e = k.edges.length;
+    var pm = 2 * D.edges.from.length / D.nodes.node.length, pn = D.nodes.node.length;
+    var pd = 2 * D.edges.from.length / (pn * (pn - 1));
+    var md = n ? 2 * e / n : 0, dn = n > 1 ? 2 * e / (n * (n - 1)) : 0;
+    return { n_nodes: n, n_edges: e, mean_degree: md, density: dn, pop_mean_degree: pm, pop_density: pd,
+      bias_degree_pct: 100 * (md - pm) / pm, bias_density_pct: 100 * (dn - pd) / pd };
+  }
+  function degrees(s) {
+    var k = sample(s), deg = new Map(k.nodes.map(function (n) { return [n, 0]; }));
+    k.edges.forEach(function (i) { var a = D.edges.from[i], b = D.edges.to[i]; deg.set(a, deg.get(a) + 1); deg.set(b, deg.get(b) + 1); });
+    return Array.from(deg.values());
+  }
+  var BINS = 12; // degree 0..10, 11+ in the last bin
+  function shares(vals) {
+    var c = new Array(BINS).fill(0); vals.forEach(function (v) { c[Math.min(v, BINS - 1)]++; });
+    return c.map(function (x) { return vals.length ? x / vals.length : 0; });
+  }
+  function codeR(s) {
+    var body = s.method === 'node'
+      ? 'set.seed(' + s.seed + ')\nsample_nodes = nodes %>%\n  slice_sample(prop = ' + s.frac + ')\nsample_edges = edges %>%\n  filter(from %in% sample_nodes$node, to %in% sample_nodes$node)'
+      : s.method === 'edge'
+      ? 'set.seed(' + s.seed + ')\nsample_edges = edges %>%\n  slice_sample(prop = ' + s.frac + ')\nsample_nodes = nodes %>%\n  filter(node %in% c(sample_edges$from, sample_edges$to))'
+      : 'g = graph_from_data_frame(edges, directed = FALSE, vertices = nodes)\nwave = ego(g, order = 427, nodes = "' + D.marked + '")[[1]]\nsample_nodes = tibble(node = as.numeric(names(wave))) %>%\n  slice_head(n = round(' + s.frac + ' * nrow(nodes)))\nsample_edges = edges %>%\n  filter(from %in% sample_nodes$node, to %in% sample_nodes$node)';
+    return body + '\n\nstats = tibble(n_nodes = nrow(sample_nodes), n_edges = nrow(sample_edges)) %>%\n  mutate(mean_degree = 2 * n_edges / n_nodes,\n         density = 2 * n_edges / (n_nodes * (n_nodes - 1)))';
+  }
+  var first = true;
+
+  var lab = Lab.create({
+    id: 'v9c', initial: { method: 'node', frac: 0.2, seed: 1 },
+    states: { baseline: { method: 'node', frac: 0.2, seed: 1 }, edge: { method: 'edge', frac: 0.2, seed: 1 }, snowball: { method: 'snowball', frac: 0.2, seed: 1 } },
+    load: function () {
+      return d3.json('data/v9c.json').then(function (d) {
+        D = d; d.samples.forEach(function (s) { byKey[s.key] = s; });
+        W = Math.max(300, document.getElementById('net').clientWidth || 560);
+        var xs = d.nodes.x, ys = d.nodes.y, id2i = new Map(d.nodes.node.map(function (n, i) { return [n, i]; }));
+        var kx = Math.cos(30 * Math.PI / 180), ok = function (v) { return v != null; };
+        var xe = d3.extent(xs.filter(ok)).map(function (v) { return v * kx; }), ye = d3.extent(ys.filter(ok));
+        // Fit the map to the stage: equal scale on both axes, height capped so the bench stays compact.
+        var Hmax = W < 520 ? W * 1.1 : 460, sx = Math.min((W - 24) / (xe[1] - xe[0]), (Hmax - 24) / (ye[1] - ye[0]));
+        H = Math.round((ye[1] - ye[0]) * sx + 24);
+        var ox = (W - (xe[1] - xe[0]) * sx) / 2;
+        px = function (v) { return ox + (v - xe[0]) * sx; };
+        py = function (v) { return 12 + (ye[1] - v) * sx; };
+        var svg = net.append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+          .attr('aria-label', 'Map of 427 county subdivisions and 847 evacuation flows; sampled ones are highlighted');
+        var drawn = function (n) { var i = id2i.get(n); return xs[i] != null && ys[i] != null; };
+        lines = svg.append('g').selectAll('line').data(d3.range(d.edges.from.length).filter(function (i) { return drawn(d.edges.from[i]) && drawn(d.edges.to[i]); })).join('line')
+          .attr('x1', function (i) { return px(xs[id2i.get(d.edges.from[i])] * kx); }).attr('y1', function (i) { return py(ys[id2i.get(d.edges.from[i])]); })
+          .attr('x2', function (i) { return px(xs[id2i.get(d.edges.to[i])] * kx); }).attr('y2', function (i) { return py(ys[id2i.get(d.edges.to[i])]); })
+          .attr('stroke-width', 1);
+        dots = svg.append('g').selectAll('circle').data(d.nodes.node.filter(drawn)).join('circle')
+          .attr('cx', function (n) { return px(xs[id2i.get(n)] * kx); }).attr('cy', function (n) { return py(ys[id2i.get(n)]); });
+        svg.append('circle').attr('cx', px(xs[id2i.get(d.marked)] * kx)).attr('cy', py(ys[id2i.get(d.marked)])).attr('r', 7)
+          .attr('fill', 'none').attr('stroke', 'var(--b)').attr('stroke-width', 2);
+        // Degree distribution: population (outline) vs sample (filled), share of nodes per degree.
+        HW = W; HH = W < 520 ? 190 : 200;
+        var M = { t: 22, r: 10, b: 34, l: 40 };
+        var hs = hist.append('svg').attr('viewBox', '0 0 ' + HW + ' ' + HH).attr('role', 'img')
+          .attr('aria-label', 'Degree distribution: share of nodes at each degree, sample bars against the population outline');
+        var bx = d3.scaleBand().domain(d3.range(BINS)).range([M.l, HW - M.r]).padding(0.15);
+        var by = d3.scaleLinear().domain([0, 1]).range([HH - M.b, M.t]);
+        hs.append('g').attr('transform', 'translate(0,' + (HH - M.b) + ')').call(d3.axisBottom(bx).tickFormat(function (v) { return v === BINS - 1 ? '11+' : v; }));
+        hs.append('g').attr('transform', 'translate(' + M.l + ',0)').call(d3.axisLeft(by).ticks(4, '%'));
+        hs.selectAll('.domain, .tick line').attr('stroke', 'var(--bench-line)');
+        hs.selectAll('.tick text').attr('fill', 'var(--bench-muted)').attr('font-size', 12);
+        hs.append('text').attr('x', M.l).attr('y', 14).attr('fill', 'var(--bench-muted)').attr('font-size', 12).text('share of nodes');
+        hs.append('text').attr('x', HW - M.r).attr('y', HH - 4).attr('text-anchor', 'end').attr('fill', 'var(--bench-muted)').attr('font-size', 12).text('degree');
+        bars = { x: bx, y: by, s: hs.append('g').selectAll('rect').data(d3.range(BINS)).join('rect')
+          .attr('x', function (i) { return bx(i); }).attr('width', bx.bandwidth()).attr('fill', 'var(--y)').attr('y', by(0)).attr('height', 0) };
+        var pop = shares(d.nodes.degree);
+        hs.append('path').attr('fill', 'none').attr('stroke', 'var(--bench-ink)').attr('stroke-width', 2)
+          .attr('d', d3.line().curve(d3.curveStepAfter).x(function (v, i) { return i < BINS ? bx(i) : HW - M.r; }).y(function (v) { return by(v); })(pop.concat([pop[BINS - 1]])));
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var k = sample(s), inN = new Set(k.nodes), inE = new Set(k.edges);
+      var ms = (first || Lab.motion.reduced()) ? 0 : 320; first = false;
+      var sh = shares(degrees(s));
+      document.getElementById('seed-note').hidden = s.method !== 'snowball';
+      lines.attr('stroke', function (i) { return inE.has(i) ? 'var(--y)' : 'var(--bench-line)'; })
+        .attr('stroke-opacity', function (i) { return inE.has(i) ? 0.9 : 0.25; });
+      // Sampled counties pulse in (grow past size, settle); dropped ones shrink out faster.
+      var t1 = dots.transition().duration(function (n) { return inN.has(n) ? ms : ms * 0.6; }).ease(d3.easeCubicOut)
+        .attr('r', function (n) { return inN.has(n) ? 3.6 : 1.6; })
+        .attr('fill', function (n) { return inN.has(n) ? 'var(--y)' : 'var(--bench-line)'; });
+      if (ms) dots.filter(function (n) { return inN.has(n); }).attr('r', 1.6);
+      var t2 = bars.s.transition().duration(ms).ease(d3.easeCubicOut)
+        .attr('y', function (i) { return bars.y(sh[i]); }).attr('height', function (i) { return bars.y(0) - bars.y(sh[i]); });
+      return ms ? Promise.all([t1.end().catch(function () {}), t2.end().catch(function () {})]) : Promise.resolve();
+    },
+    readouts: function (s, d) { return stats(s); },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'mean_degree', label: 'sample mean degree', fmt: 2 }, { key: 'pop_mean_degree', label: 'true mean degree', fmt: 2 },
+      { key: 'bias_degree_pct', label: 'degree bias (%)', fmt: 0 }, { key: 'density', label: 'sample density', fmt: 4 },
+      { key: 'pop_density', label: 'true density', fmt: 4 }, { key: 'bias_density_pct', label: 'density bias (%)', fmt: 0 },
+      { key: 'n_nodes', label: 'nodes sampled', fmt: 0 }, { key: 'n_edges', label: 'edges sampled', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.n_nodes + ' of 427 counties and ' + r.n_edges + ' of 847 flows sampled'; },
+    code: { r: codeR },
+    onState: function (s) {
+      document.getElementById('c-frac').value = String(s.frac); document.getElementById('c-seed').value = String(s.seed);
+      document.getElementById('c-seed').disabled = s.method === 'snowball';
+      document.querySelectorAll('#c-method button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.method)); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-frac').addEventListener('change', function (e) { lab.setState({ frac: +e.target.value }); });
+  document.getElementById('c-seed').addEventListener('change', function (e) { lab.setState({ seed: +e.target.value }); });
+  document.querySelectorAll('#c-method button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ method: b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>
