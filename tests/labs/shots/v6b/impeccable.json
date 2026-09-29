@@ -1,0 +1,31 @@
+{
+  "tool": "impeccable@4.1.0 detect --json",
+  "page": "docs-v3/labs/v6b-crs-lab.html",
+  "ack": [],
+  "findings": [
+    {
+      "antipattern": "design-system-radius",
+      "name": "Radius outside DESIGN.md",
+      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v6b/docs-v3/labs/v6b-crs-lab.html",
+      "line": 0,
+      "snippet": "border-radius 4px on select \"EPSG:4326 (lon/lat degrees) EPSG:3857 (w\" is outside the DESIGN.md rounded scale",
+      "advisory": true,
+      "ignoreValue": "4px"
+    },
+    {
+      "antipattern": "design-system-radius",
+      "name": "Radius outside DESIGN.md",
+      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v6b/docs-v3/labs/v6b-crs-lab.html",
+      "line": 0,
+      "snippet": "border-radius 2px on i is outside the DESIGN.md rounded scale",
+      "advisory": true,
+      "ignoreValue": "2px"
+    }
+  ]
+}
