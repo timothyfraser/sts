@@ -9,9 +9,9 @@
 <script src="kit/lab.js"></script>
 <style>
   .pipe { display: grid; grid-template-columns: 5.5rem repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(4.6rem, auto)); gap: .35rem .9rem; color: var(--bench-ink); font-family: var(--sans); }
-  .lane-name { grid-column: 1; align-self: center; font-size: .8rem; color: var(--bench-muted); line-height: 1.2; }
-  .lane-bg { grid-column: 2 / 7; border: 1px dashed var(--bench-line); border-radius: 8px; }
-  .stage { z-index: 1; align-self: center; border: 1px solid var(--bench-line); border-radius: 8px; background: var(--bench-panel); padding: .35rem .4rem; font-size: .78rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+  .lane-name { grid-column: 1; grid-row: var(--lane); align-self: center; font-size: .875rem; color: var(--bench-muted); line-height: 1.2; }
+  .lane-bg { grid-column: 2 / 7; grid-row: var(--lane); border: 1px dashed var(--bench-line); border-radius: 8px; }
+  .stage { grid-column: calc(var(--step) + 1); grid-row: var(--lane); z-index: 1; align-self: center; border: 1px solid var(--bench-line); border-radius: 8px; background: var(--bench-panel); padding: .35rem .4rem; font-size: .78rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
   .stage b { display: block; font-size: .85rem; }
   .stage .bytes { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--bench-muted); }
   .stage.is-wire { border-color: var(--b); }
@@ -21,7 +21,7 @@
   .stage { position: relative; }
   .stage:not([data-stage=source])::before { content: attr(data-arrow); position: absolute; left: -.82rem; top: 50%; transform: translateY(-50%); font-size: 1rem; line-height: 1; color: var(--bench-ink); }
   .stage.is-net::before { color: var(--b); font-weight: 700; font-size: 1.25rem; }
-  .stage .in { display: block; font-family: var(--mono); font-size: .68rem; font-variant-numeric: tabular-nums; color: var(--bench-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage .in { display: block; font-family: var(--mono); font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--bench-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stage.is-net .in { color: var(--b); font-weight: 700; }
   .lat { margin-top: .8rem; color: var(--bench-ink); font-size: .85rem; }
   .lat-track { height: .9rem; border: 1px solid var(--bench-line); border-radius: 4px; overflow: hidden; margin-top: .25rem; }
@@ -34,16 +34,24 @@
   .lab-metric dd .v { white-space: nowrap; }
   .lab-controls label.cache { display: flex; flex-direction: row; gap: .45rem; align-items: center; text-align: left; }
   .lab-controls label.cache input { margin: 0; flex: none; }
-  .lat-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; font-size: .8rem; color: var(--bench-muted); }
+  .lat-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; font-size: .875rem; color: var(--bench-muted); }
   .lat-parts b { display: block; font-family: var(--mono); font-size: 1rem; color: var(--bench-ink); font-weight: 600; }
   .code-note { font-size: .85rem; color: var(--muted); margin: .4rem 0 1rem; }
   .replay { margin-top: .6rem; font: inherit; font-size: .85rem; color: var(--bench-ink); background: transparent; border: 1px solid var(--y); border-radius: 6px; padding: .3rem .6rem; cursor: pointer; }
   @media (max-width: 720px) {
-    .pipe { grid-template-columns: 3.6rem repeat(5, minmax(0, 1fr)); gap: .2rem; }
-    .stage { font-size: .7rem; padding: .25rem; }
-    .stage b { font-size: .72rem; }
-    .lane-name { font-size: .7rem; }
-    .stage .in { white-space: normal; overflow-wrap: anywhere; font-size: .62rem; }
+    .pipe { grid-template-columns: 4.5rem repeat(5, minmax(0, 1fr)); gap: .3rem .9rem; }
+    .stage { font-size: .75rem; padding: .25rem; }
+    .stage b { font-size: .875rem; }
+    .lane-name { font-size: .75rem; }
+  }
+  /* Phone: one column per lane, stages run top to bottom, so each byte label keeps a full line. */
+  @media (max-width: 480px) {
+    .pipe { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto repeat(5, auto); gap: 1.1rem .25rem; }
+    .lane-name { grid-row: 1; grid-column: var(--lane); text-align: center; }
+    .lane-bg { grid-row: 2 / 7; grid-column: var(--lane); }
+    .stage { grid-row: calc(var(--step) + 1); grid-column: var(--lane); padding: .25rem .15rem; text-align: center; }
+    .stage .in { font-family: var(--sans); }
+    .stage:not([data-stage=source])::before { content: attr(data-arrow-v); left: 50%; top: -1.05rem; transform: translateX(-50%); }
   }
 </style>
 </head>
@@ -58,14 +66,14 @@
     <div class="lab-visual">
       <div class="lab-stage" id="stage">
         <div class="pipe" id="pipe" role="img" aria-label="Pipeline diagram: five stages placed in the PostGIS, Plumber or browser lane, with the bytes each stage hands on">
-          <div class="lane-name" style="grid-row:1">PostGIS</div><div class="lane-bg" style="grid-row:1"></div>
-          <div class="lane-name" style="grid-row:2">Plumber (R)</div><div class="lane-bg" style="grid-row:2"></div>
-          <div class="lane-name" style="grid-row:3">browser</div><div class="lane-bg" style="grid-row:3"></div>
-          <div class="stage" data-stage="source" style="grid-column:2;grid-row:1"><b>tables</b><span class="bytes"></span></div>
-          <div class="stage" data-stage="join" style="grid-column:3"><span class="in"></span><b>join</b><span class="bytes"></span></div>
-          <div class="stage" data-stage="filter" style="grid-column:4"><span class="in"></span><b>filter</b><span class="bytes"></span></div>
-          <div class="stage" data-stage="aggregate" style="grid-column:5"><span class="in"></span><b>count</b><span class="bytes"></span></div>
-          <div class="stage" data-stage="output" style="grid-column:6;grid-row:3"><span class="in"></span><b>map</b><span class="bytes">draw</span></div>
+          <div class="lane-name" style="--lane:1">PostGIS</div><div class="lane-bg" style="--lane:1"></div>
+          <div class="lane-name" style="--lane:2">Plumber (R)</div><div class="lane-bg" style="--lane:2"></div>
+          <div class="lane-name" style="--lane:3">browser</div><div class="lane-bg" style="--lane:3"></div>
+          <div class="stage" data-stage="source" style="--step:1;--lane:1"><b>tables</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="join" style="--step:2;--lane:3"><span class="in"></span><b>join</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="filter" style="--step:3;--lane:3"><span class="in"></span><b>filter</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="aggregate" style="--step:4;--lane:3"><span class="in"></span><b>count</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="output" style="--step:5;--lane:3"><span class="in"></span><b>map</b><span class="bytes">draw</span></div>
         </div>
         <div class="lat"><span id="lat-label">first-load latency</span>
           <div class="lat-track"><div class="lat-fill" id="lat-fill"></div></div>
@@ -178,7 +186,7 @@
   function paint(s, d) {
     var m = model(s, d);
     STAGES.forEach(function (g) {
-      var c = cards[g]; c.style.gridRow = ROW[s[g]];
+      var c = cards[g]; c.style.setProperty('--lane', ROW[s[g]]);
       c.classList.toggle('is-cached', g === 'join' && s.cache && s.join !== 'browser');
       c.classList.toggle('is-rerun', m.rerun.indexOf(g) >= 0);
       c.classList.toggle('is-wire', m.server.length > 0 && g === m.server[m.server.length - 1]);
@@ -193,6 +201,7 @@
     chain.slice(1).forEach(function (g, i) {
       var from = chain[i], c = cards[g], dl = lane(g) - lane(from);
       c.dataset.arrow = dl > 0 ? '\u2198' : dl < 0 ? '\u2197' : '\u2192';
+      c.dataset.arrowV = dl > 0 ? '\u2198' : dl < 0 ? '\u2199' : '\u2193';
       c.classList.toggle('is-net', from === wire);
       c.querySelector('.in').textContent = (from === wire ? 'network ' : 'in ') + kb(sent(from));
     });
