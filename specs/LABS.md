@@ -127,6 +127,17 @@ Learning checks (exactly three, written in the page):
 Choosing an option adds `.is-chosen` and `.is-correct` / `.is-wrong`; Hint and Reveal toggle
 `hidden` and `aria-expanded`.
 
+Option order and length (authoring rule):
+
+- **Position carries no signal.** The kit shows the three options in a fixed shuffled order,
+  seeded by the lab id (`body[data-lab]`) and the LC number, so the order is the same on every
+  load (screenshots stay stable) but differs across labs and LCs. Write the options in any order;
+  do not try to vary where the correct one sits.
+- **Length carries no signal either.** Keep each distractor within about 20% of the correct
+  option's length (characters of visible text). A correct option that is the longest, most
+  qualified one gives the answer away; tighten it, or give the distractors the same specificity
+  (a plausible mechanism, a number, a named column), rather than padding them.
+
 ## 5. Kit API (`window.Lab`)
 
 | Call | Does |
@@ -137,7 +148,7 @@ Choosing an option adds `.is-chosen` and `.is-correct` / `.is-wrong`; Hint and R
 | `Lab.codePanel(el, { r, sql })` | The R/SQL panel; templates are functions of state |
 | `Lab.table(el, rows, cols, opts)` | Linked table in a labelled, keyboard-scrollable region; `update(rows)` animates reorders |
 | `Lab.map(el, geojson, opts)` | D3 Mercator map; `render({ points, highlight })` resolves when transitions end |
-| `Lab.lcs(root)` | Wires the learning checks (called by `create`) |
+| `Lab.lcs(root)` | Wires the learning checks and applies the seeded option order (called by `create`) |
 | `Lab.motion` | `{ reduced(), load(), animate(el, keyframes, opts), flip(els, mutate) }`; all resolve in the end state |
 | `Lab.fmt(v, digits)` | Number formatting for display only (readouts stay raw) |
 

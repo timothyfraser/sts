@@ -9,7 +9,7 @@
       "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
       "severity": "advisory",
       "category": "quality",
-      "file": "/home/user/wt/sts-kit1/docs-v3/labs/v14a-architecture-builder.html",
+      "file": "/home/user/wt/sts-kit2/docs-v3/labs/v14a-architecture-builder.html",
       "line": 296,
       "snippet": "font-size: 13px is off the DESIGN.md type ramp",
       "advisory": true,

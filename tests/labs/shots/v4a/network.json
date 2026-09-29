@@ -1,27 +1,27 @@
 [
   {
-    "url": "http://127.0.0.1:45697/labs/v4a-api-anatomy.html",
+    "url": "http://127.0.0.1:35209/labs/v4a-api-anatomy.html",
     "type": "document",
     "status": 200,
     "bytes": 23192
   },
   {
-    "url": "http://127.0.0.1:45697/assets/sts.css",
+    "url": "http://127.0.0.1:35209/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:45697/labs/kit/lab.css",
+    "url": "http://127.0.0.1:35209/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:45697/labs/kit/lab.js",
+    "url": "http://127.0.0.1:35209/labs/kit/lab.js",
     "type": "script",
     "status": 200,
-    "bytes": 15131
+    "bytes": 16630
   },
   {
     "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:45697/labs/data/v4a.json",
+    "url": "http://127.0.0.1:35209/labs/data/v4a.json",
     "type": "fetch",
     "status": 200,
     "bytes": 72762

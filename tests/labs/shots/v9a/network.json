@@ -1,27 +1,27 @@
 [
   {
-    "url": "http://127.0.0.1:41429/labs/v9a-network-as-tables.html",
+    "url": "http://127.0.0.1:35105/labs/v9a-network-as-tables.html",
     "type": "document",
     "status": 200,
     "bytes": 22922
   },
   {
-    "url": "http://127.0.0.1:41429/assets/sts.css",
+    "url": "http://127.0.0.1:35105/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:41429/labs/kit/lab.css",
+    "url": "http://127.0.0.1:35105/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:41429/labs/kit/lab.js",
+    "url": "http://127.0.0.1:35105/labs/kit/lab.js",
     "type": "script",
     "status": 200,
-    "bytes": 15131
+    "bytes": 16630
   },
   {
     "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
@@ -30,16 +30,16 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:41429/labs/data/v9a_trips.csv",
-    "type": "fetch",
-    "status": 200,
-    "bytes": 56927
-  },
-  {
-    "url": "http://127.0.0.1:41429/labs/data/v9a_nodes.csv",
+    "url": "http://127.0.0.1:35105/labs/data/v9a_nodes.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 1074
+  },
+  {
+    "url": "http://127.0.0.1:35105/labs/data/v9a_trips.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 56927
   },
   {
     "url": "https://cdn.jsdelivr.net/npm/motion@11.18.2/+esm",
