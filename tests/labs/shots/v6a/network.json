@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:44951/labs/v6a-spatial-join.html",
+    "url": "http://127.0.0.1:34705/labs/v6a-spatial-join.html",
     "type": "document",
     "status": 200,
     "bytes": 20668
   },
   {
-    "url": "http://127.0.0.1:44951/assets/sts.css",
+    "url": "http://127.0.0.1:34705/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:44951/labs/kit/lab.css",
+    "url": "http://127.0.0.1:34705/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7050
   },
   {
-    "url": "http://127.0.0.1:44951/labs/kit/lab.js",
+    "url": "http://127.0.0.1:34705/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,22 +30,22 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:44951/labs/data/v6a_bg.geojson",
+    "url": "http://127.0.0.1:34705/labs/data/v6a_bg.geojson",
     "type": "fetch",
     "status": 200,
-    "bytes": 262729
+    "bytes": 262025
   },
   {
-    "url": "http://127.0.0.1:44951/labs/data/v6a_sites.csv",
+    "url": "http://127.0.0.1:34705/labs/data/v6a_sites.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 36784
   },
   {
-    "url": "http://127.0.0.1:44951/labs/data/v6a_keys.json",
+    "url": "http://127.0.0.1:34705/labs/data/v6a_keys.json",
     "type": "fetch",
     "status": 200,
-    "bytes": 35510
+    "bytes": 35356
   },
   {
     "url": "https://cdn.jsdelivr.net/npm/motion@11.18.2/+esm",

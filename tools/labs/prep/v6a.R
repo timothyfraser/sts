@@ -44,11 +44,15 @@ ack = list()
 set.seed(seed)
 dir.create(file.path(root, "docs-v3/labs/data"), recursive = TRUE, showWarnings = FALSE)
 
-# Polygons: simplify 20 m in a metre CRS (Massachusetts State Plane) so the page stays small.
+# Polygons: one feature per geoid (the source splits one block group into 8 island polygons,
+# 687 features for 680 geoids), so dissolve by geoid first; then simplify 20 m in a metre CRS
+# (Massachusetts State Plane) so the page stays small.
 bg_small = read_sf(file.path(root, src_polys)) %>%
   select(geoid) %>%
-  arrange(geoid) %>%
   st_transform(26986) %>%
+  group_by(geoid) %>%
+  summarize(.groups = "drop") %>%
+  arrange(geoid) %>%
   st_simplify(dTolerance = 20, preserveTopology = TRUE) %>%
   st_transform(4326)
 if (file.exists(file.path(root, bg_out))) file.remove(file.path(root, bg_out))
@@ -86,6 +90,7 @@ keys = list(
 )
 write_json(keys, file.path(root, keys_out), auto_unbox = FALSE, digits = NA)
 stopifnot(sum(file.size(file.path(root, c(bg_out, sites_out, keys_out)))) <= 500 * 1024)
+stopifnot(!anyDuplicated(bg$geoid))     # one feature per geoid, so the aggregate's key is unique
 
 # ---- 3. STATES [CHANGE] --------------------------------------------------------------------
 states = list(
