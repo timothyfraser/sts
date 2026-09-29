@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRS lab: why distances lie</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<style>
+  #measure .lab-meas-row { display: flex; gap: .5em; align-items: baseline; font-variant-numeric: tabular-nums; }
+  #measure .lab-meas-row span:first-child { min-width: 6.5em; }
+  #plot svg { cursor: crosshair; }
+  .lab-side select { max-width: 100%; }
+  .v6b-note { margin: .4rem 0 0; font-size: .85rem; }
+  #metrics .lab-metric dd { overflow-wrap: normal; white-space: nowrap; }
+  @media (max-width: 480px) { #metrics .lab-metrics { grid-template-columns: 1fr; } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+</head>
+<body data-lab="v6b">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 6 · Coordinate reference systems</p>
+    <h1>Why distances lie: the same polling places in three CRSs</h1>
+    <p class="lab-lo"><strong>Learning objective.</strong> Explain why distances and areas must be computed in a projected CRS, and transform correctly.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="plot"></div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Coordinate reference system <select id="c-crs">
+            <option value="4326">EPSG:4326 (lon/lat degrees)</option>
+            <option value="3857">EPSG:3857 (web Mercator)</option>
+            <option value="26986" selected>EPSG:26986 (MA state plane, m)</option>
+          </select></label>
+          <div role="group" aria-label="Buffer unit" class="lab-seg" id="c-buf"><button type="button" data-v="metres" aria-pressed="true">1 km in metres</button><button type="button" data-v="degrees" aria-pressed="false">0.01 in degrees</button></div>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Measure</h2>
+        <p>Tap two polling places on the map, or pick them here, to see one distance in every CRS.</p>
+        <div class="lab-controls">
+          <label>From <select id="m-a"><option value="">choose a polling place</option></select></label>
+          <label>To <select id="m-b"><option value="">choose a polling place</option></select></label>
+        </div>
+        <div id="measure" aria-live="polite"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>the two marked polling places</li><li><i style="background:var(--b)"></i>buffer around each</li><li><i style="background:var(--y);opacity:.35"></i>the marked precinct (ward-precinct 0101), measured for area</li><li><i style="background:var(--bench-line)"></i>precincts and other polling places</li><li><i style="background:var(--bench-muted);opacity:.55"></i>dashed: the precincts in EPSG:26986 (the truth), for comparison</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <p class="v6b-note">The R code is what built this lab's numbers. The PostGIS query is shown for comparison and was not run here.</p>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h2 class="lc-h">LC 01 · observe</h2><p class="lc-q">What distance does EPSG:4326 report between the two marked polling places, and what does EPSG:26986 report?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">About 0.05: EPSG:4326 reports degrees, EPSG:26986 reports 5,341 m</button><button class="lc-option" data-correct="true">About 5,345 m and 5,341 m: sf measures EPSG:4326 on the sphere, so both are metres and agree within 0.1%</button><button class="lc-option" data-correct="false">About 7,239 m and 5,341 m: EPSG:4326 inflates distance by a third</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Switch the CRS to EPSG:4326 and read "distance (m)" and "% error". Then try EPSG:3857.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>EPSG:4326 reports 5,344.52 m (sf hands lon/lat to s2, which measures on a sphere); EPSG:26986 reports 5,341.27 m, a 0.06% gap. The CRS that really lies is EPSG:3857: 7,238.96 m, 35.5% too long, because web Mercator stretches everything by 1/cos(latitude), about 1.35 in Boston.</div></section>
+    <section class="lab-lc" data-lc="2"><h2 class="lc-h">LC 02 · intervene</h2><p class="lc-q">Buffer by 0.01 in EPSG:4326 (choose "0.01 in degrees"), then view it in EPSG:26986. Why is the buffer an ellipse on the projected map?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">The projection distorts every circle, so all buffers become ellipses in EPSG:26986</button><button class="lc-option" data-correct="true">A degree of longitude is shorter than a degree of latitude at 42°N, so 0.01° reaches about 820 m east-west but 1,110 m north-south</button><button class="lc-option" data-correct="false">st_buffer() rounds the radius to the nearest 0.01, so the shape is approximate</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare with "1 km in metres": that buffer stays round in the state plane. What is 0.01 of a degree, east-west versus north-south?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>In lon/lat, 0.01° is a circle only in degree space. On the ground a degree of longitude shrinks with cos(latitude): 0.01° is about 822 m east-west but 1,111 m north-south in Boston, so the zone is a tall ellipse and its "radius" is not a distance at all.</div></section>
+    <section class="lab-lc" data-lc="3"><h2 class="lc-h">LC 03 · transfer</h2><p class="lc-q">A classmate computed service areas around polling places in EPSG:4326. What would you check, and what would you change?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Nothing: EPSG:4326 is the GPS standard, so it is always the most accurate</button><button class="lc-option" data-correct="false">Transform to EPSG:3857 so the units are metres, then buffer</button><button class="lc-option" data-correct="true">Check st_crs() and the buffer unit; st_transform() to EPSG:26986, buffer in metres, and compute areas there</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Metres are necessary but not enough: look at the % error EPSG:3857 shows here.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Assert the CRS first (st_crs()), then st_transform(crs = 26986) and buffer with dist = 1000. EPSG:3857 has metre units but overstates this distance by 35.5% (and the marked precinct's area by 83.3%: 11,500,206 m² against 6,274,258 m²), so it is not a fix.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // Projections for DRAWING the precinct outlines (the readouts use the prep script's exact coordinates).
+  var D2R = Math.PI / 180, A = 6378137, F = 1 / 298.257222101, E = Math.sqrt(2 * F - F * F);
+  function merc(ll) { return [A * ll[0] * D2R, A * Math.log(Math.tan(Math.PI / 4 + ll[1] * D2R / 2))]; }
+  // Lambert conformal conic 2SP, NAD83 Massachusetts Mainland (EPSG:26986), GRS80.
+  var lcc = (function () {
+    function m(p) { return Math.cos(p) / Math.sqrt(1 - E * E * Math.sin(p) * Math.sin(p)); }
+    function t(p) { var s = E * Math.sin(p); return Math.tan(Math.PI / 4 - p / 2) / Math.pow((1 - s) / (1 + s), E / 2); }
+    var p1 = 42.68333333333333 * D2R, p2 = 41.71666666666667 * D2R, p0 = 41 * D2R, l0 = -71.5 * D2R;
+    var n = (Math.log(m(p1)) - Math.log(m(p2))) / (Math.log(t(p1)) - Math.log(t(p2)));
+    var Fc = m(p1) / (n * Math.pow(t(p1), n)), r0 = A * Fc * Math.pow(t(p0), n);
+    return function (ll) { var r = A * Fc * Math.pow(t(ll[1] * D2R), n), th = n * (ll[0] * D2R - l0); return [200000 + r * Math.sin(th), 750000 + r0 - r * Math.cos(th)]; };
+  })();
+  var PROJ = { 4326: function (ll) { return ll; }, 3857: merc, 26986: lcc };
+
+  // Distance, mirroring st_distance(): planar in a projected CRS; in EPSG:4326 s2 (sphere, R = 6371010 m)
+  // or, with sf_use_s2(FALSE), the ellipsoid (GRS80/WGS84 inverse geodesic, Vincenty).
+  function hav(a, b) {
+    var p1 = a[1] * D2R, p2 = b[1] * D2R, dp = p2 - p1, dl = (b[0] - a[0]) * D2R;
+    var h = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+    return 2 * 6371010 * Math.asin(Math.sqrt(h));
+  }
+  function vincenty(a, b) {
+    var f = 1 / 298.257223563, bb = A * (1 - f), L = (b[0] - a[0]) * D2R;
+    var U1 = Math.atan((1 - f) * Math.tan(a[1] * D2R)), U2 = Math.atan((1 - f) * Math.tan(b[1] * D2R));
+    var sU1 = Math.sin(U1), cU1 = Math.cos(U1), sU2 = Math.sin(U2), cU2 = Math.cos(U2), l = L, lp, sS, cS, sig, ca2, c2m;
+    for (var i = 0; i < 200; i++) {
+      var sl = Math.sin(l), cl = Math.cos(l);
+      sS = Math.sqrt((cU2 * sl) * (cU2 * sl) + (cU1 * sU2 - sU1 * cU2 * cl) * (cU1 * sU2 - sU1 * cU2 * cl));
+      cS = sU1 * sU2 + cU1 * cU2 * cl; sig = Math.atan2(sS, cS);
+      var sa = cU1 * cU2 * sl / sS; ca2 = 1 - sa * sa; c2m = cS - 2 * sU1 * sU2 / ca2;
+      var C = f / 16 * ca2 * (4 + f * (4 - 3 * ca2)); lp = l;
+      l = L + (1 - C) * f * sa * (sig + C * sS * (c2m + C * cS * (-1 + 2 * c2m * c2m)));
+      if (Math.abs(l - lp) < 1e-13) break;
+    }
+    var u2 = ca2 * (A * A - bb * bb) / (bb * bb), Ak = 1 + u2 / 16384 * (4096 + u2 * (-768 + u2 * (320 - 175 * u2))), Bk = u2 / 1024 * (256 + u2 * (-128 + u2 * (74 - 47 * u2)));
+    var ds = Bk * sS * (c2m + Bk / 4 * (cS * (-1 + 2 * c2m * c2m) - Bk / 6 * c2m * (-3 + 4 * sS * sS) * (-3 + 4 * c2m * c2m)));
+    return bb * Ak * (sig - ds);
+  }
+  function r2(v, k) { var p = Math.pow(10, k); return Math.round(v * p) / p; }
+  function dist(s, d) {
+    var a = d.pa['epsg' + s.crs], b = d.pb['epsg' + s.crs];
+    if (s.crs === 4326) return s.buffer === 'degrees' ? vincenty(a, b) : hav(a, b);
+    return Math.hypot(a[0] - b[0], a[1] - b[1]);
+  }
+  // Circles for the buffers, built in lon/lat, then projected like everything else.
+  function ring(c, s) {
+    var out = [];
+    for (var i = 0; i <= 48; i++) {
+      var th = 2 * Math.PI * i / 48;
+      if (s.buffer === 'degrees') out.push([c[0] + 0.01 * Math.cos(th), c[1] + 0.01 * Math.sin(th)]);
+      else { var dn = 1000 * Math.sin(th) / 6371010, de = 1000 * Math.cos(th) / (6371010 * Math.cos(c[1] * D2R)); out.push([c[0] + de / D2R, c[1] + dn / D2R]); }
+    }
+    return out;
+  }
+
+  var stage = document.getElementById('plot');
+  var W = Math.max(300, stage.clientWidth || 560), H = W < 520 ? 340 : 440, PAD = 14;
+  var svg = d3.select('#plot').append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'Boston precincts and polling places drawn in the chosen coordinate reference system, with a buffer around two marked polling places');
+  var gGhost = svg.append('g').attr('aria-hidden', 'true'), gPre = svg.append('g'), gBuf = svg.append('g'), gLine = svg.append('g'), gPts = svg.append('g'), gMeas = svg.append('g'), label = svg.append('text');
+  var DATA = null, prev = null;
+
+  function screen(s) {
+    var P = PROJ[s.crs], all = [];
+    DATA.precincts.forEach(function (poly) { poly.forEach(function (r) { r.forEach(function (ll) { all.push(P(ll)); }); }); });
+    var xe = d3.extent(all, function (p) { return p[0]; }), ye = d3.extent(all, function (p) { return p[1]; });
+    var k = Math.min((W - 2 * PAD) / (xe[1] - xe[0]), (H - 2 * PAD) / (ye[1] - ye[0]));   // 1 CRS unit = same px both ways
+    var ox = (W - k * (xe[1] - xe[0])) / 2, oy = (H - k * (ye[1] - ye[0])) / 2;
+    return function (ll) { var p = P(ll); return [ox + k * (p[0] - xe[0]), H - oy - k * (p[1] - ye[0])]; };
+  }
+  function pathOf(rings, S) { return rings.map(function (r) { return 'M' + r.map(function (ll) { var p = S(ll); return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('L') + 'Z'; }).join(''); }
+
+  // Measure tool: two polling places -> the same distance computed the way st_distance() would in each CRS.
+  var curS = null, meas = [];
+  function drawMeasure(ms) {
+    if (!curS) return;
+    var sel = gMeas.selectAll('circle').data(meas).join('circle').attr('r', 7).attr('fill', 'none')
+      .attr('stroke', 'var(--bench-ink)').attr('stroke-width', 2);
+    (ms ? sel.transition().duration(ms).ease(d3.easeCubicInOut) : sel)
+      .attr('cx', function (p) { return curS(p.epsg4326)[0]; }).attr('cy', function (p) { return curS(p.epsg4326)[1]; });
+    var out = document.getElementById('measure');
+    document.getElementById('m-a').value = meas[0] ? String(meas[0].id) : '';
+    document.getElementById('m-b').value = meas[1] ? String(meas[1].id) : '';
+    if (meas.length < 2) { out.textContent = meas.length ? 'Now pick a second polling place.' : ''; return; }
+    var t = dist({ crs: 26986 }, { pa: meas[0], pb: meas[1] });
+    out.innerHTML = [4326, 3857, 26986].map(function (c) {
+      var v = dist({ crs: c, buffer: 'metres' }, { pa: meas[0], pb: meas[1] }), e = t > 0 ? 100 * (v - t) / t : 0;
+      return '<div class="lab-meas-row"><span>EPSG:' + c + '</span> <strong>' + Lab.fmt(v, 0) + ' m</strong> <span>(' + (e >= 0 ? '+' : '') + Lab.fmt(e, 1) + '%)</span></div>';
+    }).join('');
+  }
+  function pick(p) { meas = meas.length >= 2 ? [p] : meas.concat([p]); drawMeasure(0); }
+  svg.on('click', function (ev) {
+    if (!DATA || !curS) return;
+    var m = d3.pointer(ev, svg.node()), vb = svg.node().viewBox.baseVal, r = svg.node().getBoundingClientRect();
+    var best = null, bd = Infinity;
+    DATA.places.forEach(function (p) { var q = curS(p.epsg4326), dd = Math.hypot(q[0] - m[0], q[1] - m[1]); if (dd < bd) { bd = dd; best = p; } });
+    if (best && bd < 24 * vb.width / Math.max(1, r.width)) pick(best);
+  });
+  function fillSelects(d) {
+    ['m-a', 'm-b'].forEach(function (id, i) {
+      var el = document.getElementById(id);
+      d.places.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = 'Ward-precinct ' + p.wp + ' (#' + p.id + ')'; el.appendChild(o); });
+      el.addEventListener('change', function () {
+        var p = d.places.find(function (q) { return String(q.id) === el.value; });
+        var next = meas.slice(0, 2); next[i] = p; meas = next.filter(Boolean); drawMeasure(0);
+      });
+    });
+  }
+
+  var lab = Lab.create({
+    id: 'v6b', initial: { crs: 26986, buffer: 'metres' },
+    states: {
+      baseline: { crs: 26986, buffer: 'metres' }, wgs84: { crs: 4326, buffer: 'metres' },
+      mercator: { crs: 3857, buffer: 'metres' }, degrees: { crs: 4326, buffer: 'degrees' }
+    },
+    load: function () {
+      return d3.json('data/v6b.json').then(function (d) {
+        d.pa = d.places.find(function (p) { return p.id === d.pair[0]; });
+        d.pb = d.places.find(function (p) { return p.id === d.pair[1]; });
+        DATA = d; fillSelects(d); return d;
+      });
+    },
+    render: function (s, d) {
+      var S = screen(s), ms = (prev && !Lab.motion.reduced()) ? 900 : 0;
+      prev = s;
+      var marked = [d.pa, d.pb];
+      // Ghost: the same precincts in the state-plane truth, fitted to the same frame, so the distortion reads when still.
+      var G = screen({ crs: 26986 });
+      gGhost.selectAll('path').data(s.crs === 26986 ? [] : [0]).join('path').attr('fill', 'none')
+        .attr('stroke', 'var(--bench-muted)').attr('stroke-opacity', 0.55).attr('stroke-width', 1).attr('stroke-dasharray', '3 3')
+        .attr('d', pathOf([].concat.apply([], d.precincts), G));
+      var pre = gPre.selectAll('path').data(d.precincts).join('path')
+        .attr('fill', function (p, i) { return i === d.marked_i ? 'var(--y)' : 'none'; }).attr('fill-opacity', 0.3)
+        .attr('stroke', function (p, i) { return i === d.marked_i ? 'var(--y)' : 'var(--bench-line)'; })
+        .attr('stroke-width', function (p, i) { return i === d.marked_i ? 1.5 : 0.6; });
+      var pts = gPts.selectAll('circle').data(d.places).join('circle')
+        .attr('r', function (p) { return marked.indexOf(p) >= 0 ? 5 : 1.8; })
+        .attr('fill', function (p) { return marked.indexOf(p) >= 0 ? 'var(--y)' : 'var(--bench-muted)'; });
+      var buf = gBuf.selectAll('path').data(marked).join('path').attr('fill', 'var(--b)').attr('fill-opacity', 0.25).attr('stroke', 'var(--b)').attr('stroke-width', 1.5);
+      var ln = gLine.selectAll('line').data([0]).join('line').attr('stroke', 'var(--y)').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
+      var a = S(d.pa.epsg4326), b = S(d.pb.epsg4326);
+      label.attr('fill', 'var(--bench-ink)').attr('font-size', 12).attr('x', PAD).attr('y', H - PAD).text('EPSG:' + s.crs + (s.crs === 4326 ? ' · x = lon, y = lat (1° = 1° both ways)' : ' · 1 m = 1 m both ways'));
+      function set(sel) {
+        sel.pre.attr('d', function (p) { return pathOf(p, S); });
+        sel.buf.attr('d', function (p) { return pathOf([ring(p.epsg4326, s)], S); });
+        sel.pts.attr('cx', function (p) { return S(p.epsg4326)[0]; }).attr('cy', function (p) { return S(p.epsg4326)[1]; });
+        sel.ln.attr('x1', a[0]).attr('y1', a[1]).attr('x2', b[0]).attr('y2', b[1]);
+      }
+      curS = S; drawMeasure(ms);
+      if (!ms) { set({ pre: pre, buf: buf, pts: pts, ln: ln }); return Promise.resolve(); }
+      // The morph: every vertex slides from its old CRS position to its new one (same vertices, new coordinates).
+      var t = svg.transition().duration(ms).ease(d3.easeCubicInOut);
+      set({ pre: pre.transition(t), buf: buf.transition(t), pts: pts.transition(t), ln: ln.transition(t) });
+      return t.end().catch(function () {});
+    },
+    readouts: function (s, d) {
+      var dm = r2(dist(s, d), 2), tm = r2(Math.hypot(d.pa.epsg26986[0] - d.pb.epsg26986[0], d.pa.epsg26986[1] - d.pb.epsg26986[1]), 2);
+      // Buffer reach in true metres: 0.01° of latitude = R·0.01·π/180; of longitude, times cos(latitude).
+      var reach = s.buffer === 'degrees' ? 0.01 * D2R * 6371010 : 1000;
+      return { crs: 'EPSG:' + s.crs, dist_m: dm, truth_m: tm, pct_err: r2(100 * (dm - tm) / tm, 3),
+        ew_m: r2(s.buffer === 'degrees' ? reach * Math.cos(d.pa.epsg4326[1] * D2R) : reach, 1), ns_m: r2(reach, 1),
+        // Area of the marked precinct: st_area() as the prep ran it for this CRS (the page cannot redo the ellipsoid).
+        area_m2: d.area[s.crs + '_' + s.buffer], truth_area_m2: d.area['26986_metres'],
+        area_pct_err: r2(100 * (d.area[s.crs + '_' + s.buffer] - d.area['26986_metres']) / d.area['26986_metres'], 3) };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'crs', label: 'CRS' }, { key: 'dist_m', label: 'distance (m)', fmt: 2 },
+      { key: 'truth_m', label: 'truth, EPSG:26986 (m)', fmt: 0 }, { key: 'pct_err', label: '% error', fmt: 3 },
+      { key: 'ew_m', label: 'buffer reach E–W (true m)', fmt: 0 }, { key: 'ns_m', label: 'buffer reach N–S (true m)', fmt: 0 },
+      { key: 'area_m2', label: 'precinct 0101 area (m²)', fmt: 0 }, { key: 'area_pct_err', label: 'area % error', fmt: 1 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.crs + ': ' + Lab.fmt(r.dist_m, 0) + ' m between the marked places (' + (r.pct_err >= 0 ? '+' : '') + Lab.fmt(r.pct_err, 1) + '%)'; },
+    code: {
+      r: function (s) {
+        var buf = s.buffer === 'degrees' ? 'st_buffer(dist = 0.01)   # planar: 0.01 of a DEGREE' :
+          s.crs === 4326 ? 'st_buffer(dist = 1000)   # s2: metres on the sphere' : 'st_buffer(dist = 1000)   # 1 km in the CRS unit (metres)';
+        return (s.buffer === 'degrees' ? 'sf_use_s2(FALSE)   # treat lon/lat as flat x/y\n\n' : '') +
+          'pts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = ' + s.crs + ')\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  ' + buf +
+          '\n\na = precincts %>%\n  filter(ward_precinct == "0101") %>%\n  st_transform(crs = ' + s.crs + ') %>%\n  st_area()';
+      },
+      sql: function (s) {
+        return 'SELECT ST_Distance(ST_Transform(a.geom, ' + s.crs + '),\n                   ST_Transform(b.geom, ' + s.crs + ')) AS d_crs,\n       ST_Distance(a.geom::geography, b.geom::geography) AS d_geography\nFROM polling_places a, polling_places b\nWHERE a.id = 1 AND b.id = 120;';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-crs').value = String(s.crs);
+      document.querySelectorAll('#c-buf button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.buffer)); });
+    }
+  });
+  lab.ready.then(function () { return lab.setState({}); });
+  document.getElementById('c-crs').addEventListener('change', function (e) { lab.setState({ crs: +e.target.value }); });
+  document.querySelectorAll('#c-buf button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ buffer: b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+{
+  "lab": "v11a",
+  "ok": true,
+  "checked_at": "2026-09-29T06:08:58.341Z",
+  "results": [
+    {
+      "ok": true,
+      "check": "a",
+      "state": "-",
+      "msg": "0 console errors; first render 385 ms < 1500 ms"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "baseline",
+      "msg": "8 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "baseline",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "buffer",
+      "msg": "8 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "buffer",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "river",
+      "msg": "8 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "river",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "budget15",
+      "msg": "8 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "budget15",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "speed40",
+      "msg": "8 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "speed40",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "d",
+      "state": "-",
+      "msg": "3 learning checks: options mark chosen/correct/wrong, exactly one correct each, Hint and Reveal toggle"
+    },
+    {
+      "ok": true,
+      "check": "h",
+      "state": "-",
+      "msg": "data 473.7 KB <= 500.0 KB; JS 25.2 KB <= 150.0 KB"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-light",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-dark",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "e",
+      "state": "-",
+      "msg": "5 screenshots in tests/labs/shots/v11a/ (390-light, 390-dark, 1280-light, 1280-dark, 390-light-reduced)"
+    },
+    {
+      "ok": true,
+      "check": "i",
+      "state": "-",
+      "msg": "3 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v11a/impeccable.json"
+    }
+  ]
+}

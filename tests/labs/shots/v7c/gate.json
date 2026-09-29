@@ -1,0 +1,169 @@
+{
+  "lab": "v7c",
+  "ok": true,
+  "checked_at": "2026-09-29T06:01:31.467Z",
+  "results": [
+    {
+      "ok": true,
+      "check": "a",
+      "state": "-",
+      "msg": "0 console errors; first render 441 ms < 1500 ms"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "baseline",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "baseline",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "rook",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "rook",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "knn3",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "knn3",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "knn6",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "knn6",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "d20",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "d20",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "pv",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "pv",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "std",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "std",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "other",
+      "msg": "7 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "other",
+      "msg": "code panel matches golden (r)"
+    },
+    {
+      "ok": true,
+      "check": "d",
+      "state": "-",
+      "msg": "3 learning checks: options mark chosen/correct/wrong, exactly one correct each, Hint and Reveal toggle"
+    },
+    {
+      "ok": true,
+      "check": "h",
+      "state": "-",
+      "msg": "data 41.2 KB <= 500.0 KB; JS 26.6 KB <= 150.0 KB"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-light",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-dark",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "e",
+      "state": "-",
+      "msg": "5 screenshots in tests/labs/shots/v7c/ (390-light, 390-dark, 1280-light, 1280-dark, 390-light-reduced)"
+    },
+    {
+      "ok": true,
+      "check": "i",
+      "state": "-",
+      "msg": "2 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v7c/impeccable.json"
+    }
+  ]
+}

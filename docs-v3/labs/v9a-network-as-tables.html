@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A network is two tables</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+</head>
+<body data-lab="v9a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 9 · Networks as data</p>
+    <h1>A network is two tables: edges, nodes and the join that builds them</h1>
+    <p class="lab-lo">Learning objective: Represent a network relationally (edge list + node table), aggregate trips to weighted edges, and compare an edge list with an adjacency matrix.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="plot"></div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <div role="group" aria-label="Edge direction" class="lab-seg" id="c-dir"><button type="button" data-v="true" aria-pressed="true">Directed</button><button type="button" data-v="false" aria-pressed="false">Undirected</button></div>
+          <label>Minimum weight (rides per edge) <select id="c-minw"><option value="1" selected>1 or more</option><option value="2">2 or more</option><option value="5">5 or more</option><option value="10">10 or more</option><option value="25">25 or more</option></select></label>
+          <label>Time window (July 2021 rush hours) <select id="c-win"><option value="all" selected>AM + PM</option><option value="am">AM only</option><option value="pm">PM only</option></select></label>
+          <div role="group" aria-label="View" class="lab-seg" id="c-view"><button type="button" data-v="edges" aria-pressed="true">Edge list (map)</button><button type="button" data-v="matrix" aria-pressed="false">Adjacency matrix</button></div>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>edge / filled cell (thicker, brighter = more rides)</li><li><i style="background:var(--bench-line)"></i>station / empty cell</li></ul></div>
+      <div><h2>Heaviest edges</h2><ul class="lab-legend"><li>Heaviest edge between two stations: its tally rows (day × rush) collapse into one row.</li></ul><div id="funnel" aria-live="polite"></div><div id="table"></div></div>
+      <div><h2>Node table</h2><div id="ntable"></div></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">At baseline (directed, weight 1 or more, AM + PM), how many unique directed edges are there?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">1,886, one per tally row</button><button class="lc-option" data-correct="true">487</button><button class="lc-option" data-correct="false">625, one per station pair</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "edges" in the sidebar, not "tally rows". count(from, to) collapses many day-by-day rows into one row per pair.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>487. The 1,886 tally rows (one per start, end, day and rush period) collapse into 487 distinct (from, to) pairs; 138 of the 625 possible ordered pairs never saw a ride.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Switch to Undirected. Which edges merge, and what happens to the counts?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">Nothing merges; undirected only changes how lines are drawn, so edges stay at 487</button><button class="lc-option" data-correct="true">A→B and B→A merge into one edge: edges fall from 487 to 292, total rides stay 14,402</button><button class="lc-option" data-correct="false">Edges fall and total rides fall too, because the reverse trips are dropped</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Watch "edges" and "rides" together. pmin(from, to) and pmax(from, to) put both directions of a pair under the same key before count() adds them.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Each pair A→B and B→A becomes one row with the two weights summed, so edges drop from 487 to 292 while rides stay 14,402. Self-loops (rides back to the same station) cannot merge. The matrix becomes symmetric, so filled cells rise to 559: every undirected edge fills two mirror cells.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">At 500 stations, why would an adjacency matrix be a poor way to store the network in Postgres?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Postgres cannot store numbers in a grid</button><button class="lc-option" data-correct="true">It needs 250,000 cells (500 × 500), mostly zeros, and 500 columns; an edge list stores only the pairs that exist and joins to the node table by key</button><button class="lc-option" data-correct="false">A matrix loses the edge weights, so the ride counts disappear</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare "matrix bytes" with "edge list bytes", and note that matrix size grows with nodes squared while the edge list grows with the edges that actually happened.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Here 25 busy stations fill 487 of 625 cells, so the matrix is fine. A matrix grows as n², though: 500 stations means 250,000 cells (2 MB as doubles) and a 500-column table, while riders connect only a small share of pairs. The edge list (from, to, weight) has one row per pair that exists, indexes well, and joins to the node table on the station code.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // edgesOf() mirrors the R panel: filter(rush %in% window) -> [pmin/pmax if undirected] -> count(from, to, wt = count) -> filter(weight >= min_w)
+  function inWin(s, r) { return s.window === 'all' ? (r.rush === 'am' || r.rush === 'pm') : r.rush === s.window; }
+  function edgesOf(s, d) {
+    var m = new Map();
+    d.trips.forEach(function (r) {
+      if (!inWin(s, r)) return;
+      var a = r.from, b = r.to;
+      if (!s.directed && b < a) { var t = a; a = b; b = t; }
+      var k = a + '|' + b;
+      m.set(k, (m.get(k) || 0) + r.count);
+    });
+    var out = [];
+    m.forEach(function (w, k) { if (w >= s.min_w) { var p = k.split('|'); out.push({ id: k, from: p[0], to: p[1], weight: w }); } });
+    out.sort(function (x, y) { return x.from < y.from ? -1 : x.from > y.from ? 1 : (x.to < y.to ? -1 : x.to > y.to ? 1 : 0); });
+    return out;
+  }
+  function calc(s, d) {
+    var e = edgesOf(s, d), n = d.nodes.length, loops = e.filter(function (r) { return r.from === r.to; }).length;
+    return {
+      tally_rows: d.trips.filter(function (r) { return inWin(s, r); }).length,
+      trips: e.reduce(function (t, r) { return t + r.weight; }, 0),
+      edges: e.length, nodes: n,
+      cells_filled: s.directed ? e.length : 2 * e.length - loops,
+      cells_total: n * n, matrix_bytes: 8 * n * n, edgelist_bytes: 24 * e.length
+    };
+  }
+
+  var stage = document.getElementById('plot');
+  var W = Math.max(300, stage.clientWidth || 560), H = W < 520 ? W : Math.min(520, W * 0.8), M = 28;
+  var svg = d3.select('#plot').append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'Bluebikes stations with ride edges, or the same edges as an adjacency matrix');
+  var gMap = svg.append('g'), gMat = svg.append('g');
+  var gEdge = gMap.append('g'), gNode = gMap.append('g');
+  var px, py, idx, cellSize, matCap, first = true;
+  var gLoop = gMap.insert('g', function () { return gNode.node(); });
+  var fz = d3.select('#funnel').append('svg').attr('viewBox', '0 0 280 96').attr('width', '100%').attr('role', 'img').attr('aria-label', 'Tally rows of the heaviest edge between two different stations collapsing into one weighted edge');
+  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'from', label: 'from' }, { key: 'to', label: 'to' }, { key: 'weight', label: 'weight', num: true, fmt: 0 }], { label: 'Eight heaviest edges' });
+
+  var nt = Lab.table(document.getElementById('ntable'), [], [{ key: 'id', label: 'id', num: true, fmt: 0 }, { key: 'code', label: 'code' }, { key: 'degree', label: 'degree', num: true, fmt: 0 }, { key: 'rides', label: 'rides touching', num: true, fmt: 0 }], { label: 'Node table, eight highest degree' });
+  var lab = Lab.create({
+    id: 'v9a', initial: { directed: true, min_w: 1, window: 'all', view: 'edges' },
+    states: {
+      baseline: { directed: true, min_w: 1, window: 'all', view: 'edges' },
+      undirected: { directed: false, min_w: 1, window: 'all', view: 'edges' },
+      strong: { directed: true, min_w: 5, window: 'all', view: 'edges' },
+      am_only: { directed: true, min_w: 1, window: 'am', view: 'edges' },
+      matrix: { directed: true, min_w: 1, window: 'all', view: 'matrix' }
+    },
+    load: function () {
+      return Promise.all([d3.csv('data/v9a_trips.csv', d3.autoType), d3.csv('data/v9a_nodes.csv', d3.autoType)]).then(function (a) {
+        var d = { trips: a[0], nodes: a[1] };
+        var xe = d3.extent(d.nodes, function (r) { return r.lon; }), ye = d3.extent(d.nodes, function (r) { return r.lat; });
+        var k = Math.cos(d3.mean(ye) * Math.PI / 180), sx = (W - 2 * M) / ((xe[1] - xe[0]) * k), sy = (H - 2 * M) / (ye[1] - ye[0]), sc = Math.min(sx, sy);
+        var cxm = (xe[0] + xe[1]) / 2, cym = (ye[0] + ye[1]) / 2;
+        px = function (v) { return W / 2 + (v - cxm) * k * sc; };
+        py = function (v) { return H / 2 - (v - cym) * sc; };
+        idx = new Map(d.nodes.map(function (r, i) { return [r.code, i]; }));
+        cellSize = (Math.min(W, H) - 2 * M) / d.nodes.length;
+        var n = d.nodes.length, gx0 = (W - cellSize * n) / 2, gy0 = (Math.min(W, H) - cellSize * n) / 2;
+        gMat.append('g').selectAll('rect').data(d3.range(n * n)).join('rect').attr('class', 'empty')
+          .attr('x', function (i) { return gx0 + (i % n) * cellSize; }).attr('y', function (i) { return gy0 + Math.floor(i / n) * cellSize; })
+          .attr('width', cellSize - 1).attr('height', cellSize - 1).attr('fill', 'var(--bench-line)').attr('opacity', 0.35);
+        var lab8 = d.nodes.slice().sort(function (a, b) { return b.trips_out - a.trips_out || a.id - b.id; }).slice(0, 8).map(function (r) { return r.code; });
+        gMap.append('g').attr('font-size', 9).attr('fill', 'var(--bench-ink)').selectAll('text').data(d.nodes.filter(function (r) { return lab8.indexOf(r.code) >= 0; })).join('text')
+          .attr('x', function (r) { return px(r.lon) + 6; }).attr('y', function (r) { return py(r.lat) - 5; }).text(function (r) { return r.code; });
+        var tk = d3.range(0, n, 4);
+        gMat.append('g').attr('font-size', 8).attr('fill', 'var(--bench-ink)').selectAll('text.c').data(tk).join('text').attr('class', 'c').attr('text-anchor', 'middle')
+          .attr('x', function (i) { return gx0 + (i + 0.5) * cellSize; }).attr('y', gy0 - 4).text(function (i) { return i + 1; });
+        gMat.append('g').attr('font-size', 8).attr('fill', 'var(--bench-ink)').selectAll('text.r').data(tk).join('text').attr('class', 'r').attr('text-anchor', 'end')
+          .attr('x', gx0 - 4).attr('y', function (i) { return gy0 + (i + 0.75) * cellSize; }).text(function (i) { return i + 1; });
+        gMat.append('text').attr('font-size', 9).attr('fill', 'var(--bench-ink)').attr('x', gx0).attr('y', gy0 - 14).text('columns: to station id; rows: from station id (node table id)');
+        matCap = gMat.append('text').attr('font-size', 9).attr('fill', 'var(--bench-ink)').attr('x', gx0).attr('y', gy0 + n * cellSize + 14);
+        gNode.selectAll('circle').data(d.nodes).join('circle').attr('cx', function (r) { return px(r.lon); }).attr('cy', function (r) { return py(r.lat); })
+          .attr('r', 4).attr('fill', 'var(--bench-ink)').attr('stroke', 'var(--bench-line)');
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var e = edgesOf(s, d), wmax = d3.max(e, function (r) { return r.weight; }) || 1;
+      var ms = (first || Lab.motion.reduced()) ? 0 : 300; first = false;
+      var sw = d3.scaleSqrt().domain([1, wmax]).range([0.6, 5]);
+      var op = d3.scaleSqrt().domain([1, wmax]).range([0.25, 1]);
+      gMap.attr('display', s.view === 'edges' ? null : 'none');
+      gMat.attr('display', s.view === 'matrix' ? null : 'none');
+      var lines = gEdge.selectAll('line').data(e.filter(function (r) { return r.from !== r.to; }), function (r) { return r.id; });
+      lines.exit().transition().duration(ms * 0.6).attr('stroke-opacity', 0).remove();
+      var en = lines.enter().append('line').attr('stroke', 'var(--y)').attr('stroke-linecap', 'round').attr('stroke-opacity', 0)
+        .attr('x1', function (r) { return px(d.nodes[idx.get(r.from)].lon); }).attr('y1', function (r) { return py(d.nodes[idx.get(r.from)].lat); })
+        .attr('x2', function (r) { return px(d.nodes[idx.get(r.from)].lon); }).attr('y2', function (r) { return py(d.nodes[idx.get(r.from)].lat); });
+      var t1 = en.merge(lines).transition().duration(ms).ease(d3.easeCubicOut)
+        .attr('x2', function (r) { return px(d.nodes[idx.get(r.to)].lon); }).attr('y2', function (r) { return py(d.nodes[idx.get(r.to)].lat); })
+        .attr('stroke-width', function (r) { return sw(r.weight); }).attr('stroke-opacity', function (r) { return op(r.weight) * 0.8; });
+      var cells = gMat.selectAll('rect.cell').data(e, function (r) { return r.id; });
+      cells.exit().transition().duration(ms * 0.6).attr('opacity', 0).remove();
+      var off = (Math.min(W, H) - cellSize * d.nodes.length) / 2, x0 = (W - cellSize * d.nodes.length) / 2;
+      var ce = cells.enter().append('rect').attr('class', 'cell').attr('opacity', 0)
+        .attr('x', function (r) { return x0 + idx.get(r.to) * cellSize; }).attr('y', function (r) { return off + idx.get(r.from) * cellSize; })
+        .attr('width', cellSize - 1).attr('height', cellSize - 1).attr('fill', 'var(--y)');
+      var mirror = s.directed ? [] : e.filter(function (r) { return r.from !== r.to; });
+      var mc = gMat.selectAll('rect.mirror').data(mirror, function (r) { return r.id; });
+      mc.exit().remove();
+      mc.enter().append('rect').attr('class', 'mirror').attr('fill', 'var(--y)')
+        .attr('x', function (r) { return x0 + idx.get(r.from) * cellSize; }).attr('y', function (r) { return off + idx.get(r.to) * cellSize; })
+        .attr('width', cellSize - 1).attr('height', cellSize - 1).merge(mc).attr('opacity', function (r) { return op(r.weight); });
+      var t2 = ce.merge(cells).transition().duration(ms).attr('opacity', function (r) { return op(r.weight); });
+      var loops = e.filter(function (r) { return r.from === r.to; });
+      var lr = d3.scaleSqrt().domain([1, wmax]).range([5, 14]);
+      var lc = gLoop.selectAll('circle').data(loops, function (r) { return r.id; });
+      lc.exit().remove();
+      lc.enter().append('circle').attr('fill', 'none').attr('stroke', 'var(--y)').attr('cx', function (r) { return px(d.nodes[idx.get(r.from)].lon); }).attr('cy', function (r) { return py(d.nodes[idx.get(r.from)].lat); })
+        .merge(lc).attr('r', function (r) { return lr(r.weight); }).attr('stroke-width', 1.5).attr('stroke-opacity', function (r) { return op(r.weight); });
+      matCap.text(s.directed ? 'directed: cell (row, column) = rides from row to column' : 'undirected: symmetric, each edge fills two mirror cells');
+      var hv = e.filter(function (r) { return r.from !== r.to; }).sort(function (a, b) { return b.weight - a.weight || (a.id < b.id ? -1 : 1); })[0];
+      var rows = !hv ? [] : d.trips.filter(function (r) { if (!inWin(s, r)) return false; var a = r.from, b = r.to; if (!s.directed && b < a) { var t = a; a = b; b = t; } return a + '|' + b === hv.id; });
+      var fx = d3.scaleLinear().domain([0, d3.max(rows, function (r) { return r.count; }) || 1]).range([0, 90]);
+      var rh = Math.max(1, Math.min(4, 80 / Math.max(1, rows.length)));
+      var bars = fz.selectAll('rect.row').data(rows, function (r, i) { return i; });
+      bars.exit().remove();
+      var bt = bars.enter().append('rect').attr('class', 'row').attr('fill', 'var(--y)').attr('opacity', 0.55).merge(bars)
+        .attr('x', 0).attr('y', function (r, i) { return 8 + i * rh; }).attr('height', Math.max(1, rh - 0.5)).attr('width', function (r) { return fx(r.count); }).attr('opacity', ms ? 0.9 : 0)
+        .transition().duration(ms * 2).ease(d3.easeCubicInOut).delay(function (r, i) { return ms ? i * 4 : 0; })
+        .attr('x', 150).attr('y', 44).attr('width', 12).attr('opacity', 0);
+      var fe = fz.selectAll('rect.edge').data([0]).join('rect').attr('class', 'edge').attr('x', 150).attr('y', 40).attr('height', 12).attr('fill', 'var(--y)');
+      fe.attr('width', 0).transition().duration(ms * 2).attr('width', hv ? 120 : 0);
+      var ghost = fz.selectAll('rect.ghost').data(rows, function (r, i) { return i; });
+      ghost.exit().remove();
+      ghost.enter().append('rect').attr('class', 'ghost').attr('fill', 'var(--bench-line)').merge(ghost)
+        .attr('x', 0).attr('y', function (r, i) { return 8 + i * rh; }).attr('height', Math.max(1, rh - 0.5)).attr('width', function (r) { return fx(r.count); }).attr('opacity', 0.6);
+      fz.selectAll('text.cap').data([0, 1]).join('text').attr('class', 'cap').attr('font-size', 11).attr('fill', 'var(--bench-ink)').attr('x', function (i) { return i ? 150 : 0; }).attr('y', 92)
+        .text(function (i) { return !hv ? '' : i ? '1 edge, weight ' + hv.weight : rows.length + ' tally rows'; });
+      fz.selectAll('text.lbl').data([0]).join('text').attr('class', 'lbl').attr('font-size', 11).attr('fill', 'var(--bench-ink)').attr('x', 150).attr('y', 32)
+        .text(hv ? hv.from + (s.directed ? ' → ' : ' – ') + hv.to : '');
+      var top = e.slice().sort(function (a, b) { return b.weight - a.weight || (a.id < b.id ? -1 : 1); }).slice(0, 8);
+      var dn = ms ? Promise.all([t1.end(), t2.end()]).catch(function () {}) : Promise.resolve();
+      var dg = new Map(d.nodes.map(function (r) { return [r.code, { id: r.id, code: r.code, degree: 0, rides: 0 }]; }));
+      e.forEach(function (r) { var a = dg.get(r.from), b = dg.get(r.to); a.rides += r.weight; if (r.from !== r.to) { a.degree += 1; b.degree += 1; b.rides += r.weight; } });
+      var ntop = Array.from(dg.values()).sort(function (a, b) { return b.degree - a.degree || a.id - b.id; }).slice(0, 8);
+      Promise.resolve(nt.update(ntop)).catch(function () {});
+      return Promise.all([dn, tb.update(top)]);
+    },
+    readouts: function (s, d) { return calc(s, d); },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'edges', label: 'edges', fmt: 0 }, { key: 'tally_rows', label: 'tally rows in', fmt: 0 },
+      { key: 'trips', label: 'rides', fmt: 0 }, { key: 'nodes', label: 'nodes', fmt: 0 },
+      { key: 'cells_filled', label: 'cells filled', fmt: 0 }, { key: 'cells_total', label: 'cells total', fmt: 0 },
+      { key: 'matrix_bytes', label: 'matrix bytes', fmt: 0 }, { key: 'edgelist_bytes', label: 'edge list bytes', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.tally_rows + ' tally rows collapse into ' + r.edges + ' edges; ' + r.cells_filled + ' of ' + r.cells_total + ' matrix cells filled'; },
+    code: {
+      r: function (s) {
+        var rush = s.window === 'all' ? 'c("am", "pm")' : 'c("' + s.window + '")', dir = s.directed ? 'TRUE' : 'FALSE';
+        return 'edges = trips %>%\n  filter(rush %in% ' + rush + ')' +
+          (s.directed ? '' : ' %>%\n  mutate(a = pmin(from, to), b = pmax(from, to), from = a, to = b)') +
+          ' %>%\n  count(from, to, wt = count, name = "weight") %>%\n  filter(weight >= ' + s.min_w + ')\n\n' +
+          'g = graph_from_data_frame(edges, directed = ' + dir + ', vertices = nodes)\n' +
+          '# tidygraph: tbl_graph(nodes = nodes, edges = edges, node_key = "code", directed = ' + dir + ')\n' +
+          'adj = as_adjacency_matrix(g, attr = "weight", sparse = FALSE)\n\n' +
+          'tibble(tally_rows = nrow(filter(trips, rush %in% ' + rush + ')),\n' +
+          '       trips = sum(edges$weight), edges = gsize(g), nodes = gorder(g),\n' +
+          '       cells_filled = sum(adj > 0), cells_total = length(adj),\n' +
+          '       matrix_bytes = 8 * length(adj), edgelist_bytes = 8 * 3 * gsize(g))';
+      },
+      sql: function (s) {
+        var a = s.directed ? 'start_code' : 'MIN(start_code, end_code)', b = s.directed ? 'end_code' : 'MAX(start_code, end_code)';
+        var rush = s.window === 'all' ? "('am', 'pm')" : "('" + s.window + "')";
+        return 'SELECT ' + a + ' AS "from", ' + b + ' AS "to", SUM(count) AS weight\nFROM tally_rush_edges\n' +
+          "WHERE day BETWEEN '2021-07-01' AND '2021-07-31'\n  AND rush IN " + rush + '\n' +
+          '  AND start_code IN (SELECT code FROM nodes)\n  AND end_code IN (SELECT code FROM nodes)\nGROUP BY 1, 2\nHAVING SUM(count) >= ' + s.min_w + ';';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-minw').value = String(s.min_w);
+      document.getElementById('c-win').value = s.window;
+      document.querySelectorAll('#c-dir button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === String(s.directed))); });
+      document.querySelectorAll('#c-view button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.view)); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-minw').addEventListener('change', function (e) { lab.setState({ min_w: +e.target.value }); });
+  document.getElementById('c-win').addEventListener('change', function (e) { lab.setState({ window: e.target.value }); });
+  document.querySelectorAll('#c-dir button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ directed: b.dataset.v === 'true' }); }); });
+  document.querySelectorAll('#c-view button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ view: b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>

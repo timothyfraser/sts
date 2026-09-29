@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nearest facility at scale</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .v7b-race{display:grid;gap:.4rem;margin:.6rem 0 0;font-family:var(--mono);font-size:.8rem;color:var(--bench-muted)}
+  .v7b-race .row{display:grid;grid-template-columns:7.5rem 1fr;align-items:center;gap:.5rem}
+  .v7b-race .bar{height:.7rem;border-radius:2px;background:var(--bench-line);position:relative;overflow:hidden}
+  .v7b-race .bar i{position:absolute;inset:0 auto 0 0;background:var(--bench-muted)}
+  .v7b-race .row.is-this .bar i{background:var(--y)}
+  .v7b-count{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--bench-ink);font-size:clamp(1.4rem,5vw,2rem);line-height:1.1;margin:0}
+  .v7b-count small{display:block;font-size:.75rem;color:var(--bench-muted);font-family:var(--sans)}
+  .v7b-plan{margin:.6rem 0 0;padding:.5rem .7rem;border:1px solid var(--bench-line);border-radius:4px;background:var(--bench-panel);color:var(--bench-ink);font-family:var(--mono);font-size:.8rem;white-space:pre-wrap;overflow-wrap:anywhere}
+  .v7b-plan .scan{color:var(--y)}
+  .v7b-stage svg{display:block;width:100%;height:auto}
+  .v7b-stage .ring{fill:none;stroke:var(--b);stroke-opacity:.6;stroke-width:1.2}
+  .v7b-note{max-width:70ch;margin:.6rem 0 0;font-size:.9rem}
+  .v7b-stage .org{fill:var(--bench-ink)}
+  .v7b-stage .poll{fill:var(--y)}
+  .v7b-stage .link{stroke:var(--b);stroke-width:1.2}
+  .v7b-stage .link.is-miss{stroke:var(--bench-down);stroke-dasharray:3 3}
+</style>
+</head>
+<body data-lab="v7b">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 7 · Spatial joins at scale</p>
+    <h1>Nearest facility at scale: pre-filter with a spatial index</h1>
+    <p class="lab-lo"><strong>Learning objective:</strong> Compute nearest-facility distances efficiently: why brute force is not big-data friendly, and how ST_DWithin plus an index pre-filters.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage v7b-stage" id="plot"></div>
+      <p class="v7b-count" id="count" aria-live="off">0<small>pairs the database examines (bars: log scale)</small></p>
+      <div class="v7b-race" id="race" aria-hidden="true">
+        <div class="row" data-k="brute"><span>brute n × m</span><span class="bar"><i></i></span></div>
+        <div class="row is-this" data-k="this"><span>this plan</span><span class="bar"><i></i></span></div>
+      </div>
+      <pre class="v7b-plan" id="plan" aria-label="EXPLAIN-style query plan"></pre>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Distance threshold (m) <select id="c-d"><option value="250">250</option><option value="500" selected>500</option><option value="1000">1000</option></select></label>
+          <div role="group" aria-label="Algorithm" class="lab-seg" id="c-algo"><button type="button" data-v="brute" aria-pressed="true">Brute force</button><button type="button" data-v="bbox" aria-pressed="false">Box pre-filter</button><button type="button" data-v="index" aria-pressed="false">Index</button></div>
+          <div role="group" aria-label="Spatial index" class="lab-seg" id="c-index"><button type="button" data-v="false" aria-pressed="true">Index off</button><button type="button" data-v="true" aria-pressed="false">Index on</button></div>
+          <div role="group" aria-label="Scale multiplier" class="lab-seg" id="c-scale"><button type="button" data-v="1" aria-pressed="true">1×</button><button type="button" data-v="10" aria-pressed="false">10×</button><button type="button" data-v="100" aria-pressed="false">100×</button></div>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend">
+        <li><i style="background:var(--bench-ink)"></i>precinct centroid (origin)</li>
+        <li><i style="background:var(--y)"></i>polling place</li>
+        <li><i style="background:var(--b)"></i>search radius; nearest poll found inside it</li>
+        <li><i style="background:var(--bench-down)"></i>nearest poll lies outside the radius (missed)</li>
+      </ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <p class="v7b-note">The R tab ran to produce every number on this page. The SQL tab is the same query in PostGIS, shown for reference, not run here. The box pre-filter state is simplified: it counts the pairs inside the radius as its candidates, where a real bounding-box test would pass a few more corner pairs.</p>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h2>LC 01 · observe</h2><p class="lc-q">At 1× with brute force, how many distance comparisons does the query make?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">255, one per precinct</button><button class="lc-option" data-correct="true">65,025, every precinct against every poll</button><button class="lc-option" data-correct="false">620, only the pairs within 500 m</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "comparisons" in the sidebar. Brute force does not know which polls are close until it has measured them all.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>65,025 = 255 origins × 255 polls. The 620 pairs within 500 m are only known after all 65,025 distances are measured.</div></section>
+    <section class="lab-lc" data-lc="2"><h2>LC 02 · intervene</h2><p class="lc-q">Choose Index, turn the index on, and set the scale to 100×. How many candidate comparisons remain, and what changes in the plan?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="true">62,000 candidates; the plan switches from Seq Scan to Index Scan</button><button class="lc-option" data-correct="false">6,502,500; the index only speeds up each comparison, so the count stays n × m</button><button class="lc-option" data-correct="false">620; the index removes the copies made by the scale-up</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare the two bars and the EXPLAIN box before and after you press "Index on".</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>With the GiST index the engine only visits the 62,000 pairs whose boxes overlap the 500 m radius, instead of 6,502,500 (25,500 × 255). The plan line changes from "Seq Scan on polls" to "Index Scan using polls_geom_idx on polls".</div></section>
+    <section class="lab-lc" data-lc="3"><h2>LC 03 · transfer</h2><p class="lc-q">Why can a pre-filter with ST_DWithin miss the true nearest facility, and how do you guard against it?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">The index stores rounded coordinates, so rebuild it with more precision</button><button class="lc-option" data-correct="true">If no facility is within the radius the origin gets no match; use ORDER BY geom &lt;-&gt; point LIMIT 1 (or st_nearest_feature), or widen the radius and check for unmatched origins</button><button class="lc-option" data-correct="false">It cannot miss: ST_DWithin always returns the nearest facility</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Set the threshold to 250 m and count the dashed lines, then read "missed".</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>A radius is a filter, not a search: at 250 m, 164 of 255 precincts have no poll inside it, and even at 500 m 51 are missed, though every one has a nearest poll (mean 379 m away). The KNN operator &lt;-&gt; with LIMIT 1 walks the index outward until it finds one, so it never comes back empty; with a fixed radius, count the misses and widen it.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var N0, M0, base; // base: per-origin nearest poll and distances, computed once
+  function withinCount(o, polls, d) { var c = 0; for (var j = 0; j < polls.length; j++) { var dx = o.x - polls[j].x, dy = o.y - polls[j].y; if (Math.sqrt(dx * dx + dy * dy) <= d) c++; } return c; }
+  function prep(data) {
+    var O = data.origins, P = data.polls, origins = [], polls = [];
+    for (var i = 0; i < O.id.length; i++) origins.push({ id: O.id[i], x: O.x[i], y: O.y[i] });
+    for (var j = 0; j < P.id.length; j++) polls.push({ id: P.id[j], x: P.x[j], y: P.y[j] });
+    origins.forEach(function (o) {
+      var best = Infinity, bj = -1;
+      polls.forEach(function (p, k) { var dx = o.x - p.x, dy = o.y - p.y, dd = Math.sqrt(dx * dx + dy * dy); if (dd < best) { best = dd; bj = k; } });
+      o.near = polls[bj]; o.gap = best;
+      o.w = {}; [250, 500, 1000].forEach(function (d) { o.w[d] = withinCount(o, polls, d); });
+    });
+    N0 = origins.length; M0 = polls.length;
+    return { origins: origins, polls: polls };
+  }
+  function usesIndex(s) { return s.algo === 'index' && s.index === true; }
+  function planText(s) { return usesIndex(s) ? 'Index Scan using polls_geom_idx on polls' : 'Seq Scan on polls'; }
+  function compute(s, D) {
+    var cand1 = 0, found1 = 0, gap = 0;
+    D.origins.forEach(function (o) { var w = o.w[s.d] != null ? o.w[s.d] : withinCount(o, D.polls, s.d); cand1 += w; if (w > 0) found1++; gap += o.gap; });
+    var k = s.scale, n = N0 * k, m = M0, cand = cand1 * k;
+    var brute = n * m, comp, calc;
+    if (s.algo === 'brute') { comp = brute; calc = brute; }
+    else if (s.algo === 'bbox') { comp = brute; calc = cand; }
+    else if (usesIndex(s)) { comp = cand; calc = cand; }
+    else { comp = brute; calc = cand; }
+    return { comparisons: comp, distance_calcs: calc, candidates: cand, n: n, found: found1 * k, missed: (N0 - found1) * k, mean_nearest_m: gap / N0, plan: planText(s), brute: brute };
+  }
+  var costLine = {
+    brute: '    comparisons = n * m,                 # brute force: every origin x every poll\n    distance_calcs = n * m',
+    bbox: '    comparisons = n * m,                 # every pair gets a box test; exact distance only inside it\n    distance_calcs = candidates',
+    index: '    comparisons = candidates,            # the GiST index hands back candidates only\n    distance_calcs = candidates',
+    fallback: '    comparisons = n * m,                 # no index to use: falls back to a full scan\n    distance_calcs = candidates'
+  };
+  function codeR(s) {
+    var cost = s.algo === 'brute' ? costLine.brute : s.algo === 'bbox' ? costLine.bbox : usesIndex(s) ? costLine.index : costLine.fallback;
+    return 'library(dplyr)\nlibrary(sf)\n\n' +
+      '# ' + s.scale + 'x synthetic scale-up: copy each precinct centroid ' + s.scale + ' time' + (s.scale === 1 ? '' : 's') + '\n' +
+      'origins = centroids %>% slice(rep(1:n(), times = ' + s.scale + '))\n\n' +
+      '# pre-filter: which polls sit within ' + s.d + ' m of each origin?\n' +
+      'within = st_is_within_distance(origins, polls, dist = ' + s.d + ')\n' +
+      '# the true nearest poll, found without any radius\n' +
+      'nearest = st_nearest_feature(origins, polls)\n' +
+      'gap_m = st_distance(origins, polls[nearest, ], by_element = TRUE) %>% as.numeric()\n\n' +
+      'tibble(n = nrow(origins), m = nrow(polls),\n' +
+      '       candidates = sum(lengths(within)),\n' +
+      '       found = sum(lengths(within) > 0),\n' +
+      '       missed = sum(lengths(within) == 0),\n' +
+      '       mean_nearest_m = mean(gap_m)) %>%\n' +
+      '  mutate(\n' + cost + ',\n' +
+      '    plan = "' + planText(s) + '")';
+  }
+  function codeSQL(s) {
+    if (s.algo === 'brute') return '-- brute force: measure every origin against every poll\nSELECT o.id, MIN(ST_Distance(o.geom, p.geom)) AS nearest_m\nFROM origins o CROSS JOIN polls p\nGROUP BY o.id;';
+    return (s.index ? 'CREATE INDEX polls_geom_idx ON polls USING GIST (geom);\n\n' : '-- no spatial index on polls.geom\n\n') +
+      'SELECT o.id, near.id AS poll_id, near.dist_m\nFROM origins o\nCROSS JOIN LATERAL (\n  SELECT p.id, ST_Distance(o.geom, p.geom) AS dist_m\n  FROM polls p\n' +
+      '  WHERE ST_DWithin(o.geom, p.geom, ' + s.d + ')\n' +
+      (s.algo === 'index' ? '  ORDER BY o.geom <-> p.geom\n' : '  ORDER BY dist_m\n') + '  LIMIT 1\n) near;';
+  }
+
+  var stage = document.getElementById('plot');
+  var W = Math.max(300, stage.clientWidth || 560), H = W < 520 ? 320 : Math.min(580, Math.round(W * 0.78)), PAD = 10;
+  var svg = d3.select(stage).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'Map of Boston precinct centroids and polling places, with search radii and a line from each centroid to its nearest polling place');
+  var gR = svg.append('g'), gL = svg.append('g'), gP = svg.append('g'), gO = svg.append('g');
+  var sx, sy, px, first = true, lastCount = 0;
+  var fmtInt = d3.format(',');
+
+  function race(r, ms) {
+    var el = document.getElementById('count');
+    var small = el.querySelector('small');
+    var from = lastCount, to = r.comparisons; lastCount = to;
+    var logw = function (v) { return Math.max(1, Math.log10(Math.max(1, v)) / Math.log10(6502500) * 100); };
+    document.querySelector('#race [data-k="brute"] i').style.width = logw(r.brute) + '%';
+    var bar = document.querySelector('#race [data-k="this"] i');
+    if (!ms) { el.firstChild.nodeValue = fmtInt(to); bar.style.width = logw(to) + '%'; return Promise.resolve(); }
+    return new Promise(function (res) {
+      d3.select(el).transition().duration(ms).ease(d3.easeCubicOut).tween('count', function () {
+        var i = d3.interpolateNumber(from, to);
+        return function (t) { var v = Math.round(i(t)); el.firstChild.nodeValue = fmtInt(v); bar.style.width = logw(v) + '%'; };
+      }).on('end', res).on('interrupt', function () { el.firstChild.nodeValue = fmtInt(to); bar.style.width = logw(to) + '%'; res(); });
+      small.textContent = 'pairs the database examines (bars: log scale)';
+    });
+  }
+
+  var lab = Lab.create({
+    id: 'v7b', initial: { d: 500, index: false, scale: 1, algo: 'brute' },
+    states: {
+      baseline: { d: 500, index: false, scale: 1, algo: 'brute' },
+      bbox10: { d: 500, index: false, scale: 10, algo: 'bbox' },
+      noindex100: { d: 500, index: false, scale: 100, algo: 'index' },
+      index100: { d: 500, index: true, scale: 100, algo: 'index' },
+      tight: { d: 250, index: true, scale: 1, algo: 'index' },
+      wide: { d: 1000, index: true, scale: 1, algo: 'index' }
+    },
+    load: function () {
+      return d3.json('data/v7b.json').then(function (raw) {
+        var D = prep(raw), all = D.origins.concat(D.polls);
+        var xe = d3.extent(all, function (p) { return p.x; }), ye = d3.extent(all, function (p) { return p.y; });
+        var k = Math.min((W - 2 * PAD) / (xe[1] - xe[0]), (H - 2 * PAD) / (ye[1] - ye[0]));
+        var ox = (W - k * (xe[1] - xe[0])) / 2, oy = (H - k * (ye[1] - ye[0])) / 2;
+        sx = function (x) { return ox + (x - xe[0]) * k; }; sy = function (y) { return H - oy - (y - ye[0]) * k; }; px = k;
+        gP.selectAll('rect').data(D.polls).join('rect').attr('class', 'poll')
+          .attr('x', function (p) { return sx(p.x) - 2.5; }).attr('y', function (p) { return sy(p.y) - 2.5; }).attr('width', 5).attr('height', 5);
+        gO.selectAll('circle').data(D.origins).join('circle').attr('class', 'org').attr('r', 1.8)
+          .attr('cx', function (o) { return sx(o.x); }).attr('cy', function (o) { return sy(o.y); });
+        gR.selectAll('circle').data(D.origins).join('circle').attr('class', 'ring').attr('r', 0)
+          .attr('cx', function (o) { return sx(o.x); }).attr('cy', function (o) { return sy(o.y); });
+        gL.selectAll('line').data(D.origins).join('line')
+          .attr('x1', function (o) { return sx(o.x); }).attr('y1', function (o) { return sy(o.y); })
+          .attr('x2', function (o) { return sx(o.near.x); }).attr('y2', function (o) { return sy(o.near.y); });
+        return D;
+      });
+    },
+    render: function (s, D) {
+      var ms = (first || Lab.motion.reduced()) ? 0 : 700;
+      var r = compute(s, D);
+      gL.selectAll('line').attr('class', function (o) { return 'link' + (o.gap <= s.d ? '' : ' is-miss'); });
+      var t = gR.selectAll('circle').transition().duration(ms).ease(d3.easeCubicOut).attr('r', s.d * px);
+      var plan = document.getElementById('plan');
+      plan.innerHTML = 'EXPLAIN\n<span class="scan">-> ' + planText(s) + '</span>\n   ' +
+        (usesIndex(s) ? 'Index Cond: (geom && ST_Expand(o.geom, ' + s.d + '))' : 'Filter: ' + (s.algo === 'brute' ? 'none (every pair measured)' : 'ST_DWithin(o.geom, geom, ' + s.d + ')')) +
+        '\n   rows examined: ' + fmtInt(r.comparisons);
+      return Promise.all([ms ? t.end().catch(function () {}) : Promise.resolve(), race(r, ms)]);
+    },
+    readouts: function (s, D) { var r = compute(s, D); delete r.brute; return r; },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'comparisons', label: 'comparisons', fmt: 0 },
+      { key: 'distance_calcs', label: 'exact distances', fmt: 0 },
+      { key: 'n', label: 'origins (n)', fmt: 0 },
+      { key: 'found', label: 'found within radius', fmt: 0 },
+      { key: 'missed', label: 'missed', fmt: 0 },
+      { key: 'mean_nearest_m', label: 'mean nearest (m)', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return fmtInt(r.comparisons) + ' pairs examined of ' + fmtInt(r.n * 255) + ' possible; ' + r.plan; },
+    code: { r: codeR, sql: codeSQL },
+    onState: function (s) {
+      document.getElementById('c-d').value = String(s.d);
+      [['c-algo', s.algo], ['c-index', String(s.index)], ['c-scale', String(s.scale)]].forEach(function (p) {
+        document.querySelectorAll('#' + p[0] + ' button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === p[1])); });
+      });
+    }
+  });
+  lab.ready.then(function () { return lab.setState({}); }).then(function () { first = false; });
+  document.getElementById('c-d').addEventListener('change', function (e) { lab.setState({ d: +e.target.value }); });
+  document.querySelectorAll('#c-algo button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ algo: b.dataset.v }); }); });
+  document.querySelectorAll('#c-index button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ index: b.dataset.v === 'true' }); }); });
+  document.querySelectorAll('#c-scale button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ scale: +b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>

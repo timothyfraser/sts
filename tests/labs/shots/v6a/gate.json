@@ -1,0 +1,181 @@
+{
+  "lab": "v6a",
+  "ok": true,
+  "checked_at": "2026-09-29T06:41:11.518Z",
+  "results": [
+    {
+      "ok": true,
+      "check": "a",
+      "state": "-",
+      "msg": "0 console errors; first render 428 ms < 1500 ms"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "baseline",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "baseline",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "inner",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "inner",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "poly_left",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "poly_left",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "poly_inner",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "poly_inner",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "within",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "within",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "within_poly",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "within_poly",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "nearest",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "nearest",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "nearest_poly",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "nearest_poly",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "by_type",
+      "msg": "6 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "by_type",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "d",
+      "state": "-",
+      "msg": "3 learning checks: options mark chosen/correct/wrong, exactly one correct each, Hint and Reveal toggle"
+    },
+    {
+      "ok": true,
+      "check": "h",
+      "state": "-",
+      "msg": "data 326.3 KB <= 500.0 KB; JS 27.1 KB <= 150.0 KB"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-light",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "390-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "g",
+      "state": "390-dark",
+      "msg": "scrollWidth 390 <= clientWidth 390"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-light",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "f",
+      "state": "1280-dark",
+      "msg": "0 serious/critical axe issues"
+    },
+    {
+      "ok": true,
+      "check": "e",
+      "state": "-",
+      "msg": "5 screenshots in tests/labs/shots/v6a/ (390-light, 390-dark, 1280-light, 1280-dark, 390-light-reduced)"
+    },
+    {
+      "ok": true,
+      "check": "i",
+      "state": "-",
+      "msg": "2 finding(s), 0 acknowledged, 0 unacknowledged; report tests/labs/shots/v6a/impeccable.json"
+    }
+  ]
+}

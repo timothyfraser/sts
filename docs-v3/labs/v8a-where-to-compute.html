@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Where should each step run?</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .pipe { display: grid; grid-template-columns: 5.5rem repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(4.6rem, auto)); gap: .35rem .9rem; color: var(--bench-ink); font-family: var(--sans); }
+  .lane-name { grid-column: 1; grid-row: var(--lane); align-self: center; font-size: .875rem; color: var(--bench-muted); line-height: 1.2; }
+  .lane-bg { grid-column: 2 / 7; grid-row: var(--lane); border: 1px dashed var(--bench-line); border-radius: 8px; }
+  .stage { grid-column: calc(var(--step) + 1); grid-row: var(--lane); z-index: 1; align-self: center; border: 1px solid var(--bench-line); border-radius: 8px; background: var(--bench-panel); padding: .35rem .4rem; font-size: .78rem; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+  .stage b { display: block; font-size: .85rem; }
+  .stage .bytes { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--bench-muted); }
+  .stage.is-wire { border-color: var(--b); }
+  .stage.is-wire .bytes { color: var(--b); }
+  .stage.is-rerun { outline: 2px solid var(--y); outline-offset: 1px; }
+  .stage.is-cached b::after { content: " (view)"; font-weight: 400; color: var(--bench-muted); }
+  .stage { position: relative; }
+  .stage:not([data-stage=source])::before { content: attr(data-arrow); position: absolute; left: -.82rem; top: 50%; transform: translateY(-50%); font-size: 1rem; line-height: 1; color: var(--bench-ink); }
+  .stage.is-net::before { color: var(--b); font-weight: 700; font-size: 1.25rem; }
+  .stage .in { display: block; font-family: var(--mono); font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--bench-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage.is-net .in { color: var(--b); font-weight: 700; }
+  .lat { margin-top: .8rem; color: var(--bench-ink); font-size: .85rem; }
+  .lat-track { height: .9rem; border: 1px solid var(--bench-line); border-radius: 4px; overflow: hidden; margin-top: .25rem; }
+  .lat-fill { height: 100%; background: var(--b); transform-origin: left center; }
+  .stale { margin-top: .6rem; padding: .45rem .6rem; border: 1px solid var(--y); border-radius: 6px; color: var(--bench-ink); font-size: .85rem; }
+  .stale[hidden] { display: none; }
+  .lab-controls fieldset { border: 0; padding: 0; margin: 0; }
+  .lab-controls legend { font-size: .85rem; color: var(--bench-muted); padding: 0; margin-bottom: .2rem; }
+  .lab-controls label.cache { display: flex; flex-direction: row; gap: .5rem; align-items: center; }
+  .lab-metric dd .v { white-space: nowrap; }
+  .lab-controls label.cache { display: flex; flex-direction: row; gap: .45rem; align-items: center; text-align: left; }
+  .lab-controls label.cache input { margin: 0; flex: none; }
+  .lat-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; font-size: .875rem; color: var(--bench-muted); }
+  .lat-parts b { display: block; font-family: var(--mono); font-size: 1rem; color: var(--bench-ink); font-weight: 600; }
+  .code-note { font-size: .85rem; color: var(--muted); margin: .4rem 0 1rem; }
+  .replay { margin-top: .6rem; font: inherit; font-size: .85rem; color: var(--bench-ink); background: transparent; border: 1px solid var(--y); border-radius: 6px; padding: .3rem .6rem; cursor: pointer; }
+  @media (max-width: 720px) {
+    .pipe { grid-template-columns: 4.5rem repeat(5, minmax(0, 1fr)); gap: .3rem .9rem; }
+    .stage { font-size: .75rem; padding: .25rem; }
+    .stage b { font-size: .875rem; }
+    .lane-name { font-size: .75rem; }
+  }
+  /* Phone: one column per lane, stages run top to bottom, so each byte label keeps a full line. */
+  @media (max-width: 480px) {
+    .pipe { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto repeat(5, auto); gap: 1.1rem .25rem; }
+    .lane-name { grid-row: 1; grid-column: var(--lane); text-align: center; }
+    .lane-bg { grid-row: 2 / 7; grid-column: var(--lane); }
+    .stage { grid-row: calc(var(--step) + 1); grid-column: var(--lane); padding: .25rem .15rem; text-align: center; }
+    .stage .in { font-family: var(--sans); }
+    .stage:not([data-stage=source])::before { content: attr(data-arrow-v); left: 50%; top: -1.05rem; transform: translateX(-50%); }
+  }
+</style>
+</head>
+<body data-lab="v8a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 8 · apps that query a database</p>
+    <h1>Where should each step run? A spatial pipeline</h1>
+    <p class="lab-lo">Learning objective: Decompose an app's input → filter → join → aggregate → output chain and place each stage in PostGIS, Plumber/R or the browser, reasoning about bytes, latency and caching.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="stage">
+        <div class="pipe" id="pipe" role="img" aria-label="Pipeline diagram: five stages placed in the PostGIS, Plumber or browser lane, with the bytes each stage hands on">
+          <div class="lane-name" style="--lane:1">PostGIS</div><div class="lane-bg" style="--lane:1"></div>
+          <div class="lane-name" style="--lane:2">Plumber (R)</div><div class="lane-bg" style="--lane:2"></div>
+          <div class="lane-name" style="--lane:3">browser</div><div class="lane-bg" style="--lane:3"></div>
+          <div class="stage" data-stage="source" style="--step:1;--lane:1"><b>tables</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="join" style="--step:2;--lane:3"><span class="in"></span><b>join</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="filter" style="--step:3;--lane:3"><span class="in"></span><b>filter</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="aggregate" style="--step:4;--lane:3"><span class="in"></span><b>count</b><span class="bytes"></span></div>
+          <div class="stage" data-stage="output" style="--step:5;--lane:3"><span class="in"></span><b>map</b><span class="bytes">draw</span></div>
+        </div>
+        <div class="lat"><span id="lat-label">first-load latency</span>
+          <div class="lat-track"><div class="lat-fill" id="lat-fill"></div></div>
+          <ul class="lat-parts" id="lat-parts" aria-label="Where the modelled latency goes"></ul></div>
+        <p class="stale" id="stale" hidden>Stale: the source data changes on every click, but the materialised view is only refreshed nightly. The map shows yesterday's join.</p>
+        <button type="button" class="replay" id="replay">Change the neighbourhood: show what re-runs</button>
+      </div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <fieldset><legend>Spatial join runs in</legend><div role="group" aria-label="Join placement" class="lab-seg" data-ctl="join"><button type="button" data-v="db" aria-pressed="false">PostGIS</button><button type="button" data-v="api" aria-pressed="false">Plumber</button><button type="button" data-v="browser" aria-pressed="true">Browser</button></div></fieldset>
+          <fieldset><legend>Neighbourhood filter runs in</legend><div role="group" aria-label="Filter placement" class="lab-seg" data-ctl="filter"><button type="button" data-v="db" aria-pressed="false">PostGIS</button><button type="button" data-v="api" aria-pressed="false">Plumber</button><button type="button" data-v="browser" aria-pressed="true">Browser</button></div></fieldset>
+          <fieldset><legend>Count by cell runs in</legend><div role="group" aria-label="Count placement" class="lab-seg" data-ctl="aggregate"><button type="button" data-v="db" aria-pressed="false">PostGIS</button><button type="button" data-v="api" aria-pressed="false">Plumber</button><button type="button" data-v="browser" aria-pressed="true">Browser</button></div></fieldset>
+          <label class="cache"><input type="checkbox" id="c-cache"> Cache the join as a materialised view</label>
+          <label>Neighbourhood <select id="c-hood"></select></label>
+          <fieldset><legend>Source data changes</legend><div role="group" aria-label="Source data changes" class="lab-seg" data-ctl="updates"><button type="button" data-v="daily" aria-pressed="true">Daily</button><button type="button" data-v="click" aria-pressed="false">Every click</button></div></fieldset>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--b)"></i>stage whose output crosses the network</li><li><i style="background:var(--y)"></i>re-runs on a neighbourhood change</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <p class="code-note">The SQL view and the endpoint are shown, not run here; stage sizes come from the same steps run in R with sf.</p>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">With every stage in the browser, how many bytes cross the network on first load?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">About 3 KB: only the counts for one neighbourhood</button><button class="lc-option" data-correct="true">About 229 KB: every raw point, cell and census row</button><button class="lc-option" data-correct="false">About 82 KB: the joined table</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>If no stage runs on a server, what can the server send except the raw files?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>229,221 bytes: the points, the grid and the census table all go to the phone before it can join anything, and the modelled first load is about 1,173 ms.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Move the spatial join into PostGIS and cache it as a view. What re-runs when the user changes the neighbourhood filter?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">All three stages, because the input changed</button><button class="lc-option" data-correct="true">Only the filter and the count; the join is read from the view</button><button class="lc-option" data-correct="false">Nothing, because the view is cached</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Press "show what re-runs" and watch which cards light up. Is the join upstream or downstream of the filter?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>2 stages re-run: the filter and the count. The join sits upstream of the input, so the view answers it; first load drops from 229,221 to 82,432 bytes.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">What does a materialised view cost you, and when is it the wrong choice?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Nothing: a cached answer is always faster and always right</button><button class="lc-option" data-correct="false">Network bytes: a view makes the payload larger</button><button class="lc-option" data-correct="true">Freshness and storage: wrong when the source changes faster than the view is refreshed</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Set the source data to change on every click and read the warning.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>A view stores a copy of the join and is only as current as its last refresh. With nightly refresh and data that changes on every click, the page shows "stale": cache stable, expensive joins, not live ones.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var STAGES = ['join', 'filter', 'aggregate'], RANK = { db: 0, api: 1, browser: 2 }, ROW = { db: 1, api: 2, browser: 3 };
+  function st(join, filter, aggregate, cache, hood, updates) { return { join: join, filter: filter, aggregate: aggregate, cache: !!cache, hood: hood || 'Roxbury', updates: updates || 'daily' }; }
+  var STATES = {
+    baseline: st('browser', 'browser', 'browser'),
+    join_view: st('db', 'browser', 'browser', true),
+    api_middle: st('db', 'api', 'api'),
+    all_db: st('db', 'db', 'db', true, 'Dorchester'),
+    stale: st('db', 'db', 'db', true, 'Roxbury', 'click')
+  };
+  // A later stage never runs upstream (in a lower tier) of an earlier one.
+  function clamp(s, changed) {
+    var o = Object.assign({}, s);
+    if (changed && STAGES.indexOf(changed) >= 0) {
+      var i = STAGES.indexOf(changed);
+      STAGES.forEach(function (g, j) {
+        if (j < i && RANK[o[g]] > RANK[o[changed]]) o[g] = o[changed];
+        if (j > i && RANK[o[g]] < RANK[o[changed]]) o[g] = o[changed];
+      });
+    }
+    return o;
+  }
+  function kb(b) { return b >= 1000 ? (b / 1000).toFixed(1) + ' kB' : b + ' B'; }
+  // model() mirrors readouts_from() in the prep script line for line.
+  function model(s, d) {
+    var h = d.hoods[s.hood], out = { join: d.source.join_bytes, filter: h.filter_bytes, aggregate: h.aggregate_bytes };
+    var server = STAGES.filter(function (g) { return s[g] !== 'browser'; });
+    var toBrowser = server.length ? out[server[server.length - 1]] : d.source.raw_bytes;
+    var compute = STAGES.reduce(function (t, g) {
+      var tier = (g === 'join' && s.cache && s.join !== 'browser') ? 'view' : s[g];
+      return t + d.model.compute[g][tier];
+    }, 0);
+    var dbs = STAGES.filter(function (g) { return s[g] === 'db'; });
+    var dbToApi = dbs.length > 0 && STAGES.some(function (g) { return s[g] === 'api'; });
+    var internal = dbToApi ? d.model.internal_ms + out[dbs[dbs.length - 1]] / d.model.internal_bytes_ms : 0;
+    var latency = d.model.rtt_ms + toBrowser / d.model.browser_bytes_ms + compute + internal;
+    var request = s.filter !== 'browser';
+    var rerun = STAGES.filter(function (g) { return g === 'join' ? (request && s.join !== 'browser' && !s.cache) : true; });
+    return {
+      out: out, server: server, rerun: rerun,
+      parts: [['round trip', d.model.rtt_ms], ['download', toBrowser / d.model.browser_bytes_ms], ['compute', compute], ['database to API', internal]],
+      r: { bytes_first_load: toBrowser, latency_ms: Math.round(latency * 10) / 10, reruns: rerun.length,
+           refetch_bytes: request ? out[server[server.length - 1]] : 0, sites: h.sites,
+           stale: (s.cache && s.join !== 'browser' && s.updates === 'click') ? 'stale' : 'fresh' }
+    };
+  }
+  function codeR(s) {
+    var api = STAGES.filter(function (g) { return s[g] === 'api'; });
+    var lines = ['library(plumber)', 'library(dplyr)', 'library(sf)', '', '#* @get /sites', 'function(hood = "' + s.hood + '") {'];
+    var src = s.join === 'db' ? '  tbl(con, "' + (s.cache ? 'joined_view' : 'joined_q') + '")' : '  points';
+    if (s.filter === 'db') src = '  tbl(con, "' + (s.aggregate === 'db' ? 'hood_counts' : 'hood_sites') + '") %>%\n    filter(neighborhood == hood)';
+    var body = (api.length === 0 && s.filter === 'browser')
+      ? '  # nothing to do here: the browser gets the rows and does the work\n  read_sf("boston_social_infra.geojson")'
+      : src + (api.indexOf('filter') >= 0 ? ' %>%\n    filter(neighborhood == hood)' : '') + (api.indexOf('aggregate') >= 0 ? ' %>%\n    count(cell, group)' : '') + ((s.join !== 'browser' || s.filter !== 'browser') ? ' %>%\n    collect()' : '');
+    return lines.concat([body, '}']).join('\n');
+  }
+  function codeJs(s) {
+    if (s.join === 'browser' && s.filter === 'browser') return '// every stage runs here: fetch the raw tables once\nfetch("boston_social_infra.geojson")\n  .then(r => r.json())\n  .then(drawMap);';
+    if (s.filter === 'browser') return '// the joined rows arrive once; filter and count run here\nfetch("/sites")\n  .then(r => r.json())\n  .then(drawMap);';
+    return '// a new request on every neighbourhood change\nfetch("/sites?hood=" + encodeURIComponent("' + s.hood + '"))\n  .then(r => r.json())\n  .then(drawMap);';
+  }
+  function codeSql(s) {
+    if (s.join !== 'db') return '-- PostGIS only stores the raw tables here;\n-- the spatial join runs in the browser.\nSELECT id, grp, geom FROM points;';
+    return (s.cache ? 'CREATE MATERIALIZED VIEW joined_view AS' : 'CREATE VIEW joined_q AS') + '\nSELECT p.id, p.grp, c.cell, c.neighborhood\nFROM points p\nJOIN cells c ON ST_Within(p.geom, c.geom);' + (s.cache ? '\n\n-- refresh nightly, not on every click\nREFRESH MATERIALIZED VIEW joined_view;' : '');
+  }
+
+  var cards = {}; document.querySelectorAll('.stage').forEach(function (c) { cards[c.dataset.stage] = c; });
+  var last = null, hoodSel = document.getElementById('c-hood');
+  function paint(s, d) {
+    var m = model(s, d);
+    STAGES.forEach(function (g) {
+      var c = cards[g]; c.style.setProperty('--lane', ROW[s[g]]);
+      c.classList.toggle('is-cached', g === 'join' && s.cache && s.join !== 'browser');
+      c.classList.toggle('is-rerun', m.rerun.indexOf(g) >= 0);
+      c.classList.toggle('is-wire', m.server.length > 0 && g === m.server[m.server.length - 1]);
+      c.querySelector('.bytes').textContent = kb(m.out[g]);
+    });
+    cards.source.classList.toggle('is-wire', m.server.length === 0);
+    // Arrows: glyph follows the lane change, label carries the bytes handed on; the one that crosses the network is emphasised.
+    var chain = ['source'].concat(STAGES).concat(['output']);
+    var lane = function (g) { return g === 'source' ? 1 : g === 'output' ? 3 : ROW[s[g]]; };
+    var sent = function (g) { return g === 'source' ? d.source.raw_bytes : m.out[g]; };
+    var wire = m.server.length ? m.server[m.server.length - 1] : 'source';
+    chain.slice(1).forEach(function (g, i) {
+      var from = chain[i], c = cards[g], dl = lane(g) - lane(from);
+      c.dataset.arrow = dl > 0 ? '\u2198' : dl < 0 ? '\u2197' : '\u2192';
+      c.dataset.arrowV = dl > 0 ? '\u2198' : dl < 0 ? '\u2199' : '\u2193';
+      c.classList.toggle('is-net', from === wire);
+      c.querySelector('.in').textContent = (from === wire ? 'network ' : 'in ') + kb(sent(from));
+    });
+    cards.source.querySelector('.bytes').textContent = kb(d.source.raw_bytes);
+    document.getElementById('lat-fill').style.transform = 'scaleX(' + Math.min(1, m.r.latency_ms / 1300) + ')';
+    document.getElementById('lat-label').textContent = 'modelled first-load latency: ' + m.r.latency_ms.toLocaleString('en-US') + ' ms';
+    document.getElementById('lat-parts').innerHTML = m.parts.map(function (p) { return '<li><b>' + Math.round(p[1]).toLocaleString('en-US') + ' ms</b>' + p[0] + '</li>'; }).join('');
+    document.getElementById('stale').hidden = m.r.stale !== 'stale';
+    last = m;
+  }
+  var lab = Lab.create({
+    id: 'v8a', initial: STATES.baseline, states: STATES,
+    load: function () {
+      return fetch('data/v8a.json').then(function (r) { return r.json(); }).then(function (d) {
+        Object.keys(d.hoods).forEach(function (h) { var o = document.createElement('option'); o.value = h; o.textContent = h + ' (' + d.hoods[h].sites + ' sites)'; if (h === 'Roxbury') o.selected = true; hoodSel.appendChild(o); });
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var els = Object.keys(cards).map(function (k) { return cards[k]; });
+      if (!last) { paint(s, d); return Promise.resolve(); }
+      return Lab.motion.flip(els, function () { paint(s, d); });
+    },
+    readouts: function (s, d) { return model(s, d).r; },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'bytes_first_load', label: 'bytes to the browser', fmt: 0 }, { key: 'latency_ms', label: 'first load (ms)', fmt: 1 },
+      { key: 'reruns', label: 'stages re-run on change', fmt: 0 }, { key: 'refetch_bytes', label: 'bytes per change', fmt: 0 },
+      { key: 'sites', label: 'sites in neighbourhood', fmt: 0 }, { key: 'stale', label: 'cache', fmt: String }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.bytes_first_load.toLocaleString('en-US') + ' bytes cross the network; ' + r.reruns + ' stages re-run on a neighbourhood change'; },
+    code: { r: codeR, sql: codeSql, js: codeJs },
+    onState: function (s) {
+      document.querySelectorAll('[data-ctl]').forEach(function (g) { g.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s[g.dataset.ctl])); }); });
+      document.getElementById('c-cache').checked = !!s.cache; hoodSel.value = s.hood;
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.querySelectorAll('[data-ctl]').forEach(function (g) {
+    g.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () {
+      var k = g.dataset.ctl, next = Object.assign({}, lab.getState()); next[k] = b.dataset.v; lab.setState(clamp(next, k));
+    }); });
+  });
+  document.getElementById('c-cache').addEventListener('change', function (e) { lab.setState({ cache: e.target.checked }); });
+  hoodSel.addEventListener('change', function (e) { lab.setState({ hood: e.target.value }); });
+  // The re-run cascade: each stage that re-runs flashes in pipeline order.
+  document.getElementById('replay').addEventListener('click', function () {
+    if (!last) return;
+    last.rerun.reduce(function (p, g) {
+      return p.then(function () { return Lab.motion.animate(cards[g], { opacity: [0.35, 1], transform: ['scale(0.94)', 'scale(1)'] }, { duration: 0.3 }); });
+    }, Promise.resolve());
+  });
+})();
+</script>
+</body>
+</html>

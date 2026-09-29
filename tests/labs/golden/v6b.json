@@ -1,0 +1,97 @@
+{
+  "lab": "v6b",
+  "page": "docs-v3/labs/v6b-crs-lab.html",
+  "generated_by": "tools/labs/prep/v6b.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "crs": 26986,
+        "buffer": "metres"
+      },
+      "readouts": {
+        "crs": "EPSG:26986",
+        "dist_m": 5341.27,
+        "truth_m": 5341.27,
+        "pct_err": 0,
+        "ew_m": 1000,
+        "ns_m": 1000,
+        "area_m2": 6274257.5,
+        "truth_area_m2": 6274257.5,
+        "area_pct_err": 0
+      },
+      "code": {
+        "r": "pts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = 26986)\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  st_buffer(dist = 1000)   # 1 km in the CRS unit (metres)\n\na = precincts %>%\n  filter(ward_precinct == \"0101\") %>%\n  st_transform(crs = 26986) %>%\n  st_area()",
+        "sql": "SELECT ST_Distance(ST_Transform(a.geom, 26986),\n                   ST_Transform(b.geom, 26986)) AS d_crs,\n       ST_Distance(a.geom::geography, b.geom::geography) AS d_geography\nFROM polling_places a, polling_places b\nWHERE a.id = 1 AND b.id = 120;"
+      }
+    },
+    {
+      "name": "wgs84",
+      "state": {
+        "crs": 4326,
+        "buffer": "metres"
+      },
+      "readouts": {
+        "crs": "EPSG:4326",
+        "dist_m": 5344.52,
+        "truth_m": 5341.27,
+        "pct_err": 0.061,
+        "ew_m": 1000,
+        "ns_m": 1000,
+        "area_m2": 6264573.5,
+        "truth_area_m2": 6274257.5,
+        "area_pct_err": -0.154
+      },
+      "code": {
+        "r": "pts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = 4326)\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  st_buffer(dist = 1000)   # s2: metres on the sphere\n\na = precincts %>%\n  filter(ward_precinct == \"0101\") %>%\n  st_transform(crs = 4326) %>%\n  st_area()",
+        "sql": "SELECT ST_Distance(ST_Transform(a.geom, 4326),\n                   ST_Transform(b.geom, 4326)) AS d_crs,\n       ST_Distance(a.geom::geography, b.geom::geography) AS d_geography\nFROM polling_places a, polling_places b\nWHERE a.id = 1 AND b.id = 120;"
+      }
+    },
+    {
+      "name": "mercator",
+      "state": {
+        "crs": 3857,
+        "buffer": "metres"
+      },
+      "readouts": {
+        "crs": "EPSG:3857",
+        "dist_m": 7238.96,
+        "truth_m": 5341.27,
+        "pct_err": 35.529,
+        "ew_m": 1000,
+        "ns_m": 1000,
+        "area_m2": 11500206.4,
+        "truth_area_m2": 6274257.5,
+        "area_pct_err": 83.292
+      },
+      "code": {
+        "r": "pts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = 3857)\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  st_buffer(dist = 1000)   # 1 km in the CRS unit (metres)\n\na = precincts %>%\n  filter(ward_precinct == \"0101\") %>%\n  st_transform(crs = 3857) %>%\n  st_area()",
+        "sql": "SELECT ST_Distance(ST_Transform(a.geom, 3857),\n                   ST_Transform(b.geom, 3857)) AS d_crs,\n       ST_Distance(a.geom::geography, b.geom::geography) AS d_geography\nFROM polling_places a, polling_places b\nWHERE a.id = 1 AND b.id = 120;"
+      }
+    },
+    {
+      "name": "degrees",
+      "state": {
+        "crs": 4326,
+        "buffer": "degrees"
+      },
+      "readouts": {
+        "crs": "EPSG:4326",
+        "dist_m": 5341.44,
+        "truth_m": 5341.27,
+        "pct_err": 0.003,
+        "ew_m": 821.6,
+        "ns_m": 1112,
+        "area_m2": 6274651.9,
+        "truth_area_m2": 6274257.5,
+        "area_pct_err": 0.006
+      },
+      "code": {
+        "r": "sf_use_s2(FALSE)   # treat lon/lat as flat x/y\n\npts = polling_places %>%\n  filter(id %in% c(1, 120)) %>%\n  st_transform(crs = 4326)\n\nst_crs(pts)$units_gdal\nd = st_distance(pts)[1, 2]\n\nzone = pts %>%\n  st_buffer(dist = 0.01)   # planar: 0.01 of a DEGREE\n\na = precincts %>%\n  filter(ward_precinct == \"0101\") %>%\n  st_transform(crs = 4326) %>%\n  st_area()",
+        "sql": "SELECT ST_Distance(ST_Transform(a.geom, 4326),\n                   ST_Transform(b.geom, 4326)) AS d_crs,\n       ST_Distance(a.geom::geography, b.geom::geography) AS d_geography\nFROM polling_places a, polling_places b\nWHERE a.id = 1 AND b.id = 120;"
+      }
+    }
+  ],
+  "ack": []
+}
