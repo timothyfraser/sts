@@ -100,8 +100,10 @@ code_r = function(s) {
     "watermark = -1       # last minute safely loaded\n",
     "served = NA          # newest reading the API view can see\n",
     "served_at_18 = NA\n",
+    "worst = 0           # worst staleness seen at any run, over the day\n",
     "for (i in seq_len(nrow(events))) {\n",
     "  t = events$t[i]\n",
+    "  if (!is.na(served)) worst = max(worst, t - served)   # how old the API is just before this run\n",
     "  if (events$job[i] == \"ingest\") {\n",
     "    batch = feed %>% filter(minute > watermark, minute <= t)\n",
     "    table = ingest(table, batch)\n",
@@ -120,6 +122,7 @@ code_r = function(s) {
     "  rows_in_table = nrow(table),\n",
     "  duplicate_rows = nrow(table) - nrow(distinct(table, aqs_id_full, datetime)),\n",
     "  freshness_min = 18 * 60 - served_at_18,     # API staleness at 18:00\n",
+    "  worst_staleness_min = worst,               # worst API staleness over the day\n",
     "  next_refresh  = sprintf(\"%02d:%02d\", min(refreshes[refreshes > 600]) %/% 60, min(refreshes[refreshes > 600]) %% 60)\n",
     ")"
   )
