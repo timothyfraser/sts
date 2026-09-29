@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:43283/labs/v13a-pipeline-on-a-clock.html",
+    "url": "http://127.0.0.1:32955/labs/v13a-pipeline-on-a-clock.html",
     "type": "document",
     "status": 200,
-    "bytes": 23967
+    "bytes": 25571
   },
   {
-    "url": "http://127.0.0.1:43283/assets/sts.css",
+    "url": "http://127.0.0.1:32955/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:43283/labs/kit/lab.css",
+    "url": "http://127.0.0.1:32955/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7050
   },
   {
-    "url": "http://127.0.0.1:43283/labs/kit/lab.js",
+    "url": "http://127.0.0.1:32955/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:43283/labs/data/v13a.csv",
+    "url": "http://127.0.0.1:32955/labs/data/v13a.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 38959
