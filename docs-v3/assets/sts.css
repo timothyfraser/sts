@@ -20,8 +20,12 @@
   /* ---------- code ---------- */
   --code-bg:#1A1033; --code-ink:#EDE9FE; --code-cm:#A78BFA; --code-kw:#F0ABFC; --code-str:#FDE68A;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --nav-h:52px;
+  /* ---------- feature cards (addenda): fixed in both themes, white type ---------- */
+  --plum:#3B0764; --feature-ink:#FFFFFF;
+  --feature-grad:linear-gradient(135deg,var(--indigo),var(--purple));
+  --feature-dark-grad:linear-gradient(135deg,var(--plum),var(--indigo));
   /* ---------- semantic layer (sigma names) ---------- */
   --accent:var(--purple); --accent-dark:var(--purple-dark); --accent-tint:var(--purple-tint); --accent-line:var(--purple-line);
   --link:var(--purple); --link-hover:var(--purple-dark);
@@ -109,3 +113,61 @@ pre.chunk { background: var(--code-bg); color: var(--code-ink); padding: 12px; b
     --rule:rgba(233,213,255,.10);
 }
 :root[data-theme="dark"] .track-seg button { color: var(--ink); }
+
+/* ---------- addenda components: feature cards, banner hero, glyph cards, feature graphic ----------
+   Tokens only. Feature cards keep white type in both themes (their grounds are fixed tokens). */
+.feature-card { position: relative; display: block; border-radius: 14px; padding: 20px; margin: 14px 0;
+  background: var(--feature-grad); color: var(--feature-ink); box-shadow: var(--shadow); }
+.feature-card h3, .feature-card h2 { color: var(--feature-ink); margin: .2em 0 .35em; }
+.feature-card p { margin: .3em 0; }
+.feature-card .kicker { font: 700 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--hl); }
+.feature-card a { color: var(--feature-ink); text-decoration-color: var(--hl); text-decoration-thickness: 3px; text-underline-offset: 3px; }
+.feature-card a:hover { color: var(--hl); background: transparent; }
+.feature-card :focus-visible { outline-color: var(--focus-ring-invert); }
+.feature-card .fc-btn { display: inline-block; margin-top: 10px; padding: 8px 14px; border-radius: 8px; font-weight: 700;
+  background: var(--hl); color: var(--hl-ink); text-decoration: none; }
+.feature-card .fc-btn:hover { background: var(--feature-ink); color: var(--hl-ink); }
+.feature-card--dark { background: var(--feature-dark-grad); border-left: 6px solid var(--hl); }
+.feature-card .fc-stat { font: 800 44px/1 var(--sans); color: var(--feature-ink); }
+.feature-card .fc-stat small { font-size: 16px; font-weight: 600; }
+.feature-card .fc-glyph { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; background: var(--plum); }
+.feature-card .fc-glyph svg { width: 44px; height: 44px; }
+/* flip variant: front = title + glyph, back = prose or a stat. Hover, keyboard focus or .is-flipped turn it. */
+.feature-card--flip { padding: 0; background: none; box-shadow: none; perspective: 1000px; cursor: pointer; }
+.feature-card--flip .flip-inner { display: grid; transform-style: preserve-3d; transition: transform var(--dur-slow) var(--ease-in-out); }
+.feature-card--flip .flip-face { grid-area: 1 / 1; min-height: 184px; padding: 20px; border-radius: 14px; background: var(--feature-grad);
+  color: var(--feature-ink); box-shadow: var(--shadow); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.feature-card--flip .flip-back { transform: rotateY(180deg); background: var(--feature-dark-grad); }
+.feature-card--flip .flip-hint { font: 600 12px var(--mono); color: var(--hl); }
+.feature-card--flip:hover .flip-inner, .feature-card--flip:focus-within .flip-inner,
+.feature-card--flip:focus .flip-inner, .feature-card--flip.is-flipped .flip-inner { transform: rotateY(180deg); }
+.feature-card--flip:focus-visible { outline: var(--focus-ring-w) solid var(--focus-ring); outline-offset: 3px; border-radius: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  .feature-card--flip { cursor: auto; }
+  .feature-card--flip .flip-inner { display: grid; gap: 10px; transform: none !important; transition: none; }
+  .feature-card--flip .flip-face { grid-area: auto; min-height: 0; backface-visibility: visible; -webkit-backface-visibility: visible; }
+  .feature-card--flip .flip-back { transform: none; }
+  .feature-card--flip .flip-hint { display: none; }
+}
+/* home hero with the banner illustration */
+.hero--banner { position: relative; overflow: hidden; background: var(--nav-bg); color: var(--nav-ink); border-bottom: 0; padding: 36px 16px 30px; }
+.hero--banner h1 { color: var(--nav-ink); }
+.hero--banner .hero-art { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero--banner .hero-copy { position: relative; max-width: 880px; margin: 0 auto; }
+.hero--banner .hero-copy p { max-width: 40ch; }
+/* module glyph cards */
+.glyph-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+.glyph-card { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; padding: 16px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--surface); color: var(--ink); text-decoration: none; box-shadow: var(--shadow); }
+.glyph-card:hover { border-color: var(--hl-underline); }
+.glyph-card .glyph { width: 64px; height: 64px; border-radius: 10px; background: var(--purple-tint); display: grid; place-items: center; }
+.glyph-card .glyph svg { width: 52px; height: 52px; }
+.glyph-card h3 { margin: .15em 0; font-size: 18px; color: var(--purple-dark); }
+/* 16:9 feature-graphic slot, with a designed empty state */
+.feature-graphic { position: relative; aspect-ratio: 16 / 9; margin: 16px 0; border-radius: 14px; overflow: hidden; background: var(--surface-2); }
+.feature-graphic > svg, .feature-graphic > img { display: block; width: 100%; height: 100%; }
+.feature-graphic--empty { display: grid; place-items: center; text-align: center; border: 2px dashed var(--purple-line);
+  background: repeating-linear-gradient(135deg, var(--purple-tint) 0 12px, var(--surface) 12px 24px); color: var(--muted); }
+.feature-graphic--empty .fg-label { padding: 10px 14px; border-radius: 10px; background: var(--surface); font: 600 14px var(--sans); color: var(--ink); }
+.feature-graphic--empty .fg-label small { display: block; font: 12px var(--mono); color: var(--muted); }
+.feature-graphic figcaption, .feature-graphic + figcaption { font-size: 14px; color: var(--muted); }
