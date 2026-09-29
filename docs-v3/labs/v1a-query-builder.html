@@ -27,6 +27,9 @@
 .qb-carriers code{font:600 11px var(--mono);color:var(--bench-ink)}
 .qb-err{font:12px/1.4 var(--mono);color:var(--bench-ink);border:1px solid var(--bench-down);border-radius:var(--qb-radius);padding:4px 8px;margin:0 0 8px}
 .qb-err[hidden]{display:none}
+.qb-stale{font:600 12px/1.4 var(--mono);color:var(--bench-ink);margin:0 0 4px}
+.qb-stale[hidden]{display:none}
+.lab-stage.is-stale{outline:1px dashed var(--bench-down);outline-offset:3px}
 .lab-table td.is-new,.lab-table th.is-new{color:var(--y)}
 .lab-table .is-collapsed{display:none}
 </style>
@@ -42,6 +45,7 @@
     <div class="lab-visual">
       <div class="qb-chips" id="chips" role="group" aria-label="Filter predicates"></div>
       <p class="qb-err" id="err" role="alert" hidden></p>
+      <p class="qb-stale" id="stale" hidden>Last valid result (the pipeline above stopped with an error; this table is from before the change)</p>
       <div class="lab-stage" id="stage"></div>
       <p class="qb-carriers" id="carriers" aria-live="polite"></p>
       <div id="status"></div>
@@ -173,6 +177,9 @@
   var SHOW = ['month', 'carrier', 'origin', 'dest', 'dep_delay', 'arr_delay', 'air_time', 'distance', 'gain', 'speed', 'late'];
   var tb = Lab.table(document.getElementById('stage'), [], SHOW.map(function (c) { return { key: c, label: c, num: ['month', 'dep_delay', 'arr_delay', 'air_time', 'distance', 'gain', 'speed'].indexOf(c) >= 0, fmt: c === 'speed' ? 1 : 0 }; }), { label: 'Query result, first rows' });
   var last = { rows: [], cols: BASE_COLS }, active = 'filter', lab, AIRLINE = {};
+  // where each removed block sat, so + verb puts it back at its original pipeline position
+  var removedAt = {};
+  function canon(v) { return steps(base).indexOf(v); }
 
   function drawBlocks(s, res) {
     var st = steps(s), ol = document.getElementById('blocks');
@@ -184,7 +191,7 @@
       li.querySelector('code').textContent = stepR(v, s);
       li.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () {
         var o = st.slice(), a = b.dataset.a;
-        if (a === 'rm') o.splice(i, 1);
+        if (a === 'rm') { removedAt[v] = i; o.splice(i, 1); }
         else { var j = a === 'up' ? i - 1 : i + 1; o[i] = o[j]; o[j] = v; }
         active = v; lab.setState({ order: o.join(',') });
       }); });
@@ -193,7 +200,16 @@
     var add = document.getElementById('add'); add.innerHTML = '';
     VERBS.filter(function (v) { return st.indexOf(v) < 0; }).forEach(function (v) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = '+ ' + v; b.setAttribute('aria-label', 'Add ' + v + ' block');
-      b.addEventListener('click', function () { var o = st.filter(function (x) { return x !== 'head'; }); if (v === 'head') o.push('head'); else { o.push(v); if (st.indexOf('head') >= 0) o.push('head'); } active = v; lab.setState({ order: o.join(',') }); });
+      b.addEventListener('click', function () {
+        var o = st.filter(function (x) { return x !== 'head'; }), at;
+        if (v !== 'head') {
+          if (removedAt[v] != null) at = Math.min(removedAt[v], o.length);   // back where it was removed from
+          else { at = o.length; for (var k = 0; k < o.length; k++) if (canon(o[k]) > canon(v)) { at = k; break; } } // else its baseline slot
+          o.splice(at, 0, v); delete removedAt[v];
+        }
+        if (v === 'head' || st.indexOf('head') >= 0) o.push('head');
+        active = v; lab.setState({ order: o.join(',') });
+      });
       add.appendChild(b);
     });
   }
@@ -235,6 +251,7 @@
       var res = run(s, d);
       drawBlocks(s, res); drawStrip(s);
       var err = document.getElementById('err'); err.hidden = !res.error; err.textContent = res.error;
+      document.getElementById('stale').hidden = !res.error; document.getElementById('stage').classList.toggle('is-stale', !!res.error);
       var chips = drawChips(s);
       if (res.error) return chips;          // the table keeps the last good result, like a console after an error
       last = res;
