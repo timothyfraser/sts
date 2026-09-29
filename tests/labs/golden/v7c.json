@@ -1,0 +1,177 @@
+{
+  "lab": "v7c",
+  "page": "docs-v3/labs/v7c-neighbours-and-spatial-lag.html",
+  "generated_by": "tools/labs/prep/v7c.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "rule": "queen",
+        "var": "sp",
+        "std": false,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 8,
+        "x_sel": 3174,
+        "lag_sel": 1323.875,
+        "morans_i": 0.25250204960929,
+        "band_lo": -0.19823781585796,
+        "band_hi": 0.167356217426313,
+        "mean_links": 4.4
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = poly2nb(gunma, queen = TRUE)\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = sp,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "rook",
+      "state": {
+        "rule": "rook",
+        "var": "sp",
+        "std": false,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 8,
+        "x_sel": 3174,
+        "lag_sel": 1323.875,
+        "morans_i": 0.25250204960929,
+        "band_lo": -0.19823781585796,
+        "band_hi": 0.167356217426313,
+        "mean_links": 4.4
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = poly2nb(gunma, queen = FALSE)\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = sp,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "knn3",
+      "state": {
+        "rule": "knn3",
+        "var": "sp",
+        "std": false,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 3,
+        "x_sel": 3174,
+        "lag_sel": 750,
+        "morans_i": 0.221756727050445,
+        "band_lo": -0.225230096047145,
+        "band_hi": 0.216287140100892,
+        "mean_links": 3
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = knearneigh(coords, k = 3, longlat = TRUE) %>% knn2nb()\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = sp,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "knn6",
+      "state": {
+        "rule": "knn6",
+        "var": "sp",
+        "std": false,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 6,
+        "x_sel": 3174,
+        "lag_sel": 1085,
+        "morans_i": 0.123513237335995,
+        "band_lo": -0.147596770770778,
+        "band_hi": 0.104814442125478,
+        "mean_links": 6
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = knearneigh(coords, k = 6, longlat = TRUE) %>% knn2nb()\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = sp,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "d20",
+      "state": {
+        "rule": "d20",
+        "var": "sp",
+        "std": false,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 6,
+        "x_sel": 3174,
+        "lag_sel": 1085,
+        "morans_i": 0.226869558909433,
+        "band_lo": -0.203716128319026,
+        "band_hi": 0.172211031379992,
+        "mean_links": 4.74285714285714
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = dnearneigh(coords, d1 = 0, d2 = 20, longlat = TRUE)\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = sp,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "pv",
+      "state": {
+        "rule": "queen",
+        "var": "pv_output_2018",
+        "std": false,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 8,
+        "x_sel": 1419,
+        "lag_sel": 1407.25,
+        "morans_i": 0.426375581057736,
+        "band_lo": -0.163039285145941,
+        "band_hi": 0.2312313046317,
+        "mean_links": 4.4
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = poly2nb(gunma, queen = TRUE)\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = pv_output_2018,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "std",
+      "state": {
+        "rule": "queen",
+        "var": "sp",
+        "std": true,
+        "sel": "10201"
+      },
+      "readouts": {
+        "n_neighbours": 8,
+        "x_sel": 2.64657912424529,
+        "lag_sel": 0.679548110431217,
+        "morans_i": 0.25250204960929,
+        "band_lo": -0.19823781585796,
+        "band_hi": 0.167356217426313,
+        "mean_links": 4.4
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = poly2nb(gunma, queen = TRUE)\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = as.numeric(scale(sp)),\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10201\") %>%\n  select(muni, x, adj_sp)"
+      }
+    },
+    {
+      "name": "other",
+      "state": {
+        "rule": "queen",
+        "var": "sp",
+        "std": false,
+        "sel": "10204"
+      },
+      "readouts": {
+        "n_neighbours": 5,
+        "x_sel": 1962,
+        "lag_sel": 1738.6,
+        "morans_i": 0.25250204960929,
+        "band_lo": -0.19823781585796,
+        "band_hi": 0.167356217426313,
+        "mean_links": 4.4
+      },
+      "code": {
+        "r": "coords = cbind(gunma$lon, gunma$lat)\nnb = poly2nb(gunma, queen = TRUE)\nw = nb2listw(nb, style = \"W\")\n\ngunma = gunma %>%\n  mutate(x = sp,\n         adj_sp = lag.listw(w, x))\n\nmt = moran.test(gunma$x, w)\nset.seed(5460)\nmc = moran.mc(gunma$x, w, nsim = 199)\nband = quantile(mc$res[1:199], probs = c(0.025, 0.975))\n\ngunma %>%\n  filter(muni_code == \"10204\") %>%\n  select(muni, x, adj_sp)"
+      }
+    }
+  ],
+  "ack": []
+}
