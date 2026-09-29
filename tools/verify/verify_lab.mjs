@@ -27,6 +27,7 @@ import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { cdnRoute } from './_serve.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -103,6 +104,7 @@ export async function runLab(id, o) {
   try {
     // ----- main context: a, b, c, d, h (1280 light, network log) -----
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: 'light' });
+    await cdnRoute(ctx);
     const page = await ctx.newPage();
     const errors = [];
     page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}${m.location() && m.location().url ? ` [${m.location().url}]` : ''}`); });
@@ -211,6 +213,7 @@ export async function runLab(id, o) {
     const shotsMissing = [];
     for (const sh of SHOTS) {
       const c = await browser.newContext({ viewport: { width: sh.w, height: 900 }, colorScheme: sh.theme, reducedMotion: sh.reduced ? 'reduce' : 'no-preference' });
+      await cdnRoute(c);
       const p = await c.newPage();
       await p.goto(base + pg.url, { waitUntil: 'load' });
       await p.evaluate((t) => document.documentElement.setAttribute('data-theme', t), sh.theme);
