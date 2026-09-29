@@ -1,19 +1,19 @@
 {
   "lab": "v3a",
   "ok": true,
-  "checked_at": "2026-09-29T05:47:48.828Z",
+  "checked_at": "2026-09-29T06:28:05.450Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 1045 ms < 1500 ms"
+      "msg": "0 console errors; first render 1060 ms < 1500 ms"
     },
     {
       "ok": true,
       "check": "b",
       "state": "baseline",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -25,7 +25,7 @@
       "ok": true,
       "check": "b",
       "state": "inner",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -37,7 +37,7 @@
       "ok": true,
       "check": "b",
       "state": "right",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -49,7 +49,7 @@
       "ok": true,
       "check": "b",
       "state": "full",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -61,7 +61,7 @@
       "ok": true,
       "check": "b",
       "state": "semi",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -73,7 +73,7 @@
       "ok": true,
       "check": "b",
       "state": "anti_missing",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -85,7 +85,7 @@
       "ok": true,
       "check": "b",
       "state": "dup_key",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -97,7 +97,7 @@
       "ok": true,
       "check": "b",
       "state": "left_missing",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -109,7 +109,7 @@
       "ok": true,
       "check": "b",
       "state": "airports_left",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -121,7 +121,7 @@
       "ok": true,
       "check": "b",
       "state": "airports_anti",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -133,7 +133,7 @@
       "ok": true,
       "check": "b",
       "state": "munis_left",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
@@ -145,12 +145,24 @@
       "ok": true,
       "check": "b",
       "state": "munis_cast",
-      "msg": "7 readouts match (tol 0.000001)"
+      "msg": "8 readouts match (tol 0.000001)"
     },
     {
       "ok": true,
       "check": "c",
       "state": "munis_cast",
+      "msg": "code panel matches golden (r, sql)"
+    },
+    {
+      "ok": true,
+      "check": "b",
+      "state": "anti_vs_leftna",
+      "msg": "8 readouts match (tol 0.000001)"
+    },
+    {
+      "ok": true,
+      "check": "c",
+      "state": "anti_vs_leftna",
       "msg": "code panel matches golden (r, sql)"
     },
     {
@@ -163,7 +175,7 @@
       "ok": true,
       "check": "h",
       "state": "-",
-      "msg": "data 990 B <= 500.0 KB; JS 28.9 KB <= 150.0 KB"
+      "msg": "data 990 B <= 500.0 KB; JS 30.2 KB <= 150.0 KB"
     },
     {
       "ok": true,
