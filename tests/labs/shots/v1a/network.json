@@ -1,0 +1,50 @@
+[
+  {
+    "url": "http://127.0.0.1:33659/labs/v1a-query-builder.html",
+    "type": "document",
+    "status": 200,
+    "bytes": 22728
+  },
+  {
+    "url": "http://127.0.0.1:33659/assets/sts.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 13167
+  },
+  {
+    "url": "http://127.0.0.1:33659/labs/kit/lab.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 7050
+  },
+  {
+    "url": "http://127.0.0.1:33659/labs/kit/lab.js",
+    "type": "script",
+    "status": 200,
+    "bytes": 15131
+  },
+  {
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
+    "type": "script",
+    "status": 200,
+    "bytes": 279706
+  },
+  {
+    "url": "http://127.0.0.1:33659/labs/data/v1a_flights.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 72555
+  },
+  {
+    "url": "http://127.0.0.1:33659/labs/data/v1a_airlines.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 361
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/motion@11.18.2/+esm",
+    "type": "script",
+    "status": 200,
+    "bytes": 66362
+  }
+]
