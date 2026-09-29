@@ -1,27 +1,27 @@
 [
   {
-    "url": "http://127.0.0.1:45493/labs/v7a-grid-and-interpolate.html",
+    "url": "http://127.0.0.1:38139/labs/v7a-grid-and-interpolate.html",
     "type": "document",
     "status": 200,
     "bytes": 26512
   },
   {
-    "url": "http://127.0.0.1:45493/assets/sts.css",
+    "url": "http://127.0.0.1:38139/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:45493/labs/kit/lab.css",
+    "url": "http://127.0.0.1:38139/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:45493/labs/kit/lab.js",
+    "url": "http://127.0.0.1:38139/labs/kit/lab.js",
     "type": "script",
     "status": 200,
-    "bytes": 15131
+    "bytes": 16630
   },
   {
     "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
@@ -30,21 +30,21 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:45493/labs/data/v7a_sites.csv",
+    "url": "http://127.0.0.1:38139/labs/data/v7a_sites.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 865
   },
   {
-    "url": "http://127.0.0.1:45493/labs/data/v7a_readings.csv",
-    "type": "fetch",
-    "status": 200,
-    "bytes": 143193
-  },
-  {
-    "url": "http://127.0.0.1:45493/labs/data/v7a_metro.json",
+    "url": "http://127.0.0.1:38139/labs/data/v7a_metro.json",
     "type": "fetch",
     "status": 200,
     "bytes": 3059
+  },
+  {
+    "url": "http://127.0.0.1:38139/labs/data/v7a_readings.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 143193
   }
 ]

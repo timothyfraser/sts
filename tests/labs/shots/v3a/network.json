@@ -1,27 +1,27 @@
 [
   {
-    "url": "http://127.0.0.1:45825/labs/v3a-join-lab.html",
+    "url": "http://127.0.0.1:37931/labs/v3a-join-lab.html",
     "type": "document",
     "status": 200,
     "bytes": 26497
   },
   {
-    "url": "http://127.0.0.1:45825/assets/sts.css",
+    "url": "http://127.0.0.1:37931/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:45825/labs/kit/lab.css",
+    "url": "http://127.0.0.1:37931/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:45825/labs/kit/lab.js",
+    "url": "http://127.0.0.1:37931/labs/kit/lab.js",
     "type": "script",
     "status": 200,
-    "bytes": 15131
+    "bytes": 16630
   },
   {
     "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
@@ -30,31 +30,31 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:45825/labs/data/v3a_flights.csv",
+    "url": "http://127.0.0.1:37931/labs/data/v3a_flights.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 211
   },
   {
-    "url": "http://127.0.0.1:45825/labs/data/v3a_airlines.csv",
+    "url": "http://127.0.0.1:37931/labs/data/v3a_airlines.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 184
   },
   {
-    "url": "http://127.0.0.1:45825/labs/data/v3a_airports.csv",
+    "url": "http://127.0.0.1:37931/labs/data/v3a_airports.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 232
   },
   {
-    "url": "http://127.0.0.1:45825/labs/data/v3a_solar.csv",
+    "url": "http://127.0.0.1:37931/labs/data/v3a_solar.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 209
   },
   {
-    "url": "http://127.0.0.1:45825/labs/data/v3a_munis.csv",
+    "url": "http://127.0.0.1:37931/labs/data/v3a_munis.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 154

@@ -1,27 +1,27 @@
 [
   {
-    "url": "http://127.0.0.1:34985/labs/v9c-sampling-networks.html",
+    "url": "http://127.0.0.1:38391/labs/v9c-sampling-networks.html",
     "type": "document",
     "status": 200,
     "bytes": 16601
   },
   {
-    "url": "http://127.0.0.1:34985/assets/sts.css",
+    "url": "http://127.0.0.1:38391/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:34985/labs/kit/lab.css",
+    "url": "http://127.0.0.1:38391/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:34985/labs/kit/lab.js",
+    "url": "http://127.0.0.1:38391/labs/kit/lab.js",
     "type": "script",
     "status": 200,
-    "bytes": 15131
+    "bytes": 16630
   },
   {
     "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:34985/labs/data/v9c.json",
+    "url": "http://127.0.0.1:38391/labs/data/v9c.json",
     "type": "fetch",
     "status": 200,
     "bytes": 52553

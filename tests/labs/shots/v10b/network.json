@@ -1,27 +1,27 @@
 [
   {
-    "url": "http://127.0.0.1:41693/labs/v10b-k-hop-neighbours.html",
+    "url": "http://127.0.0.1:36541/labs/v10b-k-hop-neighbours.html",
     "type": "document",
     "status": 200,
     "bytes": 22622
   },
   {
-    "url": "http://127.0.0.1:41693/assets/sts.css",
+    "url": "http://127.0.0.1:36541/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:41693/labs/kit/lab.css",
+    "url": "http://127.0.0.1:36541/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:41693/labs/kit/lab.js",
+    "url": "http://127.0.0.1:36541/labs/kit/lab.js",
     "type": "script",
     "status": 200,
-    "bytes": 15131
+    "bytes": 16630
   },
   {
     "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
@@ -30,13 +30,13 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:41693/labs/data/v10b_edges.csv",
+    "url": "http://127.0.0.1:36541/labs/data/v10b_edges.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 9023
   },
   {
-    "url": "http://127.0.0.1:41693/labs/data/v9a_nodes.csv",
+    "url": "http://127.0.0.1:36541/labs/data/v9a_nodes.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 1074

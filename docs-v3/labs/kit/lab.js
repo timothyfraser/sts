@@ -87,10 +87,31 @@
     };
   }
 
+  // Option order: a fixed per-lab, per-LC shuffle (seed = body[data-lab] + ':' + data-lc), so the
+  // position of the correct option carries no signal and authors need not vary it. Deterministic
+  // (FNV-1a hash -> mulberry32 -> Fisher-Yates): same order on every load, stable screenshots.
+  // No-op on any surprise: options only ever move within their own parent, never get dropped.
+  function shuffleOptions(sec) {
+    try {
+      var opts = Array.prototype.slice.call(sec.querySelectorAll('.lc-option'));
+      var parent = opts.length > 1 ? opts[0].parentNode : null;
+      if (!parent || !opts.every(function (o) { return o.parentNode === parent; })) return;
+      var s = ((document.body && document.body.dataset.lab) || '') + ':' + (sec.dataset.lc || ''), h = 2166136261 >>> 0;
+      for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      var a = h, rnd = function () { a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+      var idx = opts.map(function (_, k) { return k; });
+      for (var j = idx.length - 1; j > 0; j--) { var r = Math.floor(rnd() * (j + 1)), x = idx[j]; idx[j] = idx[r]; idx[r] = x; }
+      var frag = document.createDocumentFragment();
+      idx.forEach(function (k) { frag.appendChild(opts[k]); });
+      parent.appendChild(frag);
+    } catch (e) { /* leave the authored order */ }
+  }
+
   // Learning checks on the contract DOM.
   function lcs(root) {
     (root || document).querySelectorAll('.lab-lc[data-lc]').forEach(function (sec) {
       if (sec.dataset.wired) return; sec.dataset.wired = '1';
+      shuffleOptions(sec);
       var opts = sec.querySelectorAll('.lc-option');
       opts.forEach(function (b) {
         b.setAttribute('aria-pressed', 'false');
