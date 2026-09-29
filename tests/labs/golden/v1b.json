@@ -1,0 +1,85 @@
+{
+  "lab": "v1b",
+  "page": "docs-v3/labs/v1b-connect-and-query.html",
+  "generated_by": "tools/labs/prep/v1b.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "collect": "after_summarise",
+        "creds": "env"
+      },
+      "readouts": {
+        "rows_moved": 4,
+        "cols_moved": 3,
+        "transfer_ms": 0.08,
+        "result_rows": 4,
+        "secret_in_code": 0,
+        "table_rows": 336776
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(dplyr)\nlibrary(dbplyr)\n\nreadRenviron(\".env\")\ncon = dbConnect(RPostgres::Postgres(),\n  host = Sys.getenv(\"SUPABASE_HOST\"), port = Sys.getenv(\"SUPABASE_PORT\"),\n  dbname = Sys.getenv(\"SUPABASE_DB\"), user = Sys.getenv(\"SUPABASE_USER\"),\n  password = Sys.getenv(\"SUPABASE_PASSWORD\"))\ndbListTables(con)\n\nresult = tbl(con, \"flights\") %>%\n  filter(origin == \"JFK\", dest == \"BOS\") %>%\n  group_by(carrier) %>%\n  summarize(flights = n(), mean_delay = mean(dep_delay, na.rm = TRUE)) %>%\n  collect()\n\ndbDisconnect(con)",
+        "sql": "SELECT `carrier`, COUNT(*) AS `flights`, AVG(`dep_delay`) AS `mean_delay`\nFROM (\n  SELECT `flights`.*\n  FROM `flights`\n  WHERE (`origin` = 'JFK') AND (`dest` = 'BOS')\n) AS `q01`\nGROUP BY `carrier`"
+      }
+    },
+    {
+      "name": "after_filter",
+      "state": {
+        "collect": "after_filter",
+        "creds": "env"
+      },
+      "readouts": {
+        "rows_moved": 5898,
+        "cols_moved": 19,
+        "transfer_ms": 717.2,
+        "result_rows": 4,
+        "secret_in_code": 0,
+        "table_rows": 336776
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(dplyr)\nlibrary(dbplyr)\n\nreadRenviron(\".env\")\ncon = dbConnect(RPostgres::Postgres(),\n  host = Sys.getenv(\"SUPABASE_HOST\"), port = Sys.getenv(\"SUPABASE_PORT\"),\n  dbname = Sys.getenv(\"SUPABASE_DB\"), user = Sys.getenv(\"SUPABASE_USER\"),\n  password = Sys.getenv(\"SUPABASE_PASSWORD\"))\ndbListTables(con)\n\nresult = tbl(con, \"flights\") %>%\n  filter(origin == \"JFK\", dest == \"BOS\") %>%\n  collect() %>%\n  group_by(carrier) %>%\n  summarize(flights = n(), mean_delay = mean(dep_delay, na.rm = TRUE))\n\ndbDisconnect(con)",
+        "sql": "SELECT `flights`.*\nFROM `flights`\nWHERE (`origin` = 'JFK') AND (`dest` = 'BOS')"
+      }
+    },
+    {
+      "name": "first_line",
+      "state": {
+        "collect": "first",
+        "creds": "env"
+      },
+      "readouts": {
+        "rows_moved": 336776,
+        "cols_moved": 19,
+        "transfer_ms": 40951.96,
+        "result_rows": 4,
+        "secret_in_code": 0,
+        "table_rows": 336776
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(dplyr)\nlibrary(dbplyr)\n\nreadRenviron(\".env\")\ncon = dbConnect(RPostgres::Postgres(),\n  host = Sys.getenv(\"SUPABASE_HOST\"), port = Sys.getenv(\"SUPABASE_PORT\"),\n  dbname = Sys.getenv(\"SUPABASE_DB\"), user = Sys.getenv(\"SUPABASE_USER\"),\n  password = Sys.getenv(\"SUPABASE_PASSWORD\"))\ndbListTables(con)\n\nresult = tbl(con, \"flights\") %>%\n  collect() %>%\n  filter(origin == \"JFK\", dest == \"BOS\") %>%\n  group_by(carrier) %>%\n  summarize(flights = n(), mean_delay = mean(dep_delay, na.rm = TRUE))\n\ndbDisconnect(con)",
+        "sql": "SELECT *\nFROM `flights`"
+      }
+    },
+    {
+      "name": "hard_coded",
+      "state": {
+        "collect": "after_summarise",
+        "creds": "code"
+      },
+      "readouts": {
+        "rows_moved": 4,
+        "cols_moved": 3,
+        "transfer_ms": 0.08,
+        "result_rows": 4,
+        "secret_in_code": 1,
+        "table_rows": 336776
+      },
+      "code": {
+        "r": "library(DBI)\nlibrary(dplyr)\nlibrary(dbplyr)\n\ncon = dbConnect(RPostgres::Postgres(),\n  host = \"db.abcdefgh.supabase.co\", port = 5432,\n  dbname = \"postgres\", user = \"postgres\",\n  password = \"hunter2-SuperSecret!\")\ndbListTables(con)\n\nresult = tbl(con, \"flights\") %>%\n  filter(origin == \"JFK\", dest == \"BOS\") %>%\n  group_by(carrier) %>%\n  summarize(flights = n(), mean_delay = mean(dep_delay, na.rm = TRUE)) %>%\n  collect()\n\ndbDisconnect(con)",
+        "sql": "SELECT `carrier`, COUNT(*) AS `flights`, AVG(`dep_delay`) AS `mean_delay`\nFROM (\n  SELECT `flights`.*\n  FROM `flights`\n  WHERE (`origin` = 'JFK') AND (`dest` = 'BOS')\n) AS `q01`\nGROUP BY `carrier`"
+      }
+    }
+  ],
+  "ack": []
+}

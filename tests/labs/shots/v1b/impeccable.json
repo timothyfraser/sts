@@ -1,0 +1,6 @@
+{
+  "tool": "impeccable@4.1.0 detect --json",
+  "page": "docs-v3/labs/v1b-connect-and-query.html",
+  "ack": [],
+  "findings": []
+}
