@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Joins, key by key</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+.jl-stage{display:flex;flex-direction:column;gap:14px;color:var(--bench-ink)}
+.jl-pair{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);align-items:start}
+.jl-pair>div{grid-row:1}
+.jl-pair>div:nth-child(1){grid-column:1}.jl-pair>div:nth-child(3){grid-column:3}
+.jl-pair h2,.jl-result h2{margin:0 0 6px;font:600 12px/1.3 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--bench-muted)}
+.jl-t{width:100%;border-collapse:collapse;font:13px/1.2 var(--mono);table-layout:fixed}
+.jl-t th{font-weight:600;text-align:left;color:var(--bench-muted);padding:4px 6px;border-bottom:1px solid var(--bench-line)}
+.jl-t td{padding:0 6px;height:26px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--bench-line)}
+.jl-t td.k{color:var(--y);font-weight:600}
+.jl-t tr.is-lonely td{opacity:.55}
+.jl-t tr.is-injected td{outline:1px dashed var(--y);outline-offset:-2px}
+.jl-t td.is-na{color:var(--b);font-weight:600;background:var(--bench-panel);box-shadow:inset 0 0 0 1px var(--b)}
+.jl-t td.num{text-align:right}
+.jl-lines{grid-column:1/-1;grid-row:1;align-self:stretch;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1}
+.jl-lines path{fill:none;stroke:var(--y);stroke-width:1.5}
+.jl-lines path.is-extra{stroke:var(--b);stroke-width:2.5}
+.jl-gauges{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.jl-badge{font:600 15px/1 var(--mono);padding:6px 10px;border:1px solid var(--bench-line);border-radius:6px;background:var(--bench-panel)}
+.jl-badge.is-mm{border-color:var(--b);color:var(--b)}
+.jl-meter{flex:1 1 180px;min-width:160px}
+.jl-meter-label{font-size:12px;color:var(--bench-muted);margin-bottom:4px}
+.jl-meter-track{display:grid;height:12px;border-radius:999px;background:var(--bench-panel);border:1px solid var(--bench-line)}
+.jl-meter-fill{grid-area:1/1;justify-self:start;width:0;background:var(--y);border-radius:999px}
+.jl-meter-fill.is-over{background:var(--b)}
+.jl-meter-mark{grid-area:1/1;justify-self:start;margin-left:calc(50% - 1px);width:2px;background:var(--bench-ink)}
+.jl-result-wrap{overflow-x:auto;max-height:420px;overflow-y:auto}
+.jl-result-wrap:focus-visible{outline:2px solid var(--y);outline-offset:2px}
+.jl-result .jl-t{table-layout:auto;min-width:100%}
+.jl-t tr.is-na-src td{opacity:1;box-shadow:inset 0 0 0 1px var(--b)}
+.jl-t tr.is-appended td{background:var(--bench-panel)}
+.jl-count{font:600 15px/1 var(--mono);white-space:nowrap}
+#metrics.jl-noresult .lab-metric:is([data-key=rows_out],[data-key=na_cells],[data-key=explosion]) .lab-delta{visibility:hidden}
+@media (max-width:600px){.jl-result-wrap{max-height:260px}}
+.jl-err{font:14px/1.45 var(--mono);color:var(--bench-down);border:1px solid var(--bench-down);border-radius:6px;padding:8px 10px;margin:0}
+.jl-toggles{display:flex;flex-direction:column;gap:6px;border:0;margin:0;padding:0}
+.jl-toggles legend{font-size:14px;color:var(--bench-ink);margin-bottom:4px;padding:0}
+.jl-toggles label{flex-direction:row!important;align-items:center;gap:8px!important}
+.jl-toggles input{accent-color:var(--y);width:18px;height:18px}
+</style>
+</head>
+<body data-lab="v3a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 3 · Joining tables</p>
+    <h1>Joins, key by key</h1>
+    <p class="lab-lo"><strong>Learning objective:</strong> Predict the rows and NA cells produced by inner, left, right, full, semi and anti joins, and diagnose key problems (duplicates, mismatched types, missing keys) before they explode a table (classes 4; 4C_databases_2.R).</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage jl-stage" id="stage">
+        <div class="jl-pair" id="pair">
+          <div><h2 id="x-title">x</h2><table class="jl-t" id="x-t" aria-labelledby="x-title"></table></div>
+          <div aria-hidden="true"></div>
+          <div><h2 id="y-title">y</h2><table class="jl-t" id="y-t" aria-labelledby="y-title"></table></div>
+          <svg class="jl-lines" id="lines" aria-hidden="true"></svg>
+        </div>
+        <div class="jl-gauges">
+          <div><span class="lab-sr">Key relationship </span><span class="jl-badge" id="badge">m:1</span> <span class="jl-count" id="count" aria-live="off">12 → 12 rows</span></div>
+          <div class="jl-meter">
+            <div class="jl-meter-label" id="meter-label">result rows ÷ left rows</div>
+            <div class="jl-meter-track" role="meter" aria-labelledby="meter-label" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1" id="meter"><div class="jl-meter-fill" id="meter-fill"></div><div class="jl-meter-mark" title="1 × the left table"></div></div>
+          </div>
+        </div>
+        <div class="jl-result"><h2 id="r-title">result</h2><div class="jl-result-wrap" id="r-wrap" tabindex="0" role="region" aria-labelledby="r-title"></div></div>
+      </div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Tables and key <select id="c-pair">
+            <option value="airlines" selected>flights × airlines, by carrier</option>
+            <option value="airports">flights × airports, by dest = faa</option>
+            <option value="munis">solar × municipalities, by muni_code</option></select></label>
+          <label>Join type <select id="c-how">
+            <option value="inner">inner_join</option><option value="left" selected>left_join</option><option value="right">right_join</option>
+            <option value="full">full_join</option><option value="semi">semi_join</option><option value="anti">anti_join</option></select></label>
+          <fieldset class="jl-toggles"><legend>Break the key</legend>
+            <label><input type="checkbox" id="c-dup"> duplicate a key in y</label>
+            <label><input type="checkbox" id="c-miss"> add an unmatched key to x</label>
+            <label><input type="checkbox" id="c-cast"> read y's key as integer</label>
+          </fieldset>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>key match</li><li><i style="background:var(--b)"></i>NA cell or extra match</li><li><i style="background:var(--bench-line)"></i>row with no match</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">With a left join of flights to airlines (the baseline), how many result rows have an NA carrier name?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="true">0</button><button class="lc-option" data-correct="false">2, one for each airline with no sampled flight</button><button class="lc-option" data-correct="false">12, one per flight</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "NA cells" in the sidebar and look for glowing cells in the result. Which table's rows does a left join keep?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>0. All 12 sampled flights fly AA, B6, DL, UA or WN, and every one of those carriers is in airlines, so each flight finds its name. The two airlines with no flight here (HA, OO) only appear with a right or full join, which adds 2 rows and 6 NA cells.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Tick "duplicate a key in y" (UA now appears twice in airlines). What happens to the row count of the left join, and what does R say?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">It stays at 12; R quietly keeps the first UA match</button><button class="lc-option" data-correct="true">It rises from 12 to 14, and R warns of an unexpected many-to-many relationship</button><button class="lc-option" data-correct="false">It doubles to 24, and R stops with an error</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Count the UA flights on the left, then count the lines each one now sends to the right.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Rows go from 12 to 14: each of the 2 UA flights matches 2 UA rows, so each is copied. Keys now repeat on both sides (m:m), so dplyr warns "Detected an unexpected many-to-many relationship between `x` and `y`." It does not stop: the warning is the only signal that the table exploded.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">When would you choose anti_join() over left_join() followed by filter(is.na(...))?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Never: they always return the same rows</button><button class="lc-option" data-correct="false">When you want the rows of the right table that have no match</button><button class="lc-option" data-correct="true">When the question is "which of my rows have no key match at all?"; the left_join version asks "which rows ended up with a missing value?"</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Switch to flights × airports. Compare anti_join with left_join: where does the one NA come from? Could a matched row also carry an NA?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>anti_join() answers "which keys have no partner?" and returns only x's columns, one row per unmatched x row: here 1 flight (to SJU, which is not in airports). left_join() + filter(is.na(name)) answers "which rows lack a name?", which also catches matched rows whose name is genuinely NA, and repeats rows when keys are duplicated.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  // Each pair mirrors `pairs` in the prep script; code.r / code.sql build EXACTLY its code_r() / code_sql().
+  var P = {
+    airlines: { x: 'flights', y: 'airlines', by: '"carrier"', xk: 'carrier', yk: 'carrier', dupkey: 'UA', show: 'dest',
+      missrow: 'id = "f99", carrier = "ZZ", dest = "ORD", distance = 733', miss: { id: 'f99', carrier: 'ZZ', dest: 'ORD', distance: 733 } },
+    airports: { x: 'flights', y: 'airports', by: 'c("dest" = "faa")', xk: 'dest', yk: 'faa', dupkey: 'MCO', show: 'carrier',
+      missrow: 'id = "f99", carrier = "UA", dest = "XNA", distance = 1085', miss: { id: 'f99', carrier: 'UA', dest: 'XNA', distance: 1085 } },
+    munis: { x: 'solar', y: 'munis', by: '"muni_code"', xk: 'muni_code', yk: 'muni_code', dupkey: null, show: 'date',
+      missrow: 'id = "m99", muni_code = "99999", date = "2019-01-25", solar = 0', miss: { id: 'm99', muni_code: '99999', date: '2019-01-25', solar: 0 } }
+  };
+  var NUM = { distance: 1, solar: 1 };
+  var WARN = 'Detected an unexpected many-to-many relationship between `x` and `y`.';
+  var SQLK = { inner: 'INNER JOIN', left: 'LEFT JOIN', right: 'RIGHT JOIN', full: 'FULL JOIN' };
+  var S = function (o) { return Object.assign({ pair: 'airlines', how: 'left', dup: false, miss: false, cast: false }, o || {}); };
+
+  function outcome(s) { if (s.cast) return 'error'; if (s.dup && SQLK[s.how]) return 'warn'; return 'ok'; }
+  function joinCall(s) {
+    var p = P[s.pair], out = [], xn = p.x, yn = p.y;
+    if (s.miss) { out.push('x = ' + p.x + ' %>%\n  bind_rows(tibble(' + p.missrow + '))'); xn = 'x'; }
+    if (s.dup || s.cast) {
+      var t = 'y = ' + p.y;
+      if (s.dup) t += ' %>%\n  bind_rows(' + p.y + ' %>% filter(' + p.yk + ' == "' + p.dupkey + '"))';
+      if (s.cast) t += ' %>%\n  mutate(' + p.yk + ' = as.integer(' + p.yk + '))';
+      out.push(t); yn = 'y';
+    }
+    out.push('result = ' + xn + ' %>%\n  ' + s.how + '_join(by = ' + p.by + ', y = ' + yn + ')');
+    return out.join('\n');
+  }
+  function codeR(s) {
+    var o = outcome(s), p = P[s.pair];
+    var tail = o === 'error' ? '\n# Error in `' + s.how + '_join()`:\n# ! Can\'t join `x$' + p.xk + '` with `y$' + p.yk + '` due to incompatible types.'
+      : o === 'warn' ? '\n# Warning message:\n# ' + WARN + '\n# Set `relationship = "many-to-many"` if you expect it.' : '';
+    return joinCall(s) + tail;
+  }
+  function codeSQL(s) {
+    var p = P[s.pair], xt = s.miss ? 'x' : p.x, yt = (s.dup || s.cast) ? 'y' : p.y, on = 'a.' + p.xk + ' = b.' + p.yk;
+    if (SQLK[s.how]) return 'SELECT a.*, b.*\nFROM ' + xt + ' AS a\n' + SQLK[s.how] + ' ' + yt + ' AS b\n  ON ' + on + ';';
+    return 'SELECT a.*\nFROM ' + xt + ' AS a\nWHERE ' + (s.how === 'anti' ? 'NOT ' : '') + 'EXISTS (\n  SELECT 1 FROM ' + yt + ' AS b WHERE ' + on + '\n);';
+  }
+
+  // The tables after the state's injections, then the join itself, as dplyr computes it.
+  function tables(s, d) {
+    var p = P[s.pair], x = d[p.x].slice(), y = d[p.y].slice();
+    if (s.miss) x.push(Object.assign({ _inj: true }, p.miss));
+    if (s.dup) y = y.concat(d[p.y].filter(function (r) { return r[p.yk] === p.dupkey; }).map(function (r) { return Object.assign({ _inj: true }, r); }));
+    var ykey = function (r) { return s.cast ? String(parseInt(r[p.yk], 10)) : r[p.yk]; };
+    return { p: p, x: x, y: y, ykey: ykey };
+  }
+  function join(s, d) {
+    var T = tables(s, d), p = T.p, x = T.x, y = T.y;
+    var xcols = Object.keys(d[p.x][0]), ycols = Object.keys(d[p.y][0]).filter(function (c) { return c !== p.yk; });
+    var cols = (s.how === 'semi' || s.how === 'anti') ? xcols : xcols.concat(ycols);
+    var o = outcome(s), rows = [], links = [], usedY = new Set();
+    if (o !== 'error') {
+      x.forEach(function (xr, i) {
+        var m = []; y.forEach(function (yr, j) { if (T.ykey(yr) === xr[p.xk]) m.push(j); });
+        m.forEach(function (j) { links.push([i, j]); usedY.add(j); });
+        if (s.how === 'semi') { if (m.length) rows.push(pick(xr, xcols)); return; }
+        if (s.how === 'anti') { if (!m.length) rows.push(pick(xr, xcols)); return; }
+        if (m.length) m.forEach(function (j) { rows.push(Object.assign(pick(xr, xcols), pick(y[j], ycols))); });
+        else if (s.how === 'left' || s.how === 'full') rows.push(Object.assign(pick(xr, xcols), pick({}, ycols)));
+      });
+      if (s.how === 'right' || s.how === 'full') y.forEach(function (yr, j) {
+        if (usedY.has(j)) return; var r = Object.assign(pick({}, xcols), pick(yr, ycols)); r[p.xk] = yr[p.yk]; r._app = true; rows.push(r);
+      });
+    } else {
+      x.forEach(function (xr, i) { y.forEach(function (yr, j) { if (T.ykey(yr) === xr[p.xk]) links.push([i, j]); }); });
+    }
+    return { T: T, cols: cols, rows: rows, links: links, outcome: o };
+  }
+  function pick(r, cols) { var o = {}; cols.forEach(function (c) { o[c] = r[c] == null ? null : r[c]; }); return o; }
+  function card(xk, yk) {
+    var ys = new Set(yk), m = new Set(xk.filter(function (k) { return ys.has(k); }));
+    var dupd = function (a) { var seen = new Set(); return a.filter(function (k) { return m.has(k); }).some(function (k) { if (seen.has(k)) return true; seen.add(k); return false; }); };
+    return (dupd(xk) ? 'm' : '1') + ':' + (dupd(yk) ? 'm' : '1');
+  }
+  function readouts(s, d) {
+    var J = join(s, d), T = J.T, err = J.outcome === 'error';
+    var na = 0; J.rows.forEach(function (r) { J.cols.forEach(function (c) { if (r[c] == null) na++; }); });
+    return {
+      rows_left: T.x.length, rows_right: T.y.length,
+      rows_out: err ? -1 : J.rows.length, na_cells: err ? -1 : na,
+      explosion: err ? -1 : J.rows.length / T.x.length,
+      cardinality: err ? '—' : card(T.x.map(function (r) { return String(r[T.p.xk]); }), T.y.map(T.ykey)),
+      outcome: J.outcome
+    };
+  }
+
+  // ---- drawing ----
+  var xt = document.getElementById('x-t'), yt = document.getElementById('y-t'), svg = document.getElementById('lines');
+  var rwrap = document.getElementById('r-wrap'), badge = document.getElementById('badge');
+  var fill = document.getElementById('meter-fill'), meter = document.getElementById('meter');
+  function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function td(v, c, key) { var cls = []; if (key) cls.push('k'); if (NUM[c]) cls.push('num'); if (v == null) cls.push('is-na');
+    return '<td' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>' + (v == null ? 'NA' : esc(v)) + '</td>'; }
+  function head(cols) { return '<thead><tr>' + cols.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') + '</tr></thead>'; }
+
+  function render(s, d) {
+    var J = join(s, d), T = J.T, p = T.p, reduced = Lab.motion.reduced();
+    var xm = new Set(J.links.map(function (l) { return l[0]; })), ym = new Set(J.links.map(function (l) { return l[1]; }));
+    document.getElementById('x-title').textContent = 'x · ' + p.x + ' (' + T.x.length + ')';
+    document.getElementById('y-title').textContent = 'y · ' + p.y + ' (' + T.y.length + ')';
+    var ynm = Object.keys(d[p.y][0]).filter(function (c) { return c !== p.yk; })[0];
+    xt.innerHTML = head(['id', p.xk]) + '<tbody>' + T.x.map(function (r, i) {
+      return '<tr class="' + (xm.has(i) ? '' : (s.how === 'left' || s.how === 'full') && J.outcome !== 'error' ? 'is-lonely is-na-src ' : 'is-lonely ') + (r._inj ? 'is-injected' : '') + '">' + td(r.id, 'id') + td(r[p.xk], p.xk, true) + '</tr>'; }).join('') + '</tbody>';
+    yt.innerHTML = head([p.yk, ynm]) + '<tbody>' + T.y.map(function (r, j) {
+      var k = s.cast ? String(parseInt(r[p.yk], 10)) : r[p.yk];
+      return '<tr class="' + (ym.has(j) ? '' : (s.how === 'right' || s.how === 'full') && J.outcome !== 'error' ? 'is-lonely is-na-src ' : 'is-lonely ') + (r._inj ? 'is-injected' : '') + '">' + td(k, p.yk, true) + td(r[ynm], ynm) + '</tr>'; }).join('') + '</tbody>';
+
+    // connector lines: x key cell right edge -> y key cell left edge
+    var box = svg.getBoundingClientRect(), xr = xt.tBodies[0].rows, yr = yt.tBodies[0].rows;
+    var ycount = {}; J.links.forEach(function (l) { ycount[l[0]] = (ycount[l[0]] || 0) + 1; });
+    svg.setAttribute('viewBox', '0 0 ' + Math.max(1, box.width) + ' ' + Math.max(1, box.height));
+    svg.innerHTML = J.outcome === 'error' ? '' : J.links.map(function (l) {
+      var a = xr[l[0]].cells[1].getBoundingClientRect(), b = yr[l[1]].cells[0].getBoundingClientRect();
+      var x1 = a.right - box.left, y1 = a.top + a.height / 2 - box.top, x2 = b.left - box.left, y2 = b.top + b.height / 2 - box.top, mx = (x1 + x2) / 2;
+      return '<path class="' + (ycount[l[0]] > 1 ? 'is-extra' : '') + '" d="M' + x1 + ',' + y1 + ' C' + mx + ',' + y1 + ' ' + mx + ',' + y2 + ' ' + x2 + ',' + y2 + '"/>';
+    }).join('');
+
+    // result table, row by row
+    if (J.outcome === 'error') {
+      rwrap.innerHTML = '<p class="jl-err">Error in ' + esc(s.how) + '_join(): can\'t join x$' + esc(p.xk) + ' (character) with y$' + esc(p.yk) + ' (integer). No result table.</p>';
+    } else {
+      rwrap.innerHTML = '<table class="jl-t">' + head(J.cols) + '<tbody>' + J.rows.map(function (r) {
+        return '<tr' + (r._app ? ' class="is-appended"' : '') + '>' + J.cols.map(function (c) { return td(r[c], c, c === p.xk); }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    }
+    document.getElementById('r-title').textContent = 'result · ' + s.how + '_join' + (J.outcome === 'error' ? '' : ' (' + J.rows.length + ' rows)');
+
+    // cardinality badge + explosion meter (mark at 1 x the left table, full scale 2 x)
+    var R = readouts(s, d), ratio = Math.max(0, R.explosion);
+    badge.textContent = R.cardinality; badge.classList.toggle('is-mm', R.cardinality === 'm:m');
+    meter.setAttribute('aria-valuenow', String(Math.round(ratio * 100) / 100));
+    meter.setAttribute('aria-valuetext', J.outcome === 'error' ? 'no result' : R.rows_out + ' result rows from ' + R.rows_left + ' left rows');
+    fill.classList.toggle('is-over', ratio > 1);
+    document.getElementById('count').textContent = J.outcome === 'error' ? R.rows_left + ' → error' : R.rows_left + ' → ' + R.rows_out + ' rows';
+    document.getElementById('metrics').classList.toggle('jl-noresult', J.outcome === 'error');
+    // right/full joins append y-only rows at the bottom: bring them into view inside the result box
+    var app = rwrap.querySelector('tr.is-appended'); rwrap.scrollTop = app ? rwrap.scrollHeight : 0;
+    var w = Math.min(100, ratio * 50) + '%';
+    if (reduced) { fill.style.width = w; return Promise.resolve(); }
+
+    // motion: lines draw in, result rows drop into place, meter springs
+    var paths = Array.prototype.slice.call(svg.querySelectorAll('path'));
+    paths.forEach(function (el) { var L = el.getTotalLength(); el.style.strokeDasharray = L; el.style.strokeDashoffset = L; });
+    var rows = Array.prototype.slice.call(rwrap.querySelectorAll('tbody tr'));
+    rows.forEach(function (tr) { tr.style.opacity = 0; });
+    return Promise.all([
+      Promise.all(paths.map(function (el, i) { return Lab.motion.animate(el, { strokeDashoffset: [el.style.strokeDashoffset, 0] }, { duration: 0.3, delay: i * 0.02 }); })),
+      Promise.all(rows.map(function (tr, i) { return Lab.motion.animate(tr, { opacity: [0, 1], transform: ['translateY(-10px)', 'translateY(0)'] }, { duration: 0.22, delay: 0.15 + i * 0.03 }); })),
+      Lab.motion.animate(fill, { width: w }, { type: 'spring', stiffness: 260, damping: 24 })
+    ]).then(function () { paths.forEach(function (el) { el.style.strokeDasharray = ''; el.style.strokeDashoffset = ''; }); });
+  }
+
+  // -1 is the readout for "no result table" (R stopped); show a dash, keep the raw value for the gate.
+  function nz(f) { return function (v) { return v < 0 ? '—' : Lab.fmt(v, f); }; }
+  var lab = Lab.create({
+    id: 'v3a', initial: S(),
+    states: {
+      baseline: S(), inner: S({ how: 'inner' }), right: S({ how: 'right' }), full: S({ how: 'full' }), semi: S({ how: 'semi' }),
+      anti_missing: S({ how: 'anti', miss: true }), dup_key: S({ dup: true }), left_missing: S({ miss: true }),
+      airports_left: S({ pair: 'airports' }), airports_anti: S({ pair: 'airports', how: 'anti' }),
+      munis_left: S({ pair: 'munis' }), munis_cast: S({ pair: 'munis', cast: true })
+    },
+    load: function () {
+      var num = function (r) { Object.keys(NUM).forEach(function (k) { if (k in r) r[k] = r[k] === '' ? null : +r[k]; }); return r; };
+      var names = ['flights', 'airlines', 'airports', 'solar', 'munis'];
+      return Promise.all(names.map(function (n) { return d3.csv('data/v3a_' + n + '.csv', num); })).then(function (t) {
+        var d = {}; names.forEach(function (n, i) { d[n] = t[i]; });
+        P.munis.dupkey = d.solar.map(function (r) { return r.muni_code; }).sort()[0];
+        return d;
+      });
+    },
+    render: render, readouts: readouts,
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'rows_out', label: 'result rows', fmt: nz(0) }, { key: 'rows_left', label: 'left rows (x)', fmt: 0 },
+      { key: 'na_cells', label: 'NA cells', fmt: nz(0) }, { key: 'explosion', label: 'result ÷ left', fmt: nz(2) },
+      { key: 'cardinality', label: 'keys x:y' }, { key: 'outcome', label: 'R says' }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return r.outcome === 'error' ? s.how + '_join stopped: key types differ' : r.rows_out + ' rows from ' + r.rows_left + ' left rows, ' + r.na_cells + ' NA cells' + (r.outcome === 'warn' ? ', many-to-many warning' : ''); },
+    code: { r: codeR, sql: codeSQL },
+    onState: function (s) {
+      document.getElementById('c-pair').value = s.pair; document.getElementById('c-how').value = s.how;
+      document.getElementById('c-dup').checked = s.dup; document.getElementById('c-miss').checked = s.miss; document.getElementById('c-cast').checked = s.cast;
+    }
+  });
+  document.getElementById('c-pair').addEventListener('change', function (e) { lab.setState({ pair: e.target.value }); });
+  document.getElementById('c-how').addEventListener('change', function (e) { lab.setState({ how: e.target.value }); });
+  ['dup', 'miss', 'cast'].forEach(function (k) { document.getElementById('c-' + k).addEventListener('change', function (e) { var o = {}; o[k] = e.target.checked; lab.setState(o); }); });
+  document.getElementById('c-how').value = 'left';
+})();
+</script>
+</body>
+</html>
