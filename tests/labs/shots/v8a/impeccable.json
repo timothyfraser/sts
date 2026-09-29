@@ -9,7 +9,7 @@
       "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
       "severity": "advisory",
       "category": "quality",
-      "file": "/home/user/wt/sts-kit2/docs-v3/labs/v8a-where-to-compute.html",
+      "file": "/home/user/wt/sts-kit3/docs-v3/labs/v8a-where-to-compute.html",
       "line": 27,
       "snippet": "border-radius 4px on div is outside the DESIGN.md rounded scale",
       "advisory": true,

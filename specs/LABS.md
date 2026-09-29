@@ -21,6 +21,12 @@ Every lab is built from the shared kit in `docs-v3/labs/kit/` (`lab.js`, `lab.cs
      The stage is as tall as its figure: the visual column does not stretch to the sidebar's
      height, and the stage reserves 320px only while it is still empty (loading). Give the figure
      its own height (an SVG viewBox, or an explicit height); never size it to 100% of the stage.
+     From 900px the visual column is sticky (`top: 12px`) inside the bench, so when the sidebar
+     is the taller column the figure stays in view while the controls scroll. It only travels by
+     the difference in column heights, so a visual taller than the sidebar never moves and none
+     of it becomes unreachable. The bench clips its corners with `overflow: clip`, never
+     `hidden`/`auto`, which would turn it into a scroll container and stop the stick. A lab page
+     that sets its own `position` on `.lab-visual` opts out.
    - **Status bar** under the visual: `loading`, `applying`, `ready` + a one-line summary, or `error: ...`.
    - **Sidebar** (right, 340px): Controls, Metrics, Legend, and optionally a linked Rows table.
      Metrics show the raw value in mono tabular numerals plus a **delta against baseline**

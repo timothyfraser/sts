@@ -1,13 +1,13 @@
 {
   "lab": "_reference",
   "ok": true,
-  "checked_at": "2026-09-29T07:41:33.074Z",
+  "checked_at": "2026-09-29T08:00:13.842Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 494 ms < 1500 ms"
+      "msg": "0 console errors; first render 530 ms < 1500 ms"
     },
     {
       "ok": true,

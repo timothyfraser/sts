@@ -9,7 +9,9 @@
 .lab-head h1{margin:4px 0 6px;font-size:var(--fs-h1-site)}
 .lab-head .lab-lo{color:var(--muted);margin:0 0 12px}
 .lab-bench{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:1px;background:var(--bench-bg);
-  color:var(--bench-ink);border-radius:10px;overflow:hidden}
+  color:var(--bench-ink);border-radius:10px;overflow:hidden;overflow:clip}
+/* overflow:clip (not hidden) rounds the corners without making the bench a scroll container,
+   so the sticky visual below can stick to the page viewport; hidden stays as the fallback */
 /* the visual column sizes to its content; only the sidebar spans the bench height */
 .lab-visual{display:flex;flex-direction:column;min-width:0;padding:12px;align-self:start}
 /* reserve height only while the stage is still empty (loading); a drawn stage is as tall as its figure */
@@ -73,6 +75,9 @@
 .lc-hint,.lc-answer{margin-top:8px;padding:8px 10px;border:1px solid var(--line, var(--bench-line));border-radius:6px;background:var(--surface-2)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .lc-option.is-correct{background:var(--gray-2)}}
 :root[data-theme=dark] .lc-option.is-correct{background:var(--gray-2)}
+/* a long sidebar scrolls past the figure: from 900px the visual column sticks inside the bench,
+   so the figure stays in view while the controls scroll (no page header is sticky, so top is 12px) */
+@media (min-width:900px){.lab-visual{position:sticky;top:12px}}
 @media (max-width:720px){
   .lab-bench{grid-template-columns:1fr}
   .lab-side{border-left:0;border-top:1px solid var(--bench-line)}

@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:39567/labs/v8b-small-numbers.html",
+    "url": "http://127.0.0.1:35711/labs/v8b-small-numbers.html",
     "type": "document",
     "status": 200,
     "bytes": 20038
   },
   {
-    "url": "http://127.0.0.1:39567/assets/sts.css",
+    "url": "http://127.0.0.1:35711/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:39567/labs/kit/lab.css",
+    "url": "http://127.0.0.1:35711/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
-    "bytes": 7302
+    "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:39567/labs/kit/lab.js",
+    "url": "http://127.0.0.1:35711/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,13 +30,13 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:39567/labs/data/v8b.csv",
+    "url": "http://127.0.0.1:35711/labs/data/v8b.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 2012
   },
   {
-    "url": "http://127.0.0.1:39567/labs/data/v8b-grid.geojson",
+    "url": "http://127.0.0.1:35711/labs/data/v8b-grid.geojson",
     "type": "fetch",
     "status": 200,
     "bytes": 14727

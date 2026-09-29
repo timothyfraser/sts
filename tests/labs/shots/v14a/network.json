@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:44983/labs/v14a-architecture-builder.html",
+    "url": "http://127.0.0.1:39573/labs/v14a-architecture-builder.html",
     "type": "document",
     "status": 200,
     "bytes": 24470
   },
   {
-    "url": "http://127.0.0.1:44983/assets/sts.css",
+    "url": "http://127.0.0.1:39573/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:44983/labs/kit/lab.css",
+    "url": "http://127.0.0.1:39573/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
-    "bytes": 7302
+    "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:44983/labs/kit/lab.js",
+    "url": "http://127.0.0.1:39573/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:44983/labs/data/v14a.json",
+    "url": "http://127.0.0.1:39573/labs/data/v14a.json",
     "type": "fetch",
     "status": 200,
     "bytes": 1252
