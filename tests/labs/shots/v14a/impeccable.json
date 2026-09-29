@@ -1,0 +1,31 @@
+{
+  "tool": "impeccable@4.1.0 detect --json",
+  "page": "docs-v3/labs/v14a-architecture-builder.html",
+  "ack": [],
+  "findings": [
+    {
+      "antipattern": "design-system-radius",
+      "name": "Radius outside DESIGN.md",
+      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v14a/docs-v3/labs/v14a-architecture-builder.html",
+      "line": 0,
+      "snippet": "border-radius 4px on select \"Air quality: county officerBluebikes: re\" is outside the DESIGN.md rounded scale",
+      "advisory": true,
+      "ignoreValue": "4px"
+    },
+    {
+      "antipattern": "design-system-font-size",
+      "name": "Font size outside DESIGN.md",
+      "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v14a/docs-v3/labs/v14a-architecture-builder.html",
+      "line": 296,
+      "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+      "advisory": true,
+      "ignoreValue": "13px"
+    }
+  ]
+}

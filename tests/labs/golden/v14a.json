@@ -1,0 +1,153 @@
+{
+  "lab": "v14a",
+  "page": "docs-v3/labs/v14a-architecture-builder.html",
+  "generated_by": "tools/labs/prep/v14a.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "brief": "air_quality",
+        "compute": "client",
+        "refresh_min": 60,
+        "grain": "aggregate",
+        "rls": false
+      },
+      "readouts": {
+        "payload_kb": 3942.875,
+        "latency_ms": 206.172,
+        "stale_min": 60,
+        "cost_usd": 35.1525902748108,
+        "pass_fresh": "pass",
+        "pass_payload": "fail",
+        "pass_privacy": "pass",
+        "pass_cost": "pass"
+      },
+      "code": {
+        "r": "check = briefs %>%\n  filter(brief == \"air_quality\") %>%\n  mutate(\n    compute = \"client\", refresh_min = 60, grain = \"aggregate\", rls = FALSE,\n    rows_sent = if_else(compute == \"client\", rows_window, groups),\n    rows_scanned = if_else(compute == \"matview\", groups, rows_window),\n    payload_kb = rows_sent * bytes_per_row / 1024,\n    latency_ms = 80 + rows_scanned / 500,\n    stale_min = if_else(compute == \"matview\", pmax(refresh_min, cadence_min), cadence_min),\n    cron_usd = if_else(compute == \"matview\", 43200 / refresh_min * rows_window * 3e-7, 0),\n    api_usd = if_else(compute == \"endpoint\", requests_month * rows_window * 5e-10, 0),\n    egress_usd = requests_month * payload_kb / 1024^2 * 0.09,\n    cost_usd = 25 + cron_usd + api_usd + egress_usd,\n    pass_fresh = stale_min + latency_ms / 60000 <= max_stale_min,\n    pass_payload = payload_kb <= max_payload_kb,\n    pass_privacy = grain == \"aggregate\" | rls,\n    pass_cost = cost_usd <= budget_usd\n  )\n\ncheck %>%\n  select(payload_kb, latency_ms, stale_min, cost_usd,\n         pass_fresh, pass_payload, pass_privacy, pass_cost)",
+        "sql": "-- Supabase schema skeleton for the air_quality brief\nCREATE TABLE air_quality_raw (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  unit_id text NOT NULL,\n  observed_at timestamptz NOT NULL,\n  value double precision\n);"
+      }
+    },
+    {
+      "name": "aq_matview",
+      "state": {
+        "brief": "air_quality",
+        "compute": "matview",
+        "refresh_min": 60,
+        "grain": "aggregate",
+        "rls": false
+      },
+      "readouts": {
+        "payload_kb": 98.5,
+        "latency_ms": 83.152,
+        "stale_min": 60,
+        "cost_usd": 38.8802056844482,
+        "pass_fresh": "pass",
+        "pass_payload": "pass",
+        "pass_privacy": "pass",
+        "pass_cost": "pass"
+      },
+      "code": {
+        "r": "check = briefs %>%\n  filter(brief == \"air_quality\") %>%\n  mutate(\n    compute = \"matview\", refresh_min = 60, grain = \"aggregate\", rls = FALSE,\n    rows_sent = if_else(compute == \"client\", rows_window, groups),\n    rows_scanned = if_else(compute == \"matview\", groups, rows_window),\n    payload_kb = rows_sent * bytes_per_row / 1024,\n    latency_ms = 80 + rows_scanned / 500,\n    stale_min = if_else(compute == \"matview\", pmax(refresh_min, cadence_min), cadence_min),\n    cron_usd = if_else(compute == \"matview\", 43200 / refresh_min * rows_window * 3e-7, 0),\n    api_usd = if_else(compute == \"endpoint\", requests_month * rows_window * 5e-10, 0),\n    egress_usd = requests_month * payload_kb / 1024^2 * 0.09,\n    cost_usd = 25 + cron_usd + api_usd + egress_usd,\n    pass_fresh = stale_min + latency_ms / 60000 <= max_stale_min,\n    pass_payload = payload_kb <= max_payload_kb,\n    pass_privacy = grain == \"aggregate\" | rls,\n    pass_cost = cost_usd <= budget_usd\n  )\n\ncheck %>%\n  select(payload_kb, latency_ms, stale_min, cost_usd,\n         pass_fresh, pass_payload, pass_privacy, pass_cost)",
+        "sql": "-- Supabase schema skeleton for the air_quality brief\nCREATE TABLE air_quality_raw (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  unit_id text NOT NULL,\n  observed_at timestamptz NOT NULL,\n  value double precision\n);\n\nCREATE MATERIALIZED VIEW air_quality_daily AS\nSELECT unit_id, date_trunc('day', observed_at) AS day, avg(value) AS mean_value\nFROM air_quality_raw GROUP BY 1, 2;\n\nSELECT cron.schedule('refresh_air_quality', '0 */1 * * *',\n  'REFRESH MATERIALIZED VIEW air_quality_daily');"
+      }
+    },
+    {
+      "name": "aq_person",
+      "state": {
+        "brief": "air_quality",
+        "compute": "matview",
+        "refresh_min": 60,
+        "grain": "person",
+        "rls": false
+      },
+      "readouts": {
+        "payload_kb": 98.5,
+        "latency_ms": 83.152,
+        "stale_min": 60,
+        "cost_usd": 38.8802056844482,
+        "pass_fresh": "pass",
+        "pass_payload": "pass",
+        "pass_privacy": "fail",
+        "pass_cost": "pass"
+      },
+      "code": {
+        "r": "check = briefs %>%\n  filter(brief == \"air_quality\") %>%\n  mutate(\n    compute = \"matview\", refresh_min = 60, grain = \"person\", rls = FALSE,\n    rows_sent = if_else(compute == \"client\", rows_window, groups),\n    rows_scanned = if_else(compute == \"matview\", groups, rows_window),\n    payload_kb = rows_sent * bytes_per_row / 1024,\n    latency_ms = 80 + rows_scanned / 500,\n    stale_min = if_else(compute == \"matview\", pmax(refresh_min, cadence_min), cadence_min),\n    cron_usd = if_else(compute == \"matview\", 43200 / refresh_min * rows_window * 3e-7, 0),\n    api_usd = if_else(compute == \"endpoint\", requests_month * rows_window * 5e-10, 0),\n    egress_usd = requests_month * payload_kb / 1024^2 * 0.09,\n    cost_usd = 25 + cron_usd + api_usd + egress_usd,\n    pass_fresh = stale_min + latency_ms / 60000 <= max_stale_min,\n    pass_payload = payload_kb <= max_payload_kb,\n    pass_privacy = grain == \"aggregate\" | rls,\n    pass_cost = cost_usd <= budget_usd\n  )\n\ncheck %>%\n  select(payload_kb, latency_ms, stale_min, cost_usd,\n         pass_fresh, pass_payload, pass_privacy, pass_cost)",
+        "sql": "-- Supabase schema skeleton for the air_quality brief\nCREATE TABLE air_quality_raw (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  unit_id text NOT NULL,\n  person_id uuid NOT NULL,\n  observed_at timestamptz NOT NULL,\n  value double precision\n);\n\nCREATE MATERIALIZED VIEW air_quality_daily AS\nSELECT unit_id, person_id, date_trunc('day', observed_at) AS day, avg(value) AS mean_value\nFROM air_quality_raw GROUP BY 1, 2, 3;\n\nSELECT cron.schedule('refresh_air_quality', '0 */1 * * *',\n  'REFRESH MATERIALIZED VIEW air_quality_daily');"
+      }
+    },
+    {
+      "name": "aq_rls",
+      "state": {
+        "brief": "air_quality",
+        "compute": "matview",
+        "refresh_min": 60,
+        "grain": "person",
+        "rls": true
+      },
+      "readouts": {
+        "payload_kb": 98.5,
+        "latency_ms": 83.152,
+        "stale_min": 60,
+        "cost_usd": 38.8802056844482,
+        "pass_fresh": "pass",
+        "pass_payload": "pass",
+        "pass_privacy": "pass",
+        "pass_cost": "pass"
+      },
+      "code": {
+        "r": "check = briefs %>%\n  filter(brief == \"air_quality\") %>%\n  mutate(\n    compute = \"matview\", refresh_min = 60, grain = \"person\", rls = TRUE,\n    rows_sent = if_else(compute == \"client\", rows_window, groups),\n    rows_scanned = if_else(compute == \"matview\", groups, rows_window),\n    payload_kb = rows_sent * bytes_per_row / 1024,\n    latency_ms = 80 + rows_scanned / 500,\n    stale_min = if_else(compute == \"matview\", pmax(refresh_min, cadence_min), cadence_min),\n    cron_usd = if_else(compute == \"matview\", 43200 / refresh_min * rows_window * 3e-7, 0),\n    api_usd = if_else(compute == \"endpoint\", requests_month * rows_window * 5e-10, 0),\n    egress_usd = requests_month * payload_kb / 1024^2 * 0.09,\n    cost_usd = 25 + cron_usd + api_usd + egress_usd,\n    pass_fresh = stale_min + latency_ms / 60000 <= max_stale_min,\n    pass_payload = payload_kb <= max_payload_kb,\n    pass_privacy = grain == \"aggregate\" | rls,\n    pass_cost = cost_usd <= budget_usd\n  )\n\ncheck %>%\n  select(payload_kb, latency_ms, stale_min, cost_usd,\n         pass_fresh, pass_payload, pass_privacy, pass_cost)",
+        "sql": "-- Supabase schema skeleton for the air_quality brief\nCREATE TABLE air_quality_raw (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  unit_id text NOT NULL,\n  person_id uuid NOT NULL,\n  observed_at timestamptz NOT NULL,\n  value double precision\n);\n\nCREATE MATERIALIZED VIEW air_quality_daily AS\nSELECT unit_id, person_id, date_trunc('day', observed_at) AS day, avg(value) AS mean_value\nFROM air_quality_raw GROUP BY 1, 2, 3;\n\nSELECT cron.schedule('refresh_air_quality', '0 */1 * * *',\n  'REFRESH MATERIALIZED VIEW air_quality_daily');\n\nALTER TABLE air_quality_raw ENABLE ROW LEVEL SECURITY;\nCREATE POLICY own_rows ON air_quality_raw\n  FOR SELECT USING (person_id = auth.uid());"
+      }
+    },
+    {
+      "name": "bikes",
+      "state": {
+        "brief": "bluebikes",
+        "compute": "endpoint",
+        "refresh_min": 15,
+        "grain": "aggregate",
+        "rls": false
+      },
+      "readouts": {
+        "payload_kb": 19.5,
+        "latency_ms": 679.04,
+        "stale_min": 15,
+        "cost_usd": 38.6290328582764,
+        "pass_fresh": "pass",
+        "pass_payload": "pass",
+        "pass_privacy": "pass",
+        "pass_cost": "pass"
+      },
+      "code": {
+        "r": "check = briefs %>%\n  filter(brief == \"bluebikes\") %>%\n  mutate(\n    compute = \"endpoint\", refresh_min = 15, grain = \"aggregate\", rls = FALSE,\n    rows_sent = if_else(compute == \"client\", rows_window, groups),\n    rows_scanned = if_else(compute == \"matview\", groups, rows_window),\n    payload_kb = rows_sent * bytes_per_row / 1024,\n    latency_ms = 80 + rows_scanned / 500,\n    stale_min = if_else(compute == \"matview\", pmax(refresh_min, cadence_min), cadence_min),\n    cron_usd = if_else(compute == \"matview\", 43200 / refresh_min * rows_window * 3e-7, 0),\n    api_usd = if_else(compute == \"endpoint\", requests_month * rows_window * 5e-10, 0),\n    egress_usd = requests_month * payload_kb / 1024^2 * 0.09,\n    cost_usd = 25 + cron_usd + api_usd + egress_usd,\n    pass_fresh = stale_min + latency_ms / 60000 <= max_stale_min,\n    pass_payload = payload_kb <= max_payload_kb,\n    pass_privacy = grain == \"aggregate\" | rls,\n    pass_cost = cost_usd <= budget_usd\n  )\n\ncheck %>%\n  select(payload_kb, latency_ms, stale_min, cost_usd,\n         pass_fresh, pass_payload, pass_privacy, pass_cost)",
+        "sql": "-- Supabase schema skeleton for the bluebikes brief\nCREATE TABLE bluebikes_raw (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  unit_id text NOT NULL,\n  observed_at timestamptz NOT NULL,\n  value double precision\n);"
+      }
+    },
+    {
+      "name": "social",
+      "state": {
+        "brief": "social_infra",
+        "compute": "matview",
+        "refresh_min": 1440,
+        "grain": "aggregate",
+        "rls": false
+      },
+      "readouts": {
+        "payload_kb": 37.5,
+        "latency_ms": 80.8,
+        "stale_min": 525600,
+        "cost_usd": 29.3814689524536,
+        "pass_fresh": "pass",
+        "pass_payload": "pass",
+        "pass_privacy": "pass",
+        "pass_cost": "pass"
+      },
+      "code": {
+        "r": "check = briefs %>%\n  filter(brief == \"social_infra\") %>%\n  mutate(\n    compute = \"matview\", refresh_min = 1440, grain = \"aggregate\", rls = FALSE,\n    rows_sent = if_else(compute == \"client\", rows_window, groups),\n    rows_scanned = if_else(compute == \"matview\", groups, rows_window),\n    payload_kb = rows_sent * bytes_per_row / 1024,\n    latency_ms = 80 + rows_scanned / 500,\n    stale_min = if_else(compute == \"matview\", pmax(refresh_min, cadence_min), cadence_min),\n    cron_usd = if_else(compute == \"matview\", 43200 / refresh_min * rows_window * 3e-7, 0),\n    api_usd = if_else(compute == \"endpoint\", requests_month * rows_window * 5e-10, 0),\n    egress_usd = requests_month * payload_kb / 1024^2 * 0.09,\n    cost_usd = 25 + cron_usd + api_usd + egress_usd,\n    pass_fresh = stale_min + latency_ms / 60000 <= max_stale_min,\n    pass_payload = payload_kb <= max_payload_kb,\n    pass_privacy = grain == \"aggregate\" | rls,\n    pass_cost = cost_usd <= budget_usd\n  )\n\ncheck %>%\n  select(payload_kb, latency_ms, stale_min, cost_usd,\n         pass_fresh, pass_payload, pass_privacy, pass_cost)",
+        "sql": "-- Supabase schema skeleton for the social_infra brief\nCREATE TABLE social_infra_raw (\n  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  unit_id text NOT NULL,\n  observed_at timestamptz NOT NULL,\n  value double precision\n);\n\nCREATE MATERIALIZED VIEW social_infra_daily AS\nSELECT unit_id, date_trunc('day', observed_at) AS day, avg(value) AS mean_value\nFROM social_infra_raw GROUP BY 1, 2;\n\nSELECT cron.schedule('refresh_social_infra', '0 3 * * *',\n  'REFRESH MATERIALIZED VIEW social_infra_daily');"
+      }
+    }
+  ],
+  "ack": []
+}
