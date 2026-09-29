@@ -3,6 +3,7 @@
 
 # Set working directory
 setwd("/cloud/project/workshops/28C_datacom")
+library(DBI); library(RSQLite); library(dplyr); library(dbplyr)
 
 # Test 1 ################################
 
@@ -27,7 +28,7 @@ system.time({
 db %>%
   tbl("tally_rush_edges") %>%
   filter(rush == "pm", day == "2011-09-30") %>%
-  mutate(year = stringr::str_sub(day, 1,4)) %>%
+  mutate(year = substr(day, 1, 4)) %>%
   group_by(year, start_code, end_code) %>%
   summarize(trip = n()) 
 
@@ -35,11 +36,11 @@ db %>%
 db %>%
   tbl("tally_rush_edges") %>%
   filter(rush == "pm", day == "2011-09-30") %>%
-  mutate(year = stringr::str_sub(day, 1,4)) %>%
+  mutate(year = substr(day, 1, 4)) %>%
   group_by(year, start_code, end_code) %>%
   summarize(trip = n()) %>%
   collect() %>%
-  saveRDS("28C_datacom/helper_data.rds")
+  saveRDS("helper_data.rds")
 
 
 dbDisconnect(db)
@@ -70,8 +71,8 @@ db = dbConnect(drv = RSQLite::SQLite(), "bluebikes.sqlite")
 data = db %>%
   tbl("tally_rush_edges") %>%
   filter(rush == "pm") %>%
-  mutate(year = stringr::str_sub(day, 1,4)) %>%
-  filter(year == input$year) %>%
+  mutate(year = substr(day, 1, 4)) %>%
+  filter(year == !!input$year) %>%
   head(1) %>%
   collect()
 
