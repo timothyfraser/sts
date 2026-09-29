@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:43747/labs/v3c-betas-by-group.html",
+    "url": "http://127.0.0.1:39487/labs/v3c-betas-by-group.html",
     "type": "document",
     "status": 200,
-    "bytes": 21923
+    "bytes": 22043
   },
   {
-    "url": "http://127.0.0.1:43747/assets/sts.css",
+    "url": "http://127.0.0.1:39487/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:43747/labs/kit/lab.css",
+    "url": "http://127.0.0.1:39487/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:43747/labs/kit/lab.js",
+    "url": "http://127.0.0.1:39487/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:43747/labs/data/v3c.csv",
+    "url": "http://127.0.0.1:39487/labs/data/v3c.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 117307

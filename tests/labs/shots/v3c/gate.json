@@ -1,13 +1,13 @@
 {
   "lab": "v3c",
   "ok": true,
-  "checked_at": "2026-09-29T08:24:57.908Z",
+  "checked_at": "2026-09-29T08:38:27.036Z",
   "results": [
     {
       "ok": true,
       "check": "a",
       "state": "-",
-      "msg": "0 console errors; first render 873 ms < 1500 ms"
+      "msg": "0 console errors; first render 900 ms < 1500 ms"
     },
     {
       "ok": true,
