@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anatomy of an API call</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<style>
+/* v4a: sequence diagram, URL bar, annotation, payload and timing. Tokens only. */
+.v4a-seq text{font:12px var(--mono);fill:var(--bench-muted)}
+.v4a-seq .lane-head{fill:var(--bench-panel);stroke:var(--bench-line)}
+.v4a-seq .lane-name{fill:var(--bench-ink);font-weight:600}
+.v4a-seq .lifeline{stroke:var(--bench-line);stroke-dasharray:3 4}
+.v4a-seq .hop{stroke:var(--bench-line);stroke-width:1.5;fill:none}
+.v4a-seq .hop.is-on{stroke:var(--bench-muted)}
+.v4a-seq .hop.is-skipped{stroke-dasharray:2 5;opacity:.45}
+.v4a-seq .hop-label{fill:var(--bench-ink)}
+.v4a-seq .hop-label.is-skipped{fill:var(--bench-muted);text-decoration:line-through}
+.v4a-seq .packet{fill:var(--y);stroke:var(--indigo);stroke-width:1}
+.v4a-seq .packet.back{fill:var(--b)}
+.v4a-seq .cache-box{fill:transparent;stroke:var(--bench-line);stroke-dasharray:4 3}
+.v4a-seq .cache-box.is-hit{stroke:var(--y);stroke-dasharray:none;fill:var(--bench-panel)}
+.v4a-seq .cache-box.is-off{opacity:.35}
+.v4a-strip{display:grid;gap:10px;margin-top:10px}
+.v4a-strip h2{font:600 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bench-muted);margin:0 0 4px}
+.v4a-url,.v4a-anno,.v4a-json{font:12px/1.5 var(--mono);background:var(--bench-panel);border:1px solid var(--bench-line);border-radius:6px;padding:8px 10px;margin:0;overflow-wrap:anywhere;white-space:pre-wrap;color:var(--bench-ink)}
+.v4a-url .q{color:var(--y)}
+.v4a-anno span{display:block;opacity:.45}
+.v4a-anno span.is-lit{opacity:1;color:var(--y)}
+.v4a-json{max-height:9.5em;overflow:auto}
+.v4a-size{font:600 15px var(--mono);font-variant-numeric:tabular-nums;color:var(--b)}
+.v4a-bar{height:12px;border-radius:6px;background:var(--bench-panel);border:1px solid var(--bench-line);overflow:hidden;display:flex}
+.v4a-bar i{display:block;height:100%}
+.v4a-bar .net{background:var(--bench-muted)} .v4a-bar .r{background:var(--y)} .v4a-bar .xfer{background:var(--b)}
+.v4a-send{background:var(--y);color:var(--y-ink);border:0;border-radius:6px;padding:8px 12px;font:600 13px var(--sans);cursor:pointer;min-height:44px}
+.v4a-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:720px){.v4a-two{grid-template-columns:1fr}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+</head>
+<body data-lab="v4a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 4 · APIs: React, Plumber and R</p>
+    <h1>Anatomy of an API call</h1>
+    <p class="lab-lo"><strong>Learning objective:</strong> Trace a request from a React component through a Plumber endpoint to an R function and back, and decide what should be computed on the server vs sent to the client.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="seq"></div>
+      <div class="v4a-strip">
+        <div><h2>Request URL (built from the controls)</h2><p class="v4a-url" id="url"></p></div>
+        <div class="v4a-two">
+          <div><h2>plumber.R annotation that answers it</h2><pre class="v4a-anno" id="anno"></pre></div>
+          <div><h2>JSON payload <span class="v4a-size" id="size"></span></h2><pre class="v4a-json" id="json" tabindex="0" aria-label="JSON payload preview"></pre></div>
+        </div>
+        <div><h2>Response time, modeled: <span class="v4a-size" id="ms"></span></h2>
+          <div class="v4a-bar" id="bar" role="img" aria-label="Response time split into network, R and transfer"><i class="net"></i><i class="r"></i><i class="xfer"></i></div></div>
+      </div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Origin airport <select id="c-origin"><option>EWR</option><option>JFK</option><option>LGA</option></select></label>
+          <label>Month <select id="c-month"></select></label>
+          <label>Statistic per carrier <select id="c-stat"><option value="mean_arr_delay">mean arrival delay (min)</option><option value="pct_late">% arriving over 15 min late</option><option value="n_flights">number of flights</option></select></label>
+          <div role="group" aria-label="Where the work happens" class="lab-seg" id="c-mode"><button type="button" data-v="server" aria-pressed="true">Compute on server</button><button type="button" data-v="raw" aria-pressed="false">Send raw rows</button></div>
+          <div role="group" aria-label="Caching with memoise" class="lab-seg" id="c-cache"><button type="button" data-v="off" aria-pressed="true">Cache off</button><button type="button" data-v="on" aria-pressed="false">Cache on (memoise)</button></div>
+          <div role="group" aria-label="Endpoint design" class="lab-seg" id="c-design"><button type="button" data-v="shared" aria-pressed="true">One shared endpoint</button><button type="button" data-v="per_chart" aria-pressed="false">One per chart</button></div>
+          <button type="button" class="v4a-send" id="c-send">Send the same request again</button>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>request packet</li><li><i style="background:var(--b)"></i>response packet</li><li><i style="background:var(--bench-line)"></i>skipped step</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">Switch to "Send raw rows" for JFK in January. How large is the JSON payload?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">About 330 bytes, the same as the summary</button><button class="lc-option" data-correct="true">About 603 KB (602,825 bytes for 9,161 rows)</button><button class="lc-option" data-correct="false">About 24 MB, the whole flights file</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "payload bytes" in the sidebar, or the size above the JSON preview. The filter still runs on the server; only the summarize step moves to the browser.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>602,825 bytes: every one of the 9,161 January JFK flights travels as a JSON row. Computing on the server sends 10 carrier rows in 327 bytes, about 1,800 times smaller.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Turn caching on, then press "Send the same request again". Which steps are skipped the second time?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">None: every call re-runs the whole path</button><button class="lc-option" data-correct="true">The R step: memoise returns the stored data frame, so filter and summarize do not run</button><button class="lc-option" data-correct="false">The fetch from React: the browser never contacts Plumber</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Watch the dashed hop in the diagram and "steps run" in the sidebar. memoise lives inside plumber.R, not in the browser.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>The second call still goes React to Plumber and back as JSON, but get_data() answers from the cache: steps run falls from 4 to 3 and the modeled time from 131 ms to 25 ms.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Two charts on a dashboard need the same statistic. What is the trade-off of one shared endpoint vs one endpoint per chart?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Per-chart endpoints are always faster because each one is smaller</button><button class="lc-option" data-correct="false">A shared endpoint sends more bytes because it serves two charts</button><button class="lc-option" data-correct="true">A shared endpoint computes once and caches once, but its parameters must cover both charts; per-chart endpoints are simpler to read but repeat the work</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Toggle the endpoint design: the payload bytes do not change, but the URL and the annotation do.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Both designs send the same 327 bytes here. A shared /stat endpoint takes a stat parameter, runs one R function and fills one cache that both charts hit; /carrier-mean-arr-delay is clearer on its own but a second chart means a second endpoint, a second function and a second cache.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var sel = document.getElementById('c-month');
+  MONTHS.forEach(function (m, i) { var o = document.createElement('option'); o.value = String(i + 1); o.textContent = m; sel.appendChild(o); });
+
+  // ---- code templates: build EXACTLY the strings code_r() / code_js() build in tools/labs/prep/v4a.R
+  var STAT = { mean_arr_delay: 'mean(arr_delay, na.rm = TRUE)', pct_late: 'mean(arr_delay > 15, na.rm = TRUE) * 100', n_flights: 'n()' };
+  function shared(s) { return s.mode === 'server' && s.design === 'shared'; }
+  function pathOf(s) { if (s.mode === 'raw') return '/rows'; return s.design === 'shared' ? '/stat' : '/carrier-' + s.stat.replace(/_/g, '-'); }
+  function queryOf(s) { var q = 'origin=' + s.origin + '&month=' + s.month; if (shared(s)) q += '&stat=' + s.stat; return q; }
+  function coreR(s) {
+    var body, args;
+    if (s.mode === 'raw') {
+      body = '  flights %>%\n    filter(origin == !!origin, month == !!month) %>%\n    select(month, day, carrier, origin, arr_delay)\n'; args = 'origin, month';
+    } else if (s.design === 'shared') {
+      body = '  flights %>%\n    filter(origin == !!origin, month == !!month) %>%\n    group_by(carrier) %>%\n    summarize(value = switch(stat,\n' +
+        '      mean_arr_delay = ' + STAT.mean_arr_delay + ',\n      pct_late = ' + STAT.pct_late + ',\n      n_flights = ' + STAT.n_flights + '), .groups = "drop")\n';
+      args = 'origin, month, stat';
+    } else {
+      body = '  flights %>%\n    filter(origin == !!origin, month == !!month) %>%\n    group_by(carrier) %>%\n    summarize(value = ' + STAT[s.stat] + ', .groups = "drop")\n'; args = 'origin, month';
+    }
+    return 'get_data = function(' + args + ') {\n' + body + '}\n' + (s.cache ? 'get_data = memoise(get_data)\n' : '');
+  }
+  function fnArgs(s) { return 'origin = "' + s.origin + '", month = ' + s.month + (shared(s) ? ', stat = "' + s.stat + '"' : ''); }
+  function annoLines(s) {
+    return ['#* @param origin EWR, JFK or LGA', '#* @param month 1 to 12'].concat(shared(s) ? ['#* @param stat mean_arr_delay, pct_late or n_flights'] : [])
+      .concat(['#* @serializer json', '#* @get ' + pathOf(s), 'function(' + fnArgs(s) + ') {']);
+  }
+  function codeR(s) {
+    return '# plumber.R\nlibrary(plumber)\nlibrary(dplyr)\nlibrary(readr)\n' + (s.cache ? 'library(memoise)\n' : '') + '\n' +
+      'flights = read_csv("flights.csv", show_col_types = FALSE)\n\n' + coreR(s) + '\n' +
+      annoLines(s).join('\n') + '\n  get_data(' + (shared(s) ? 'origin, as.integer(month), stat' : 'origin, as.integer(month)') + ')\n}\n\n' +
+      '# testme.R\nlibrary(httr2)\nlibrary(dplyr)\n\nresp = request("http://localhost:8000' + pathOf(s) + '") %>%\n  req_url_query(' + fnArgs(s) + ') %>%\n  req_perform()\nresp %>% resp_body_json(simplifyVector = TRUE)';
+  }
+  function codeJS(s) {
+    return '// React component: fetch the endpoint for the current controls\nconst API = "http://localhost:8000";\nconst url = API + "' + pathOf(s) + '?' + queryOf(s) + '";\n\n' +
+      'useEffect(() => {\n  fetch(url)\n    .then((res) => res.json())\n    .then((data) => setRows(data));\n}, [url]);';
+  }
+
+  // ---- the modeled timing, same constants as the prep script
+  function timing(s, rec) {
+    var hit = !!s.cache && s.call >= 2;
+    var r = hit ? 0 : 60 + Math.round(rec.rows_matched / 200), x = Math.round(rec.payload_bytes / 5000);
+    return { hit: hit, net: 25, r: r, x: x, total: 25 + r + x };
+  }
+  function recOf(s, d) {
+    var stat = s.mode === 'raw' ? 'any' : s.stat;
+    return d.index[s.origin + '|' + s.month + '|' + stat + '|' + s.mode];
+  }
+
+  // ---- sequence diagram
+  var W = Math.max(300, document.getElementById('seq').clientWidth || 600), narrow = W < 520, H = narrow ? 250 : 270;
+  var LANES = ['React', 'Plumber', 'R function'], lx = LANES.map(function (_, i) { return W * (i * 2 + 1) / 6; });
+  var svg = d3.select('#seq').append('svg').attr('class', 'v4a-seq').attr('viewBox', '0 0 ' + W + ' ' + H)
+    .attr('role', 'img').attr('aria-label', 'Sequence diagram: React sends a request to Plumber, Plumber calls the R function or its cache, and JSON returns to React');
+  var boxW = narrow ? 84 : 110;
+  LANES.forEach(function (n, i) {
+    svg.append('rect').attr('class', 'lane-head').attr('x', lx[i] - boxW / 2).attr('y', 6).attr('width', boxW).attr('height', 26).attr('rx', 5);
+    svg.append('text').attr('class', 'lane-name').attr('x', lx[i]).attr('y', 23).attr('text-anchor', 'middle').text(n);
+    svg.append('line').attr('class', 'lifeline').attr('x1', lx[i]).attr('x2', lx[i]).attr('y1', 32).attr('y2', H - 8);
+  });
+  var cache = svg.append('rect').attr('class', 'cache-box').attr('x', lx[1] + 8).attr('y', 132).attr('width', (lx[2] - lx[1]) - 16).attr('height', 34).attr('rx', 5);
+  var cacheT = svg.append('text').attr('x', (lx[1] + lx[2]) / 2).attr('y', 153).attr('text-anchor', 'middle');
+  // hops: y, from lane, to lane
+  var HOPS = [{ y: 56, a: 0, b: 1, k: 'req' }, { y: 92, a: 1, b: 2, k: 'call' }, { y: 196, a: 2, b: 1, k: 'df' }, { y: 234, a: 1, b: 0, k: 'json' }];
+  var hopG = svg.append('g').selectAll('g').data(HOPS).join('g');
+  hopG.append('line').attr('class', 'hop').attr('x1', function (h) { return lx[h.a]; }).attr('x2', function (h) { return lx[h.b]; })
+    .attr('y1', function (h) { return h.y; }).attr('y2', function (h) { return h.y; });
+  hopG.append('text').attr('class', 'hop-label').attr('x', function (h) { return (lx[h.a] + lx[h.b]) / 2; }).attr('y', function (h) { return h.y - 6; }).attr('text-anchor', 'middle');
+  var packet = svg.append('circle').attr('class', 'packet').attr('r', 6).attr('cx', lx[0]).attr('cy', HOPS[0].y);
+
+  // Payload weight on a log scale: 10 carrier rows vs 9,161 flight rows must look different on the return hops.
+  function weight(rows) { return Math.log10(Math.max(1, rows) + 1); }
+  function labels(s, rec, t) {
+    var bytes = rec.payload_bytes >= 10000 ? Math.round(rec.payload_bytes / 1000) + ' KB' : rec.payload_bytes + ' B';
+    return {
+      req: narrow ? 'GET ' + pathOf(s) : 'GET ' + pathOf(s) + '?…',
+      call: t.hit ? 'get_data() skipped' : 'get_data(' + s.origin + ', ' + s.month + ')',
+      df: t.hit ? 'R did not run' : rec.payload_rows.toLocaleString('en-US') + ' rows',
+      json: 'JSON · ' + bytes
+    };
+  }
+
+  // Packets travel the hops in order; a cache hit short-circuits at the cache box with a flash.
+  var first = true;  // the first render lands in its end state (no trip on page load)
+  function travel(s, rec, t) {
+    var rBack = 4 + 2.2 * weight(rec.payload_rows);
+    if (first || Lab.motion.reduced()) { first = false; packet.interrupt().attr('r', rBack).attr('cx', lx[0]).attr('cy', HOPS[3].y).classed('back', true); return Promise.resolve(); }
+    var seq = t.hit
+      ? [[lx[0], HOPS[0].y, false], [lx[1], HOPS[0].y, false], [lx[1] + 8, 149, false], [lx[1], HOPS[3].y, true], [lx[0], HOPS[3].y, true]]
+      : [[lx[0], HOPS[0].y, false], [lx[1], HOPS[0].y, false], [lx[1], HOPS[1].y, false], [lx[2], HOPS[1].y, false], [lx[2], HOPS[2].y, true], [lx[1], HOPS[2].y, true], [lx[1], HOPS[3].y, true], [lx[0], HOPS[3].y, true]];
+    packet.interrupt().attr('r', 5).attr('cx', seq[0][0]).attr('cy', seq[0][1]).classed('back', false);
+    var p = Promise.resolve();
+    seq.slice(1).forEach(function (pt, i) {
+      p = p.then(function () {
+        packet.classed('back', pt[2]);
+        var dur = pt[0] === seq[i][0] ? 90 : 240;
+        return packet.transition().duration(dur).ease(d3.easeCubicOut).attr('cx', pt[0]).attr('cy', pt[1]).attr('r', pt[2] ? rBack : 5).end().catch(function () {});
+      });
+      if (t.hit && i === 1) p = p.then(function () { return Lab.motion.animate(cache.node(), { opacity: [0.3, 1, 0.3, 1] }, { duration: 0.35 }); });
+    });
+    return p;
+  }
+
+  var lab = Lab.create({
+    id: 'v4a',
+    initial: { origin: 'JFK', month: 1, stat: 'mean_arr_delay', mode: 'server', cache: false, call: 1, design: 'shared' },
+    states: {
+      baseline:     { origin: 'JFK', month: 1, stat: 'mean_arr_delay', mode: 'server', cache: false, call: 1, design: 'shared' },
+      raw_rows:     { origin: 'JFK', month: 1, stat: 'mean_arr_delay', mode: 'raw', cache: false, call: 1, design: 'shared' },
+      cache_first:  { origin: 'JFK', month: 1, stat: 'mean_arr_delay', mode: 'server', cache: true, call: 1, design: 'shared' },
+      cache_second: { origin: 'JFK', month: 1, stat: 'mean_arr_delay', mode: 'server', cache: true, call: 2, design: 'shared' },
+      per_chart:    { origin: 'JFK', month: 1, stat: 'mean_arr_delay', mode: 'server', cache: false, call: 1, design: 'per_chart' },
+      lga_july:     { origin: 'LGA', month: 7, stat: 'pct_late', mode: 'server', cache: false, call: 1, design: 'shared' }
+    },
+    load: function () {
+      return fetch('data/v4a.json').then(function (r) { if (!r.ok) throw new Error('data/v4a.json: HTTP ' + r.status); return r.json(); }).then(function (d) {
+        d.index = {}; d.records.forEach(function (r) { d.index[r.origin + '|' + r.month + '|' + r.stat + '|' + r.mode] = r; });
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var rec = recOf(s, d); if (!rec) throw new Error('no record for ' + s.origin + ' month ' + s.month);
+      var t = timing(s, rec), L = labels(s, rec, t);
+      hopG.select('line').attr('class', function (h) { return 'hop' + (t.hit && (h.k === 'call' || h.k === 'df') ? ' is-skipped' : ' is-on'); })
+        .style('stroke-width', function (h) { return (h.k === 'df' && !t.hit) || h.k === 'json' ? (1 + 1.1 * weight(rec.payload_rows)) + 'px' : null; });
+      hopG.select('text').attr('class', function (h) { return 'hop-label' + (t.hit && (h.k === 'call' || h.k === 'df') ? ' is-skipped' : ''); }).text(function (h) { return L[h.k]; });
+      cache.attr('class', 'cache-box' + (t.hit ? ' is-hit' : s.cache ? '' : ' is-off'));
+      cacheT.text(!s.cache ? 'no cache' : t.hit ? 'memoise: cache hit' : 'memoise: stored for next call');
+      document.getElementById('url').innerHTML = 'http://localhost:8000' + pathOf(s) + '<span class="q">?' + queryOf(s).replace(/&/g, '&amp;') + '</span>';
+      var anno = document.getElementById('anno'); anno.textContent = '';
+      annoLines(s).forEach(function (l) { var sp = document.createElement('span'); sp.textContent = l; if (/@get|@param/.test(l)) sp.className = 'is-lit'; anno.appendChild(sp); });
+      document.getElementById('json').textContent = s.mode === 'raw'
+        ? rec.preview.replace(/\]$/, ',\n … ' + (rec.payload_rows - 3).toLocaleString('en-US') + ' more rows]') : rec.preview.replace(/\},\{/g, '},\n{');
+      document.getElementById('size').textContent = rec.payload_bytes.toLocaleString('en-US') + ' bytes';
+      document.getElementById('ms').textContent = t.total + ' ms';
+      var max = 300, bar = document.getElementById('bar').children;
+      [t.net, t.r, t.x].forEach(function (v, i) { bar[i].style.width = Math.min(100, v / max * 100) + '%'; });
+      return travel(s, rec, t);
+    },
+    // readouts() mirrors readouts_of() in the prep script
+    readouts: function (s, d) {
+      var rec = recOf(s, d), t = timing(s, rec);
+      return { rows_matched: rec.rows_matched, payload_rows: rec.payload_rows, payload_bytes: rec.payload_bytes, steps_run: t.hit ? 3 : 4,
+        path: t.hit ? 'React > Plumber > cache > JSON' : 'React > Plumber > R > JSON', url: pathOf(s) + '?' + queryOf(s), time_ms: t.total };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'payload_bytes', label: 'payload bytes', fmt: 0 }, { key: 'payload_rows', label: 'rows in payload', fmt: 0 },
+      { key: 'rows_matched', label: 'flights matched', fmt: 0 }, { key: 'steps_run', label: 'steps run', fmt: 0 }, { key: 'time_ms', label: 'modeled ms', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return 'call ' + s.call + ': ' + r.path + ' · of 336,776 flights'; },
+    code: { r: codeR, js: codeJS },
+    onState: function (s) {
+      document.getElementById('c-origin').value = s.origin; sel.value = String(s.month); document.getElementById('c-stat').value = s.stat;
+      document.getElementById('c-stat').disabled = s.mode === 'raw';
+      var seg = { 'c-mode': s.mode, 'c-cache': s.cache ? 'on' : 'off', 'c-design': s.design };
+      Object.keys(seg).forEach(function (id) { document.querySelectorAll('#' + id + ' button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === seg[id])); }); });
+    }
+  });
+  // Sync the controls to the initial state (onState only runs on setState).
+  (function (s) { document.getElementById('c-origin').value = s.origin; sel.value = String(s.month); document.getElementById('c-stat').value = s.stat; })(lab.getState());
+  // Changing any parameter makes it a new request (call 1); "send again" repeats it.
+  function on(id, ev, f) { document.getElementById(id).addEventListener(ev, f); }
+  on('c-origin', 'change', function (e) { lab.setState({ origin: e.target.value, call: 1 }); });
+  on('c-month', 'change', function (e) { lab.setState({ month: +e.target.value, call: 1 }); });
+  on('c-stat', 'change', function (e) { lab.setState({ stat: e.target.value, call: 1 }); });
+  document.querySelectorAll('#c-mode button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ mode: b.dataset.v, call: 1 }); }); });
+  document.querySelectorAll('#c-cache button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ cache: b.dataset.v === 'on', call: 1 }); }); });
+  document.querySelectorAll('#c-design button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ design: b.dataset.v, call: 1 }); }); });
+  on('c-send', 'click', function () { lab.setState({ call: lab.getState().call + 1 }); });
+})();
+</script>
+</body>
+</html>
