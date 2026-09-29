@@ -1,6 +1,0 @@
-{
-  "tool": "impeccable@4.1.0 detect --json",
-  "page": "docs-v3/labs/v3c-betas-by-group.html",
-  "ack": [],
-  "findings": []
-}
