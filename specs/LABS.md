@@ -11,9 +11,16 @@ Every lab is built from the shared kit in `docs-v3/labs/kit/` (`lab.js`, `lab.cs
 
 ## 1. Anatomy (top to bottom)
 
-1. **Header**: eyebrow (chapter section), `h1` naming the concept, one-line learning outcome.
+1. **Header**: eyebrow (chapter section), `h1` naming the concept, one-line learning outcome
+   in `p.lab-lo`. The line starts with exactly one lead-in, `Learning objective:` (capital L,
+   colon, plain text or wrapped in `<strong>`), then the objective as a sentence:
+   `<p class="lab-lo"><strong>Learning objective:</strong> Explain what ...</p>`.
+   Not `Learning objective.`, not `Objective:`, not lower case.
 2. **Bench** (`section.lab-bench`): a dark indigo-to-purple surface in BOTH themes.
    - **Visual** (left, fluid): the D3 figure (map, chart, table view) in `.lab-stage`.
+     The stage is as tall as its figure: the visual column does not stretch to the sidebar's
+     height, and the stage reserves 320px only while it is still empty (loading). Give the figure
+     its own height (an SVG viewBox, or an explicit height); never size it to 100% of the stage.
    - **Status bar** under the visual: `loading`, `applying`, `ready` + a one-line summary, or `error: ...`.
    - **Sidebar** (right, 340px): Controls, Metrics, Legend, and optionally a linked Rows table.
      Metrics show the raw value in mono tabular numerals plus a **delta against baseline**
@@ -27,6 +34,11 @@ Every lab is built from the shared kit in `docs-v3/labs/kit/` (`lab.js`, `lab.cs
    - LC 02 **intervene**: change a control, predict or explain what moved.
    - LC 03 **transfer**: apply the idea to a new case.
    Each has exactly 3 options (exactly one correct), a Hint, and Reveal answer.
+   The LC heading may be `h2` or `h3` (pick whichever keeps the page's heading order); the kit
+   styles `.lab-lc h2` and `.lab-lc h3` identically (small mono caps), so every lab looks the same.
+5. **Radii** come only from the DESIGN.md `rounded` scale: 6px for controls (select, segmented
+   buttons, Copy, LC options and buttons, legend swatches), 8px for cards (LC cards, code panel),
+   10px for the bench. No other radius literals in the kit or a lab page.
 
 ## 2. Real data, prepared in R
 

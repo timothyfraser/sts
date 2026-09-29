@@ -2,18 +2,5 @@
   "tool": "impeccable@4.1.0 detect --json",
   "page": "docs-v3/labs/v5a-normalize-it.html",
   "ack": [],
-  "findings": [
-    {
-      "antipattern": "design-system-radius",
-      "name": "Radius outside DESIGN.md",
-      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v5a/docs-v3/labs/v5a-normalize-it.html",
-      "line": 0,
-      "snippet": "border-radius 2px on i is outside the DESIGN.md rounded scale",
-      "advisory": true,
-      "ignoreValue": "2px"
-    }
-  ]
+  "findings": []
 }

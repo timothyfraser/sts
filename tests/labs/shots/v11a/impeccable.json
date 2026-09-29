@@ -4,36 +4,12 @@
   "ack": [],
   "findings": [
     {
-      "antipattern": "design-system-radius",
-      "name": "Radius outside DESIGN.md",
-      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v11a/docs-v3/labs/v11a-isochrones.html",
-      "line": 0,
-      "snippet": "border-radius 4px on select \"Union SquareCity Hall Borough Hall (Broo\" is outside the DESIGN.md rounded scale",
-      "advisory": true,
-      "ignoreValue": "4px"
-    },
-    {
-      "antipattern": "design-system-radius",
-      "name": "Radius outside DESIGN.md",
-      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v11a/docs-v3/labs/v11a-isochrones.html",
-      "line": 0,
-      "snippet": "border-radius 2px on i is outside the DESIGN.md rounded scale",
-      "advisory": true,
-      "ignoreValue": "2px"
-    },
-    {
       "antipattern": "repeating-stripes-gradient",
       "name": "Repeating-gradient stripes",
       "description": "Repeating-gradient stripes used as surface decoration are a recurring generated-UI signature. Reach for a deliberate texture or leave the surface plain.",
       "severity": "advisory",
       "category": "slop",
-      "file": "/home/user/wt/sts-v11a/docs-v3/labs/v11a-isochrones.html",
+      "file": "/home/user/wt/sts-kit1/docs-v3/labs/v11a-isochrones.html",
       "line": 0,
       "snippet": "repeating-gradient decorative stripes",
       "advisory": true

@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:46469/labs/v11a-isochrones.html",
+    "url": "http://127.0.0.1:40781/labs/v11a-isochrones.html",
     "type": "document",
     "status": 200,
     "bytes": 17726
   },
   {
-    "url": "http://127.0.0.1:46469/assets/sts.css",
+    "url": "http://127.0.0.1:40781/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:46469/labs/kit/lab.css",
+    "url": "http://127.0.0.1:40781/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
-    "bytes": 7050
+    "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:46469/labs/kit/lab.js",
+    "url": "http://127.0.0.1:40781/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,25 +30,25 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:46469/labs/data/v11a-nodes.csv",
+    "url": "http://127.0.0.1:40781/labs/data/v11a-nodes.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 107068
   },
   {
-    "url": "http://127.0.0.1:46469/labs/data/v11a-edges.csv",
+    "url": "http://127.0.0.1:40781/labs/data/v11a-edges.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 202298
   },
   {
-    "url": "http://127.0.0.1:46469/labs/data/v11a-bg.json",
+    "url": "http://127.0.0.1:40781/labs/data/v11a-bg.json",
     "type": "fetch",
     "status": 200,
     "bytes": 175100
   },
   {
-    "url": "http://127.0.0.1:46469/labs/data/v11a-sites.json",
+    "url": "http://127.0.0.1:40781/labs/data/v11a-sites.json",
     "type": "fetch",
     "status": 200,
     "bytes": 572

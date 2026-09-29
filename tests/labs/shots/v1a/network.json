@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:43429/labs/v1a-query-builder.html",
+    "url": "http://127.0.0.1:41161/labs/v1a-query-builder.html",
     "type": "document",
     "status": 200,
     "bytes": 23728
   },
   {
-    "url": "http://127.0.0.1:43429/assets/sts.css",
+    "url": "http://127.0.0.1:41161/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:43429/labs/kit/lab.css",
+    "url": "http://127.0.0.1:41161/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
-    "bytes": 7050
+    "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:43429/labs/kit/lab.js",
+    "url": "http://127.0.0.1:41161/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,13 +30,13 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:43429/labs/data/v1a_flights.csv",
+    "url": "http://127.0.0.1:41161/labs/data/v1a_flights.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 72555
   },
   {
-    "url": "http://127.0.0.1:43429/labs/data/v1a_airlines.csv",
+    "url": "http://127.0.0.1:41161/labs/data/v1a_airlines.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 361

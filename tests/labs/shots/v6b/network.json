@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:33871/labs/v6b-crs-lab.html",
+    "url": "http://127.0.0.1:35871/labs/v6b-crs-lab.html",
     "type": "document",
     "status": 200,
     "bytes": 21401
   },
   {
-    "url": "http://127.0.0.1:33871/assets/sts.css",
+    "url": "http://127.0.0.1:35871/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:33871/labs/kit/lab.css",
+    "url": "http://127.0.0.1:35871/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
-    "bytes": 7050
+    "bytes": 7302
   },
   {
-    "url": "http://127.0.0.1:33871/labs/kit/lab.js",
+    "url": "http://127.0.0.1:35871/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 15131
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:33871/labs/data/v6b.json",
+    "url": "http://127.0.0.1:35871/labs/data/v6b.json",
     "type": "fetch",
     "status": 200,
     "bytes": 115639

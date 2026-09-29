@@ -2,30 +2,5 @@
   "tool": "impeccable@4.1.0 detect --json",
   "page": "docs-v3/labs/v11c-od-flows.html",
   "ack": [],
-  "findings": [
-    {
-      "antipattern": "design-system-radius",
-      "name": "Radius outside DESIGN.md",
-      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v11c/docs-v3/labs/v11c-od-flows.html",
-      "line": 0,
-      "snippet": "border-radius 4px on select \"01005001,0005,000\" is outside the DESIGN.md rounded scale",
-      "advisory": true,
-      "ignoreValue": "4px"
-    },
-    {
-      "antipattern": "design-system-radius",
-      "name": "Radius outside DESIGN.md",
-      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-v11c/docs-v3/labs/v11c-od-flows.html",
-      "line": 0,
-      "snippet": "border-radius 2px on i is outside the DESIGN.md rounded scale",
-      "advisory": true,
-      "ignoreValue": "2px"
-    }
-  ]
+  "findings": []
 }
