@@ -9,7 +9,6 @@
 <script src="kit/lab.js"></script>
 <style>
   #metrics .lab-delta.down{color:var(--bench-up)} #metrics .lab-delta.up{color:var(--bench-down)}
-  #metrics [data-key="trips"] .lab-delta{color:var(--bench-muted)}
   .v9b-cap{margin:6px 0 0;font-size:12px;color:var(--bench-ink, inherit)}
 .v9-plan{margin:8px 0 0;padding:8px 10px;background:var(--bench-panel);border:1px solid var(--bench-line);border-radius:6px;font:12px/1.45 var(--mono);color:var(--bench-ink);white-space:pre-wrap;overflow-wrap:anywhere}
 .v9-bytes{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 8px;align-items:center;font:12px var(--mono);color:var(--bench-muted);margin-top:8px}
@@ -52,7 +51,7 @@
           <div role="group" aria-label="Partition by month" class="lab-seg" id="c-partition"><button type="button" data-v="false" aria-pressed="true">One table</button><button type="button" data-v="true" aria-pressed="false">Partition by month</button></div>
           <div role="group" aria-label="Materialised view" class="lab-seg" id="c-mview"><button type="button" data-v="false" aria-pressed="true">Raw rows</button><button type="button" data-v="true" aria-pressed="false">Materialised view</button></div>
         </div></div>
-      <div><h2>Metrics</h2><div id="metrics"></div><p class="v9b-cap">Arrows compare with the no-index Postgres scan; fewer = less read.</p></div>
+      <div><h2>Metrics</h2><div id="metrics"></div><p class="v9b-cap">Cost rows compare with the no-index Postgres scan of the same query; fewer = less read. The result never changes.</p></div>
       <div><h2>Legend</h2><ul class="lab-legend"><li><i style="background:var(--y)"></i>block read</li><li><i style="background:var(--bench-line)"></i>block skipped</li></ul></div>
     </aside>
   </section>
@@ -95,6 +94,19 @@
       bytes_read: s.engine === 'postgres' ? rowStore : colStore, bytes_row_store: rowStore, bytes_col_store: colStore, trips: trips };
   }
   var Z = null;
+  // Deltas: only the cost rows, each against the plain Postgres scan of the SAME query (the kit's own
+  // delta is against the first state shown, which made the result row look as if an index changed it).
+  var COST = ['rows_scanned', 'pages_scanned', 'bytes_read'], F0 = d3.format(',');
+  function deltas(s, r) {
+    var b = model({ query: s.query, index: false, partition: false, mview: false, engine: 'postgres' }, Z);
+    document.querySelectorAll('#metrics .lab-metric').forEach(function (el) {
+      var k = el.dataset.key, de = el.querySelector('.lab-delta'), cost = COST.indexOf(k) >= 0;
+      var v = r[k], c = cost && v !== b[k];
+      el.classList.toggle('is-changed', c);
+      de.className = 'lab-delta' + (c ? (v > b[k] ? ' up' : ' down') : '');
+      de.textContent = c ? (v > b[k] ? '+' : '\u2212') + F0(Math.abs(v - b[k])) : '';
+    });
+  }
   function whereOf(s) {
     if (s.query === 'station') return "start_code = '" + Z.station + "'";
     if (s.query === 'month') return "day >= '" + Z.month + "-01' AND day < '" + nextMonth(Z.month) + "-01'";
@@ -231,7 +243,7 @@
       { key: 'rows_scanned', label: 'rows scanned', fmt: 0 }, { key: 'pages_scanned', label: 'pages read', fmt: 0 },
       { key: 'bytes_read', label: 'bytes read', fmt: 0 }, { key: 'trips', label: 'result: trips', fmt: 0 }] },
     status: document.getElementById('status'), codeEl: document.getElementById('code'),
-    statusText: function (s, r) { return d3.format(',')(r.rows_scanned) + ' of ' + d3.format(',')(Z.n_rows) + ' rows scanned'; },
+    statusText: function (s, r) { deltas(s, r); return d3.format(',')(r.rows_scanned) + ' of ' + d3.format(',')(Z.n_rows) + ' rows scanned'; },
     code: { r: function (s) { return codeR(s); }, sql: function (s) { return codeSql(s); } },
     onState: function (s) {
       document.getElementById('c-query').value = s.query; document.getElementById('c-engine').value = s.engine;
