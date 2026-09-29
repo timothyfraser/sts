@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Buffers vs isochrones</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+#map svg{display:block;width:100%;height:auto}
+#map .bg{stroke:var(--bench-line);stroke-width:.5}
+#map .bg.is-net{fill:var(--y);fill-opacity:.55}
+#map .bg.is-diff{fill:url(#v11a-hatch)}
+#map .bg.is-off{fill:transparent}
+#map .road{stroke:var(--bench-muted);stroke-opacity:.35;stroke-width:.6;fill:none}
+#map .road.is-on{stroke:var(--y);stroke-opacity:1;stroke-width:1.3}
+#map .ring{fill:none;stroke:var(--bench-ink);stroke-width:1.5;stroke-dasharray:5 4}
+#map .origin{fill:var(--bench-ink);stroke:#14121a;stroke-width:2}
+#map svg{overflow:hidden}
+#metrics .lab-metric dd{white-space:nowrap;overflow-wrap:normal}
+#metrics .lab-metric dt{overflow-wrap:normal}
+@media (max-width:720px){#metrics .lab-metrics{grid-template-columns:1fr}}
+.v11a-hatch-line{stroke:var(--bench-down);stroke-width:1.6}
+</style>
+</head>
+<body data-lab="v11a">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 11 · Accessibility and service areas</p>
+    <h1>Straight line vs street network: what can people reach?</h1>
+    <p class="lab-lo"><strong>Learning objective:</strong> Contrast Euclidean buffers with network-distance isochrones and measure accessibility as population reached.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="map"></div>
+      <div id="status"></div>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <label>Origin <select id="c-site">
+            <option value="union_sq" selected>Union Square</option><option value="city_hall">City Hall</option>
+            <option value="borough_hall">Borough Hall (Brooklyn)</option><option value="williamsburg">Williamsburg waterfront</option>
+            <option value="lic">Long Island City</option></select></label>
+          <div role="group" aria-label="Reach measured by" class="lab-seg" id="c-mode"><button type="button" data-v="buffer" aria-pressed="false">Buffer</button><button type="button" data-v="network" aria-pressed="true">Network</button></div>
+          <div role="group" aria-label="Travel budget in minutes" class="lab-seg" id="c-budget"><button type="button" data-v="5" aria-pressed="false">5 min</button><button type="button" data-v="10" aria-pressed="true">10 min</button><button type="button" data-v="15" aria-pressed="false">15 min</button></div>
+          <label>Speed assumption <select id="c-speed"><option value="15">15 km/h (bike)</option><option value="25" selected>25 km/h (city driving)</option><option value="40">40 km/h (free flow)</option></select></label>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Legend</h2><ul class="lab-legend">
+        <li><i style="background:var(--y)"></i>block group reached along streets</li>
+        <li><i style="background:repeating-linear-gradient(45deg,var(--bench-down) 0 2px,transparent 2px 5px)"></i>inside the buffer only (overstated)</li>
+        <li><i style="border:1.5px dashed var(--bench-ink);background:transparent"></i>straight-line buffer</li></ul></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">From Union Square with a 10-minute budget at 25 km/h, how many people does the buffer claim, and how many can the street network actually reach?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="true">About 522,000 by buffer vs 417,000 by network</button><button class="lc-option" data-correct="false">The same number: 10 minutes is 10 minutes either way</button><button class="lc-option" data-correct="false">About 417,000 by buffer vs 522,000 by network</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "people, buffer" and "people, network" in the sidebar at baseline.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>The buffer claims 521,671 people; the network reaches 417,128. A straight line is never longer than the street path, so the buffer can only claim more, here 25.1 % more.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Move the origin to the Williamsburg waterfront, across the East River. Why does the gap between buffer and isochrone grow?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">Brooklyn is denser, so every method counts more people</button><button class="lc-option" data-correct="true">The circle reaches over the water into Manhattan, but the streets must detour through a bridge</button><button class="lc-option" data-correct="false">The speed limit is lower in Brooklyn</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Look at where the hatched block groups sit, and which side of the river they are on.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>The buffer claims 689,430 people, the network 392,978: 75.4 % overstated. The hatched area is mostly across the river, which a straight line crosses for free and a street path can only cross at a bridge.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">When is a Euclidean buffer an acceptable stand-in for an accessibility metric?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">Always, as long as the radius matches the travel time</button><button class="lc-option" data-correct="true">On a dense, gridded, well-connected street network with no barriers; not near rivers, rail yards or highways</button><button class="lc-option" data-correct="false">Only when the travel budget is long, because errors average out</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Compare "% overstated" for Union Square (inland grid) and Long Island City (waterfront).</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>A buffer is a fair first pass where streets form a fine grid in every direction. Barriers such as water break that: from Long Island City the buffer overstates reach by more than double. Use network distance whenever a barrier or a sparse network sits inside the radius.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var SITE_LABEL = { union_sq: 'Union Square', city_hall: 'City Hall', borough_hall: 'Borough Hall', williamsburg: 'Williamsburg waterfront', lic: 'Long Island City' };
+  function reachM(s) { return s.speed * 1000 / 60 * s.budget; }
+  function r2(v) { return Math.round(v * 100) / 100; }
+  // measure() mirrors the panel R: buffer_m = straight line; network_m = precomputed igraph distances + snap.
+  function measure(s, d) {
+    var site = d.sites[s.site], reach = reachM(s), out = { pb: 0, pn: 0, ab: 0, an: 0, n: 0, p: 0, inB: {}, inN: {} };
+    d.bg.forEach(function (b) {
+      var bm = Math.sqrt(Math.pow(b.x - site.x, 2) + Math.pow(b.y - site.y, 2)), nm = b.net_m[s.site];
+      var ib = bm <= reach, inn = nm <= reach;
+      if (ib) { out.pb += b.pop; out.ab += b.area_km2; out.inB[b.id] = 1; }
+      if (inn) { out.pn += b.pop; out.an += b.area_km2; out.inN[b.id] = 1; }
+      if (s.mode === 'buffer' ? ib : inn) { out.n += 1; out.p += b.pop; }
+    });
+    out.reach = reach;
+    return out;
+  }
+  // Dijkstra on the published graph: the order in which streets light up (motion only).
+  function dijkstra(d, src) {
+    var dist = new Float64Array(d.nNodes + 1).fill(Infinity), done = new Uint8Array(d.nNodes + 1), heap = [[0, src]];
+    dist[src] = 0;
+    function push(it) { heap.push(it); var i = heap.length - 1; while (i > 0) { var p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; var t = heap[p]; heap[p] = heap[i]; heap[i] = t; i = p; } }
+    function pop() { var top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; var i = 0; for (;;) { var l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; var t = heap[m]; heap[m] = heap[i]; heap[i] = t; i = m; } } return top; }
+    while (heap.length) { var it = pop(), u = it[1]; if (done[u]) continue; done[u] = 1;
+      d.adj[u].forEach(function (a) { var nd = dist[u] + a[1]; if (nd < dist[a[0]]) { dist[a[0]] = nd; push([nd, a[0]]); } }); }
+    return dist;
+  }
+  var W = Math.max(300, document.getElementById('map').clientWidth || 640), H = Math.round(W * (W < 520 ? 0.9 : 0.66));
+  var svg = d3.select('#map').append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('role', 'img')
+    .attr('aria-label', 'Map of Lower Manhattan and the Brooklyn and Queens waterfront: streets reached from the origin, the straight-line buffer, and block groups reached');
+  var pat = svg.append('defs').append('pattern').attr('id', 'v11a-hatch').attr('patternUnits', 'userSpaceOnUse').attr('width', 6).attr('height', 6).attr('patternTransform', 'rotate(45)');
+  pat.append('line').attr('class', 'v11a-hatch-line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6);
+  var proj, gBg, gRoad, ring, origin, roads, polys, first = true, lastSite = null, distCache = {};
+
+  var lab = Lab.create({
+    id: 'v11a', initial: { site: 'union_sq', mode: 'network', budget: 10, speed: 25 },
+    states: {
+      baseline: { site: 'union_sq', mode: 'network', budget: 10, speed: 25 },
+      buffer: { site: 'union_sq', mode: 'buffer', budget: 10, speed: 25 },
+      river: { site: 'williamsburg', mode: 'network', budget: 10, speed: 25 },
+      budget15: { site: 'union_sq', mode: 'network', budget: 15, speed: 25 },
+      speed40: { site: 'union_sq', mode: 'network', budget: 10, speed: 40 }
+    },
+    load: function () {
+      return Promise.all([d3.csv('data/v11a-nodes.csv', d3.autoType), d3.csv('data/v11a-edges.csv', d3.autoType),
+        d3.json('data/v11a-bg.json'), d3.json('data/v11a-sites.json')]).then(function (a) {
+        var nodes = a[0], edges = a[1], d = { bg: a[2], sites: {}, edges: edges, nNodes: nodes.length, xy: [], adj: [] };
+        a[3].forEach(function (s) { d.sites[s.site] = s; });
+        // Fit to the block groups (the study area); long TIGER roads that run past it are clipped by the viewBox.
+        proj = d3.geoMercator().fitExtent([[6, 6], [W - 6, H - 6]], { type: 'MultiPoint', coordinates: [].concat.apply([], a[2].map(function (b) { return b.ring; })) });
+        for (var i = 0; i <= nodes.length; i++) d.adj.push([]);
+        nodes.forEach(function (n) { d.xy[n.node] = proj([n.lon, n.lat]); });
+        edges.forEach(function (e) { d.adj[e.from].push([e.to, e.length_m]); d.adj[e.to].push([e.from, e.length_m]); });
+        gBg = svg.append('g');
+        polys = gBg.selectAll('path').data(d.bg).join('path').attr('class', 'bg')
+          .attr('d', function (b) { return 'M' + b.ring.map(function (p) { return proj(p).map(function (v) { return v.toFixed(1); }).join(','); }).join('L') + 'Z'; });
+        gRoad = svg.append('g');
+        roads = gRoad.selectAll('line').data(edges).join('line').attr('class', 'road')
+          .attr('x1', function (e) { return d.xy[e.from][0]; }).attr('y1', function (e) { return d.xy[e.from][1]; })
+          .attr('x2', function (e) { return d.xy[e.to][0]; }).attr('y2', function (e) { return d.xy[e.to][1]; });
+        ring = svg.append('ellipse').attr('class', 'ring');
+        origin = svg.append('circle').attr('class', 'origin').attr('r', 6);
+        return d;
+      });
+    },
+    render: function (s, d) {
+      var m = measure(s, d), site = d.sites[s.site], c = proj([site.lon, site.lat]);
+      if (!distCache[s.site]) distCache[s.site] = dijkstra(d, site.node);
+      var dist = distCache[s.site], reach = m.reach;
+      var ry = c[1] - proj([site.lon, site.lat + reach / 111320])[1], rx = proj([site.lon + reach / (111320 * Math.cos(site.lat * Math.PI / 180)), site.lat])[0] - c[0];
+      polys.attr('class', function (b) {
+        var n = m.inN[b.id], bf = m.inB[b.id];
+        if (s.mode === 'network') return 'bg ' + (n ? 'is-net' : bf ? 'is-diff' : 'is-off');
+        return 'bg ' + (bf ? (n ? 'is-net' : 'is-diff') : 'is-off');
+      });
+      origin.attr('cx', c[0]).attr('cy', c[1]);
+      ring.attr('cx', c[0]).attr('cy', c[1]).attr('rx', rx).attr('ry', ry);
+      function on(e) { return Math.min(dist[e.from], dist[e.to]) <= reach; }
+      var key = [s.site, s.mode, s.budget, s.speed].join('|');
+      var animate = !first && key !== lastSite && !Lab.motion.reduced() && s.mode === 'network';
+      first = false; lastSite = key;
+      roads.interrupt();
+      if (!animate) { roads.attr('class', function (e) { return 'road' + (on(e) ? ' is-on' : ''); }); return Promise.resolve(); }
+      // The isochrone grows outward along the streets: each edge lights up at its Dijkstra distance.
+      roads.attr('class', 'road');
+      var t = roads.filter(on).transition().delay(function (e) { return 1400 * Math.min(dist[e.from], dist[e.to]) / reach; }).duration(0)
+        .attr('class', 'road is-on');
+      return t.end().catch(function () {});
+    },
+    readouts: function (s, d) {
+      var m = measure(s, d);
+      return { reach_m: m.reach, pop_buffer: m.pb, pop_network: m.pn, overstated_pct: Math.round(1000 * (m.pb - m.pn) / m.pn) / 10,
+        area_buffer_km2: r2(m.ab), area_network_km2: r2(m.an), bg_reached: m.n, pop_reached: m.p };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'pop_buffer', label: 'people, buffer', fmt: 0 }, { key: 'pop_network', label: 'people, network', fmt: 0 },
+      { key: 'overstated_pct', label: '% overstated by buffer', fmt: 1 }, { key: 'reach_m', label: 'reach (m)', fmt: 0 },
+      { key: 'area_buffer_km2', label: 'area, buffer (km²)', fmt: 2 }, { key: 'area_network_km2', label: 'area, network (km²)', fmt: 2 },
+      { key: 'bg_reached', label: 'block groups reached', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return SITE_LABEL[s.site] + ', ' + s.budget + ' min at ' + s.speed + ' km/h: ' + (s.mode === 'buffer' ? 'buffer' : 'street network') + ' reaches ' + r.pop_reached.toLocaleString('en-US') + ' people in ' + r.bg_reached + ' block groups'; },
+    // code.r builds EXACTLY the string code_r() builds in tools/labs/prep/v11a.R.
+    code: {
+      r: function (s) {
+        return 'library(dplyr)\nlibrary(igraph)\n\n' +
+          'site = sites %>% filter(site == "' + s.site + '")\n' +
+          'reach_m = ' + s.speed + ' * 1000 / 60 * ' + s.budget + '   # km/h to metres per minute, times minutes\n\n' +
+          '# Euclidean buffer: straight-line metres from the origin\n' +
+          'bg = bg %>% mutate(buffer_m = sqrt((x - site$x)^2 + (y - site$y)^2))\n\n' +
+          '# Network isochrone: shortest path along the streets, plus the walk to the nearest node\n' +
+          'g = graph_from_data_frame(edges %>% select(from, to, length_m), directed = FALSE,\n' +
+          '                          vertices = nodes %>% select(node))\n' +
+          'd = distances(g, v = as.character(site$node), weights = E(g)$length_m)\n' +
+          'bg = bg %>% mutate(network_m = round(d[1, as.character(node)] + snap_m, 1))\n\n' +
+          'reached = bg %>% filter(' + (s.mode === 'buffer' ? 'buffer_m' : 'network_m') + ' <= reach_m)\n\n' +
+          'bg %>% summarize(\n' +
+          '  reach_m = reach_m,\n' +
+          '  pop_buffer = sum(pop[buffer_m <= reach_m]),\n' +
+          '  pop_network = sum(pop[network_m <= reach_m]),\n' +
+          '  overstated_pct = round(100 * (pop_buffer - pop_network) / pop_network, 1),\n' +
+          '  area_buffer_km2 = round(sum(area_km2[buffer_m <= reach_m]), 2),\n' +
+          '  area_network_km2 = round(sum(area_km2[network_m <= reach_m]), 2),\n' +
+          '  bg_reached = nrow(reached),\n' +
+          '  pop_reached = sum(reached$pop))';
+      }
+    },
+    onState: function (s) {
+      document.getElementById('c-site').value = s.site;
+      document.getElementById('c-speed').value = String(s.speed);
+      document.querySelectorAll('#c-mode button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.mode)); });
+      document.querySelectorAll('#c-budget button').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === s.budget)); });
+    }
+  });
+  lab.ready.then(function () { lab.setState({}); });
+  document.getElementById('c-site').addEventListener('change', function (e) { lab.setState({ site: e.target.value }); });
+  document.getElementById('c-speed').addEventListener('change', function (e) { lab.setState({ speed: +e.target.value }); });
+  document.querySelectorAll('#c-mode button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ mode: b.dataset.v }); }); });
+  document.querySelectorAll('#c-budget button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ budget: +b.dataset.v }); }); });
+})();
+</script>
+</body>
+</html>

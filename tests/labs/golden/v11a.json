@@ -1,0 +1,119 @@
+{
+  "lab": "v11a",
+  "page": "docs-v3/labs/v11a-isochrones.html",
+  "generated_by": "tools/labs/prep/v11a.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "site": "union_sq",
+        "mode": "network",
+        "budget": 10,
+        "speed": 25
+      },
+      "readouts": {
+        "reach_m": 4166.66666666667,
+        "pop_buffer": 521671,
+        "pop_network": 417128,
+        "overstated_pct": 25.1,
+        "area_buffer_km2": 18.32,
+        "area_network_km2": 13.47,
+        "bg_reached": 308,
+        "pop_reached": 417128
+      },
+      "code": {
+        "r": "library(dplyr)\nlibrary(igraph)\n\nsite = sites %>% filter(site == \"union_sq\")\nreach_m = 25 * 1000 / 60 * 10   # km/h to metres per minute, times minutes\n\n# Euclidean buffer: straight-line metres from the origin\nbg = bg %>% mutate(buffer_m = sqrt((x - site$x)^2 + (y - site$y)^2))\n\n# Network isochrone: shortest path along the streets, plus the walk to the nearest node\ng = graph_from_data_frame(edges %>% select(from, to, length_m), directed = FALSE,\n                          vertices = nodes %>% select(node))\nd = distances(g, v = as.character(site$node), weights = E(g)$length_m)\nbg = bg %>% mutate(network_m = round(d[1, as.character(node)] + snap_m, 1))\n\nreached = bg %>% filter(network_m <= reach_m)\n\nbg %>% summarize(\n  reach_m = reach_m,\n  pop_buffer = sum(pop[buffer_m <= reach_m]),\n  pop_network = sum(pop[network_m <= reach_m]),\n  overstated_pct = round(100 * (pop_buffer - pop_network) / pop_network, 1),\n  area_buffer_km2 = round(sum(area_km2[buffer_m <= reach_m]), 2),\n  area_network_km2 = round(sum(area_km2[network_m <= reach_m]), 2),\n  bg_reached = nrow(reached),\n  pop_reached = sum(reached$pop))"
+      }
+    },
+    {
+      "name": "buffer",
+      "state": {
+        "site": "union_sq",
+        "mode": "buffer",
+        "budget": 10,
+        "speed": 25
+      },
+      "readouts": {
+        "reach_m": 4166.66666666667,
+        "pop_buffer": 521671,
+        "pop_network": 417128,
+        "overstated_pct": 25.1,
+        "area_buffer_km2": 18.32,
+        "area_network_km2": 13.47,
+        "bg_reached": 381,
+        "pop_reached": 521671
+      },
+      "code": {
+        "r": "library(dplyr)\nlibrary(igraph)\n\nsite = sites %>% filter(site == \"union_sq\")\nreach_m = 25 * 1000 / 60 * 10   # km/h to metres per minute, times minutes\n\n# Euclidean buffer: straight-line metres from the origin\nbg = bg %>% mutate(buffer_m = sqrt((x - site$x)^2 + (y - site$y)^2))\n\n# Network isochrone: shortest path along the streets, plus the walk to the nearest node\ng = graph_from_data_frame(edges %>% select(from, to, length_m), directed = FALSE,\n                          vertices = nodes %>% select(node))\nd = distances(g, v = as.character(site$node), weights = E(g)$length_m)\nbg = bg %>% mutate(network_m = round(d[1, as.character(node)] + snap_m, 1))\n\nreached = bg %>% filter(buffer_m <= reach_m)\n\nbg %>% summarize(\n  reach_m = reach_m,\n  pop_buffer = sum(pop[buffer_m <= reach_m]),\n  pop_network = sum(pop[network_m <= reach_m]),\n  overstated_pct = round(100 * (pop_buffer - pop_network) / pop_network, 1),\n  area_buffer_km2 = round(sum(area_km2[buffer_m <= reach_m]), 2),\n  area_network_km2 = round(sum(area_km2[network_m <= reach_m]), 2),\n  bg_reached = nrow(reached),\n  pop_reached = sum(reached$pop))"
+      }
+    },
+    {
+      "name": "river",
+      "state": {
+        "site": "williamsburg",
+        "mode": "network",
+        "budget": 10,
+        "speed": 25
+      },
+      "readouts": {
+        "reach_m": 4166.66666666667,
+        "pop_buffer": 689430,
+        "pop_network": 392978,
+        "overstated_pct": 75.4,
+        "area_buffer_km2": 25.93,
+        "area_network_km2": 15.3,
+        "bg_reached": 278,
+        "pop_reached": 392978
+      },
+      "code": {
+        "r": "library(dplyr)\nlibrary(igraph)\n\nsite = sites %>% filter(site == \"williamsburg\")\nreach_m = 25 * 1000 / 60 * 10   # km/h to metres per minute, times minutes\n\n# Euclidean buffer: straight-line metres from the origin\nbg = bg %>% mutate(buffer_m = sqrt((x - site$x)^2 + (y - site$y)^2))\n\n# Network isochrone: shortest path along the streets, plus the walk to the nearest node\ng = graph_from_data_frame(edges %>% select(from, to, length_m), directed = FALSE,\n                          vertices = nodes %>% select(node))\nd = distances(g, v = as.character(site$node), weights = E(g)$length_m)\nbg = bg %>% mutate(network_m = round(d[1, as.character(node)] + snap_m, 1))\n\nreached = bg %>% filter(network_m <= reach_m)\n\nbg %>% summarize(\n  reach_m = reach_m,\n  pop_buffer = sum(pop[buffer_m <= reach_m]),\n  pop_network = sum(pop[network_m <= reach_m]),\n  overstated_pct = round(100 * (pop_buffer - pop_network) / pop_network, 1),\n  area_buffer_km2 = round(sum(area_km2[buffer_m <= reach_m]), 2),\n  area_network_km2 = round(sum(area_km2[network_m <= reach_m]), 2),\n  bg_reached = nrow(reached),\n  pop_reached = sum(reached$pop))"
+      }
+    },
+    {
+      "name": "budget15",
+      "state": {
+        "site": "union_sq",
+        "mode": "network",
+        "budget": 15,
+        "speed": 25
+      },
+      "readouts": {
+        "reach_m": 6250,
+        "pop_buffer": 709638,
+        "pop_network": 622920,
+        "overstated_pct": 13.9,
+        "area_buffer_km2": 26.56,
+        "area_network_km2": 22.31,
+        "bg_reached": 449,
+        "pop_reached": 622920
+      },
+      "code": {
+        "r": "library(dplyr)\nlibrary(igraph)\n\nsite = sites %>% filter(site == \"union_sq\")\nreach_m = 25 * 1000 / 60 * 15   # km/h to metres per minute, times minutes\n\n# Euclidean buffer: straight-line metres from the origin\nbg = bg %>% mutate(buffer_m = sqrt((x - site$x)^2 + (y - site$y)^2))\n\n# Network isochrone: shortest path along the streets, plus the walk to the nearest node\ng = graph_from_data_frame(edges %>% select(from, to, length_m), directed = FALSE,\n                          vertices = nodes %>% select(node))\nd = distances(g, v = as.character(site$node), weights = E(g)$length_m)\nbg = bg %>% mutate(network_m = round(d[1, as.character(node)] + snap_m, 1))\n\nreached = bg %>% filter(network_m <= reach_m)\n\nbg %>% summarize(\n  reach_m = reach_m,\n  pop_buffer = sum(pop[buffer_m <= reach_m]),\n  pop_network = sum(pop[network_m <= reach_m]),\n  overstated_pct = round(100 * (pop_buffer - pop_network) / pop_network, 1),\n  area_buffer_km2 = round(sum(area_km2[buffer_m <= reach_m]), 2),\n  area_network_km2 = round(sum(area_km2[network_m <= reach_m]), 2),\n  bg_reached = nrow(reached),\n  pop_reached = sum(reached$pop))"
+      }
+    },
+    {
+      "name": "speed40",
+      "state": {
+        "site": "union_sq",
+        "mode": "network",
+        "budget": 10,
+        "speed": 40
+      },
+      "readouts": {
+        "reach_m": 6666.66666666667,
+        "pop_buffer": 726749,
+        "pop_network": 662975,
+        "overstated_pct": 9.6,
+        "area_buffer_km2": 27.29,
+        "area_network_km2": 24.38,
+        "bg_reached": 480,
+        "pop_reached": 662975
+      },
+      "code": {
+        "r": "library(dplyr)\nlibrary(igraph)\n\nsite = sites %>% filter(site == \"union_sq\")\nreach_m = 40 * 1000 / 60 * 10   # km/h to metres per minute, times minutes\n\n# Euclidean buffer: straight-line metres from the origin\nbg = bg %>% mutate(buffer_m = sqrt((x - site$x)^2 + (y - site$y)^2))\n\n# Network isochrone: shortest path along the streets, plus the walk to the nearest node\ng = graph_from_data_frame(edges %>% select(from, to, length_m), directed = FALSE,\n                          vertices = nodes %>% select(node))\nd = distances(g, v = as.character(site$node), weights = E(g)$length_m)\nbg = bg %>% mutate(network_m = round(d[1, as.character(node)] + snap_m, 1))\n\nreached = bg %>% filter(network_m <= reach_m)\n\nbg %>% summarize(\n  reach_m = reach_m,\n  pop_buffer = sum(pop[buffer_m <= reach_m]),\n  pop_network = sum(pop[network_m <= reach_m]),\n  overstated_pct = round(100 * (pop_buffer - pop_network) / pop_network, 1),\n  area_buffer_km2 = round(sum(area_km2[buffer_m <= reach_m]), 2),\n  area_network_km2 = round(sum(area_km2[network_m <= reach_m]), 2),\n  bg_reached = nrow(reached),\n  pop_reached = sum(reached$pop))"
+      }
+    }
+  ],
+  "ack": []
+}
