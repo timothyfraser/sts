@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:35075/labs/v5a-normalize-it.html",
+    "url": "http://127.0.0.1:44539/labs/v5a-normalize-it.html",
     "type": "document",
     "status": 200,
-    "bytes": 22115
+    "bytes": 22229
   },
   {
-    "url": "http://127.0.0.1:35075/assets/sts.css",
+    "url": "http://127.0.0.1:44539/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:35075/labs/kit/lab.css",
+    "url": "http://127.0.0.1:44539/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:35075/labs/kit/lab.js",
+    "url": "http://127.0.0.1:44539/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:35075/labs/data/v5a.json",
+    "url": "http://127.0.0.1:44539/labs/data/v5a.json",
     "type": "fetch",
     "status": 200,
     "bytes": 18641
