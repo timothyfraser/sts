@@ -1,0 +1,55 @@
+{
+  "tool": "impeccable@4.1.0 detect --json",
+  "page": "docs-v3/labs/v13b-deploy-anatomy.html",
+  "ack": [],
+  "findings": [
+    {
+      "antipattern": "design-system-radius",
+      "name": "Radius outside DESIGN.md",
+      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v13b/docs-v3/labs/v13b-deploy-anatomy.html",
+      "line": 0,
+      "snippet": "border-radius 4px on select \"all five listedsf missing\" is outside the DESIGN.md rounded scale",
+      "advisory": true,
+      "ignoreValue": "4px"
+    },
+    {
+      "antipattern": "design-system-radius",
+      "name": "Radius outside DESIGN.md",
+      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v13b/docs-v3/labs/v13b-deploy-anatomy.html",
+      "line": 0,
+      "snippet": "border-radius 2px on i is outside the DESIGN.md rounded scale",
+      "advisory": true,
+      "ignoreValue": "2px"
+    },
+    {
+      "antipattern": "design-system-font-size",
+      "name": "Font size outside DESIGN.md",
+      "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v13b/docs-v3/labs/v13b-deploy-anatomy.html",
+      "line": 13,
+      "snippet": "font-size: 0.8125rem is off the DESIGN.md type ramp",
+      "advisory": true,
+      "ignoreValue": "0.8125rem"
+    },
+    {
+      "antipattern": "design-system-radius",
+      "name": "Radius outside DESIGN.md",
+      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+      "severity": "advisory",
+      "category": "quality",
+      "file": "/home/user/wt/sts-v13b/docs-v3/labs/v13b-deploy-anatomy.html",
+      "line": 22,
+      "snippet": "border-radius: 5px is outside the DESIGN.md rounded scale",
+      "advisory": true,
+      "ignoreValue": "5px"
+    }
+  ]
+}
