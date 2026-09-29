@@ -1,6 +1,0 @@
-{
-  "tool": "impeccable@4.1.0 detect --json",
-  "page": "docs-v3/labs/v4a-api-anatomy.html",
-  "ack": [],
-  "findings": []
-}

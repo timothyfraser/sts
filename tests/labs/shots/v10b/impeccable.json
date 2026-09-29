@@ -1,6 +1,0 @@
-{
-  "tool": "impeccable@4.1.0 detect --json",
-  "page": "docs-v3/labs/v10b-k-hop-neighbours.html",
-  "ack": [],
-  "findings": []
-}

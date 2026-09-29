@@ -5,6 +5,9 @@
 > **Description**: Exercises for the course *Data Science for Socio-Technical Systems*\
 > **Author**: Tim Fraser, PhD
 
+
+> **Where is the course website?** This repository holds the **code and data** students use: `workshops/`, `data/`, `functions/`, `exemplars/`, and the cheatsheets in `docs/`. The course website, its interactive labs and lecture decks are published separately at <https://connect.systems-apps.com/sts/> and are not maintained in this repository.
+
 ------------------------------------------------------------------------
 
 ## 🧩 Summary
