@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:44309/labs/v7c-neighbours-and-spatial-lag.html",
+    "url": "http://127.0.0.1:37625/labs/v7c-neighbours-and-spatial-lag.html",
     "type": "document",
     "status": 200,
     "bytes": 19473
   },
   {
-    "url": "http://127.0.0.1:44309/assets/sts.css",
+    "url": "http://127.0.0.1:37625/assets/sts.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 13167
   },
   {
-    "url": "http://127.0.0.1:44309/labs/kit/lab.css",
+    "url": "http://127.0.0.1:37625/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:44309/labs/kit/lab.js",
+    "url": "http://127.0.0.1:37625/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,7 +30,7 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:44309/labs/data/v7c.json",
+    "url": "http://127.0.0.1:37625/labs/data/v7c.json",
     "type": "fetch",
     "status": 200,
     "bytes": 42217

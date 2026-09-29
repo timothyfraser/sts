@@ -2,18 +2,5 @@
   "tool": "impeccable@4.1.0 detect --json",
   "page": "docs-v3/labs/v8a-where-to-compute.html",
   "ack": [],
-  "findings": [
-    {
-      "antipattern": "design-system-radius",
-      "name": "Radius outside DESIGN.md",
-      "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
-      "severity": "advisory",
-      "category": "quality",
-      "file": "/home/user/wt/sts-kit3/docs-v3/labs/v8a-where-to-compute.html",
-      "line": 27,
-      "snippet": "border-radius 4px on div is outside the DESIGN.md rounded scale",
-      "advisory": true,
-      "ignoreValue": "4px"
-    }
-  ]
+  "findings": []
 }

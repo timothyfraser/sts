@@ -156,7 +156,7 @@
   var g = nodes.selectAll('g').data(LAYERS).join('g').attr('class', 'v14a-node')
     .attr('transform', function (d) { var p = pos(d.key); return 'translate(' + (p.x - nw / 2) + ',' + (p.y - nh / 2) + ')'; });
   g.append('rect').attr('width', nw).attr('height', nh).attr('rx', 6).attr('stroke-width', 1.5);
-  g.append('text').attr('x', nw / 2).attr('y', nh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 13).text(function (d) { return d.label; });
+  g.append('text').attr('x', nw / 2).attr('y', nh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 14).text(function (d) { return d.label; });
 
   // A link between two nodes; a link that skips an unused node bows around it instead of crossing its label.
   function linkPath(p) {
@@ -292,13 +292,13 @@
 <style>
 .v14a-note { color: var(--ink); font-size: 0.9rem; margin: 0.5rem 0 1.5rem; }
 .v14a-palette { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
-.v14a-pal-label { flex-basis: 100%; font-size: 12px; color: var(--bench-ink); }
-.v14a-palette button { font-family: inherit; font-size: 13px; line-height: 1.2; padding: 7px 12px; min-height: 36px; border: 1.5px dashed var(--bench-line); border-radius: 6px; background: transparent; color: var(--bench-ink); cursor: grab; }
+.v14a-pal-label { flex-basis: 100%; font-size: 14px; color: var(--bench-ink); }
+.v14a-palette button { font-family: inherit; font-size: 14px; line-height: 1.2; padding: 7px 12px; min-height: 36px; border: 1.5px dashed var(--bench-line); border-radius: 6px; background: transparent; color: var(--bench-ink); cursor: grab; }
 .v14a-palette button[aria-pressed="true"] { border-style: solid; border-color: var(--y); background: var(--bench-panel); }
 .v14a-palette button:focus-visible { outline: 2px solid var(--y); outline-offset: 2px; }
 #canvas { display: flex; flex-direction: column; justify-content: center; }
 .lab-stage.is-drop { outline: 2px dashed var(--y); outline-offset: -4px; }
-.v14a-export { margin: 8px 0 0; font-size: 13px; color: var(--bench-ink); }
+.v14a-export { margin: 8px 0 0; font-size: 14px; color: var(--bench-ink); }
 .v14a-export button { font: inherit; padding: 6px 12px; min-height: 36px; border: 1px solid var(--bench-line); border-radius: 6px; background: var(--bench-panel); color: var(--bench-ink); cursor: pointer; }
 .v14a-export button:focus-visible { outline: 2px solid var(--y); outline-offset: 2px; }
 /* Every estimate here is a cost: a rise reads as worse, a fall as better. */

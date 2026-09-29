@@ -1,24 +1,24 @@
 [
   {
-    "url": "http://127.0.0.1:42287/labs/v11c-od-flows.html",
+    "url": "http://127.0.0.1:38773/labs/v11c-od-flows.html",
     "type": "document",
     "status": 200,
     "bytes": 20608
   },
   {
-    "url": "http://127.0.0.1:42287/assets/sts.css",
-    "type": "stylesheet",
-    "status": 200,
-    "bytes": 13167
-  },
-  {
-    "url": "http://127.0.0.1:42287/labs/kit/lab.css",
+    "url": "http://127.0.0.1:38773/labs/kit/lab.css",
     "type": "stylesheet",
     "status": 200,
     "bytes": 7768
   },
   {
-    "url": "http://127.0.0.1:42287/labs/kit/lab.js",
+    "url": "http://127.0.0.1:38773/assets/sts.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 13167
+  },
+  {
+    "url": "http://127.0.0.1:38773/labs/kit/lab.js",
     "type": "script",
     "status": 200,
     "bytes": 16630
@@ -30,13 +30,13 @@
     "bytes": 279706
   },
   {
-    "url": "http://127.0.0.1:42287/labs/data/v11c-flows.csv",
+    "url": "http://127.0.0.1:38773/labs/data/v11c-flows.csv",
     "type": "fetch",
     "status": 200,
     "bytes": 15175
   },
   {
-    "url": "http://127.0.0.1:42287/labs/data/v11c-counties.geojson",
+    "url": "http://127.0.0.1:38773/labs/data/v11c-counties.geojson",
     "type": "fetch",
     "status": 200,
     "bytes": 39627

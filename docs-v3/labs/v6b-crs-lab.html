@@ -22,7 +22,7 @@
   <header class="lab-head">
     <p class="eyebrow">Chapter 6 · Coordinate reference systems</p>
     <h1>Why distances lie: the same polling places in three CRSs</h1>
-    <p class="lab-lo"><strong>Learning objective.</strong> Explain why distances and areas must be computed in a projected CRS, and transform correctly.</p>
+    <p class="lab-lo"><strong>Learning objective:</strong> Explain why distances and areas must be computed in a projected CRS, and transform correctly.</p>
   </header>
   <section class="lab-bench" aria-label="Lab bench">
     <div class="lab-visual">
@@ -192,8 +192,8 @@
       });
     },
     render: function (s, d) {
-      var S = screen(s), ms = (prev && !Lab.motion.reduced()) ? 900 : 0;
-      prev = s;
+      var S = screen(s), ms = (prev && (prev.crs !== s.crs || prev.buffer !== s.buffer) && !Lab.motion.reduced()) ? 900 : 0;
+      prev = { crs: s.crs, buffer: s.buffer };
       var marked = [d.pa, d.pb];
       // Ghost: the same precincts in the state-plane truth, fitted to the same frame, so the distortion reads when still.
       var G = screen({ crs: 26986 });
