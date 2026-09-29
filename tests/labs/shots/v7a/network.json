@@ -1,0 +1,44 @@
+[
+  {
+    "url": "http://127.0.0.1:46273/labs/v7a-grid-and-interpolate.html",
+    "type": "document",
+    "status": 200,
+    "bytes": 24710
+  },
+  {
+    "url": "http://127.0.0.1:46273/assets/sts.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 13167
+  },
+  {
+    "url": "http://127.0.0.1:46273/labs/kit/lab.css",
+    "type": "stylesheet",
+    "status": 200,
+    "bytes": 7050
+  },
+  {
+    "url": "http://127.0.0.1:46273/labs/kit/lab.js",
+    "type": "script",
+    "status": 200,
+    "bytes": 15131
+  },
+  {
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
+    "type": "script",
+    "status": 200,
+    "bytes": 279706
+  },
+  {
+    "url": "http://127.0.0.1:46273/labs/data/v7a_sites.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 865
+  },
+  {
+    "url": "http://127.0.0.1:46273/labs/data/v7a_readings.csv",
+    "type": "fetch",
+    "status": 200,
+    "bytes": 143193
+  }
+]
