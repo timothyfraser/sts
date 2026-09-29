@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connect, query, collect</title>
+<link rel="stylesheet" href="../assets/sts.css">
+<link rel="stylesheet" href="kit/lab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="kit/lab.js"></script>
+<style>
+  .v1b-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: s; }
+  .v1b-steps li { font: 12px/1.35 var(--mono); color: var(--bench-muted); padding: 3px 6px; border-left: 3px solid transparent; }
+  .v1b-steps li.is-now { color: var(--bench-ink); border-left-color: var(--y); }
+  .v1b-steps li.is-done { color: var(--bench-ink); }
+  .v1b-step-nav { margin-top: 6px; }
+  .v1b-step-nav button:disabled { color: var(--bench-muted); cursor: default; }
+  .v1b-step-nav button + button { border-left: 1px solid var(--bench-line); }
+  .v1b-steps li[aria-current=step] { font-weight: 600; }
+  .v1b-secret { border: 1px solid var(--bench-line); border-radius: 6px; padding: 8px 10px; font: 12px/1.4 var(--mono); color: var(--bench-ink); }
+  .v1b-secret strong { display: block; font-family: var(--sans); margin-bottom: 2px; }
+  .v1b-secret.is-exposed { border: 2px solid var(--bench-down); }
+  .v1b-secret.is-exposed strong { color: var(--bench-down); }
+  .v1b-secret.is-safe strong { color: var(--bench-up); }
+  #plot { flex: none; min-height: 0; }
+  .v1b-sqlbox { flex: 1; display: flex; flex-direction: column; margin-top: 8px; border: 1px solid var(--bench-line); border-radius: 6px; padding: 8px 10px; background: var(--bench-panel); }
+  .v1b-sqlbox h2 { margin: 0 0 4px; font: 600 12px/1.3 var(--sans); color: var(--bench-muted); text-transform: none; letter-spacing: 0; }
+  .v1b-sql { margin: 0; font: 12px/1.45 var(--mono); color: var(--bench-ink); white-space: pre-wrap; word-break: break-word; }
+  .v1b-caption { font-size: 12px; color: var(--bench-muted); margin: 6px 0 0; }
+</style>
+</head>
+<body data-lab="v1b">
+<main class="lab-page">
+  <header class="lab-head">
+    <p class="eyebrow">Chapter 1 · Databases: connect, query, collect</p>
+    <h1>Where the work happens: in the database, or on your laptop</h1>
+    <p class="lab-lo"><strong>Learning objective.</strong> Describe the database connection life cycle (dbConnect with env vars, dbListTables, tbl, lazy query, collect, dbDisconnect) and why pushing work to the database beats collecting early.</p>
+  </header>
+  <section class="lab-bench" aria-label="Lab bench">
+    <div class="lab-visual">
+      <div class="lab-stage" id="plot"></div>
+      <p class="v1b-caption" id="wire-caption">Packets on the wire grow with the log of rows moved.</p>
+      <div class="v1b-sqlbox"><h2>SQL sent to the database (show_query)</h2><pre class="v1b-sql" id="sql-sent" aria-label="SQL sent (show_query)"></pre></div>
+      <div id="status"></div>
+      <p class="v1b-caption">Numbers computed by running this pipeline on the SQLite copy of the same flights table; the SQL shown is what that engine received.</p>
+    </div>
+    <aside class="lab-side">
+      <div><h2>Controls</h2>
+        <div class="lab-controls">
+          <div><span id="lbl-collect">Where collect() sits</span>
+            <div role="group" aria-labelledby="lbl-collect" class="lab-seg" id="c-collect"><button type="button" data-v="first" aria-pressed="false">First line</button><button type="button" data-v="after_filter" aria-pressed="false">After filter</button><button type="button" data-v="after_summarise" aria-pressed="true">After summarise</button></div></div>
+          <div><span id="lbl-creds">Credentials</span>
+            <div role="group" aria-labelledby="lbl-creds" class="lab-seg" id="c-creds"><button type="button" data-v="env" aria-pressed="true">.env file</button><button type="button" data-v="code" aria-pressed="false">Typed in code</button></div></div>
+        </div></div>
+      <div><h2>Metrics</h2><div id="metrics"></div></div>
+      <div><h2>Secrets</h2><div class="v1b-secret is-safe" id="secret" role="status"><strong>Safe</strong><span></span></div></div>
+      <div><h2>Life cycle</h2>
+        <ol class="v1b-steps" id="steps"></ol>
+        <div class="v1b-step-nav lab-seg" role="group" aria-label="Step through the life cycle"><button type="button" id="step-prev">Back</button><button type="button" id="step-next">Next step</button></div>
+        <p class="v1b-caption" id="step-live" aria-live="polite"></p></div>
+      <div><h2>What crossed the wire</h2><div id="table"></div><p class="v1b-caption" id="table-note"></p></div>
+    </aside>
+  </section>
+  <div id="code"></div>
+  <div class="lab-lcs">
+    <section class="lab-lc" data-lc="1"><h3>LC 01 · observe</h3><p class="lc-q">With collect() after summarise, how many rows cross the network?</p>
+      <div class="lc-options" role="group" aria-label="LC 01 options"><button class="lc-option" data-correct="false">336,776: the database always sends the whole table</button><button class="lc-option" data-correct="true">4: one row per carrier</button><button class="lc-option" data-correct="false">5,898: the JFK to Boston flights</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Read "rows over the wire" in the sidebar at baseline.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>4 rows of 3 columns. The database filtered 336,776 flights down to 5,898 and grouped them into 4 carriers before anything was sent.</div></section>
+    <section class="lab-lc" data-lc="2"><h3>LC 02 · intervene</h3><p class="lc-q">Move collect() to the first line. What happens to rows transferred and to the SQL sent?</p>
+      <div class="lc-options" role="group" aria-label="LC 02 options"><button class="lc-option" data-correct="false">Nothing changes: the answer is the same 4 rows</button><button class="lc-option" data-correct="true">All 336,776 rows cross, and the SQL shrinks to a plain SELECT of the whole table</button><button class="lc-option" data-correct="false">Fewer rows cross, because R filters faster than the database</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Press "First line" and compare the SQL under the diagram with the baseline SQL.</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>The result is still 4 rows, but 336,776 rows × 19 columns cross the wire (about 41 seconds at 10 Mbps, against under a millisecond). The SQL loses its WHERE and GROUP BY: R does that work after the download.</div></section>
+    <section class="lab-lc" data-lc="3"><h3>LC 03 · transfer</h3><p class="lc-q">Why does lazy evaluation let a 336,776-row table answer a question in milliseconds from a laptop?</p>
+      <div class="lc-options" role="group" aria-label="LC 03 options"><button class="lc-option" data-correct="false">tbl() downloads the table once and caches it in memory</button><button class="lc-option" data-correct="false">dplyr is compiled, so it is faster than SQL</button><button class="lc-option" data-correct="true">dplyr only writes SQL until collect(); the database runs the filter and summary next to the data and returns the small result</button></div>
+      <button class="lc-hint-btn" aria-expanded="false">Hint</button><div class="lc-hint" hidden>Step through the life cycle: which step is the first one that moves rows?</div>
+      <button class="lc-reveal-btn" aria-expanded="false">Reveal answer</button><div class="lc-answer" hidden>Until collect(), tbl() and each verb only build a query. The database does the work where the 336,776 rows live, and only the 4-row answer travels.</div></section>
+  </div>
+</main>
+<script>
+(function () {
+  var STEPS = ['dbConnect(): open the connection', 'dbListTables(con): see what is there', 'tbl(con, "flights"): a lazy table, 0 rows moved', 'filter, group_by, summarize: SQL is written, not run', 'collect(): the query runs, rows cross the wire', 'dbDisconnect(con): close the connection'];
+  var POS_LABEL = { first: 'on the first line', after_filter: 'after filter', after_summarise: 'after summarise' };
+  var D = null, sample = null;
+
+  function connectR(s) {
+    if (s.creds === 'env') return 'readRenviron(".env")\ncon = dbConnect(RPostgres::Postgres(),\n  host = Sys.getenv("SUPABASE_HOST"), port = Sys.getenv("SUPABASE_PORT"),\n  dbname = Sys.getenv("SUPABASE_DB"), user = Sys.getenv("SUPABASE_USER"),\n  password = Sys.getenv("SUPABASE_PASSWORD"))\n';
+    return 'con = dbConnect(RPostgres::Postgres(),\n  host = "db.abcdefgh.supabase.co", port = 5432,\n  dbname = "postgres", user = "postgres",\n  password = "hunter2-SuperSecret!")\n';
+  }
+  function pipelineR(s) {
+    var c = ' %>%\n  collect()';
+    return 'result = tbl(con, "flights")' + (s.collect === 'first' ? c : '') + ' %>%\n' +
+      '  filter(origin == "JFK", dest == "BOS")' + (s.collect === 'after_filter' ? c : '') + ' %>%\n' +
+      '  group_by(carrier) %>%\n' +
+      '  summarize(flights = n(), mean_delay = mean(dep_delay, na.rm = TRUE))' + (s.collect === 'after_summarise' ? c : '');
+  }
+  function codeR(s) { return 'library(DBI)\nlibrary(dplyr)\nlibrary(dbplyr)\n\n' + connectR(s) + 'dbListTables(con)\n\n' + pipelineR(s) + '\n\ndbDisconnect(con)'; }
+
+  var W = Math.max(300, document.getElementById('plot').clientWidth || 560), H = 230;
+  var narrow = W < 520, boxW = narrow ? 92 : 140, boxH = 86, y0 = 40;
+  var svg = d3.select('#plot').append('svg').attr('viewBox', '0 0 ' + W + ' ' + H)
+    .attr('role', 'img').attr('aria-label', 'Diagram: R session on the left, network wire in the middle, Postgres database on the right; packets on the wire show rows moved');
+  function box(x, title, sub) {
+    var g = svg.append('g').attr('transform', 'translate(' + x + ',' + y0 + ')');
+    g.append('rect').attr('width', boxW).attr('height', boxH).attr('rx', 8).attr('fill', 'var(--bench-panel)').attr('stroke', 'var(--bench-line)');
+    g.append('text').attr('x', boxW / 2).attr('y', 32).attr('text-anchor', 'middle').attr('fill', 'var(--bench-ink)').attr('font-size', 14).attr('font-weight', 600).text(title);
+    g.append('text').attr('x', boxW / 2).attr('y', 54).attr('text-anchor', 'middle').attr('fill', 'var(--bench-muted)').attr('font-size', 12).text(sub);
+    return g;
+  }
+  var rBox = box(8, 'R session', 'your laptop');
+  var dBox = box(W - boxW - 8, 'Postgres', '336,776 flights');
+  var wx0 = 8 + boxW, wx1 = W - boxW - 8, wy = y0 + boxH / 2;
+  var wire = svg.append('line').attr('x1', wx0).attr('x2', wx1).attr('y1', wy).attr('y2', wy).attr('stroke', 'var(--bench-line)').attr('stroke-width', 2).attr('stroke-dasharray', '4 4');
+  svg.append('text').attr('x', (wx0 + wx1) / 2).attr('y', wy - 22).attr('text-anchor', 'middle').attr('fill', 'var(--bench-muted)').attr('font-size', 12).text('network');
+  var packets = svg.append('g');
+  var barY = y0 + boxH + 44, barX = 8, barW = W - 16;
+  svg.append('text').attr('x', barX).attr('y', barY - 8).attr('fill', 'var(--bench-muted)').attr('font-size', 12).text('rows over the wire (log scale, of 336,776)');
+  svg.append('rect').attr('x', barX).attr('y', barY).attr('width', barW).attr('height', 16).attr('rx', 3).attr('fill', 'var(--bench-panel)').attr('stroke', 'var(--bench-line)');
+  var bar = svg.append('rect').attr('x', barX).attr('y', barY).attr('height', 16).attr('rx', 3).attr('width', 0).attr('fill', 'var(--y)');
+  var barNum = svg.append('text').attr('x', barX).attr('y', barY + 40).attr('fill', 'var(--bench-ink)').attr('font-size', narrow ? 20 : 24).attr('font-family', 'var(--mono)').attr('font-weight', 600);
+
+  var stepsEl = document.getElementById('steps');
+  STEPS.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; stepsEl.appendChild(li); });
+
+  // Column union: raw flights rows (before/after filter) vs the summarised rows. update() hides the set that did not cross the wire.
+  var RAW_COLS = ['flight', 'origin', 'dest', 'dep_delay'], SUM_COLS = ['flights', 'mean_delay'];
+  var tb = Lab.table(document.getElementById('table'), [], [{ key: 'carrier', label: 'carrier' }, { key: 'flight', label: 'flight', num: true, fmt: String }, { key: 'origin', label: 'origin' }, { key: 'dest', label: 'dest' }, { key: 'dep_delay', label: 'dep_delay', num: true, fmt: 0 }, { key: 'flights', label: 'flights', num: true, fmt: 0 }, { key: 'mean_delay', label: 'mean_delay', num: true, fmt: 2 }], { label: 'First rows that crossed the wire', key: function (r) { return r.k; } });
+  var tableNote = document.getElementById('table-note');
+
+  function wireRows(s) {
+    var p = D.positions[s.collect];
+    if (s.collect === 'after_summarise') return p.result.map(function (r) { return { k: 'r' + r.carrier, carrier: r.carrier, flights: r.flights, mean_delay: r.mean_delay }; });
+    var rows = s.collect === 'first' ? sample : sample.filter(function (r) { return r.origin === 'JFK' && r.dest === 'BOS'; });
+    return rows.slice(0, 6).map(function (r) { return { k: 's' + r.month + '-' + r.day + '-' + r.carrier + r.flight, carrier: r.carrier, flight: r.flight, origin: r.origin, dest: r.dest, dep_delay: r.dep_delay }; });
+  }
+
+  var runId = 0;
+  function sendPackets(n) {
+    var id = ++runId;
+    packets.selectAll('*').interrupt().remove();
+    var reduced = Lab.motion.reduced();
+    var sel = packets.selectAll('rect').data(d3.range(n)).join('rect')
+      .attr('width', 10).attr('height', 8).attr('rx', 2).attr('y', function (i) { return wy - 4 + ((i % 3) - 1) * 10; })
+      .attr('fill', 'var(--b)');
+    if (reduced) { sel.attr('x', function (i) { return wx0 + 6 + (i * (wx1 - wx0 - 22) / Math.max(1, n - 1 || 1)); }); return Promise.resolve(); }
+    sel.attr('x', wx1 - 14).attr('opacity', 1);
+    var t = sel.transition().delay(function (i) { return i * 18; }).duration(320).ease(d3.easeCubicOut)
+      .attr('x', function (i) { return wx0 + 6 + (i * (wx1 - wx0 - 22) / Math.max(1, n - 1 || 1)); });
+    return t.end().catch(function () {}).then(function () { if (id !== runId) return; });
+  }
+
+  var lab = Lab.create({
+    id: 'v1b', initial: { collect: 'after_summarise', creds: 'env', step: 5 },
+    states: {
+      baseline: { collect: 'after_summarise', creds: 'env' },
+      after_filter: { collect: 'after_filter', creds: 'env' },
+      first_line: { collect: 'first', creds: 'env' },
+      hard_coded: { collect: 'after_summarise', creds: 'code' }
+    },
+    load: function () {
+      return Promise.all([
+        fetch('data/v1b.json').then(function (r) { if (!r.ok) throw new Error('data/v1b.json: HTTP ' + r.status); return r.json(); }),
+        d3.csv('data/v1b_sample.csv', d3.autoType)
+      ]).then(function (x) { D = x[0]; sample = x[1]; return D; });
+    },
+    render: function (s, d) {
+      var p = d.positions[s.collect], step = s.step == null ? 5 : s.step, moved = step >= 4 ? p.rows_moved : 0;
+      var n = moved ? Math.max(1, Math.round(24 * Math.log10(moved + 1) / Math.log10(d.table_rows + 1))) : 0;
+      var frac = moved ? Math.log10(moved + 1) / Math.log10(d.table_rows + 1) : 0;
+      var ms = Lab.motion.reduced() ? 0 : 300;
+      var tBar = bar.transition().duration(ms).ease(d3.easeCubicOut).attr('width', barW * frac);
+      barNum.text(d3.format(',')(moved) + ' rows × ' + p.cols_moved + ' cols');
+      document.getElementById('sql-sent').textContent = step >= 3 ? p.sql : '-- no query written yet';
+      var sec = document.getElementById('secret'), bad = s.creds === 'code';
+      sec.className = 'v1b-secret ' + (bad ? 'is-exposed' : 'is-safe');
+      sec.querySelector('strong').textContent = bad ? 'Exposed: password is in the script' : 'Safe: read from .env';
+      sec.querySelector('span').textContent = bad ? 'Anyone who sees this file or its git history has the database password.' : 'The script names SUPABASE_PASSWORD; the value stays in a file git ignores.';
+      Array.prototype.forEach.call(stepsEl.children, function (li, i) { li.className = i === step ? 'is-now' : (i < step ? 'is-done' : ''); if (i === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current'); });
+      tableNote.textContent = step < 4 ? 'No rows yet: collect() has not run.' : (s.collect === 'after_summarise' ? 'All ' + p.cols_moved + ' columns of the summarised answer.' : 'First 6 rows; 5 of the ' + p.cols_moved + ' columns that crossed.');
+      document.getElementById('step-live').textContent = 'Step ' + (step + 1) + ' of ' + STEPS.length + (step >= 4 ? ': rows have crossed the wire.' : ': no rows have moved yet.');
+      var done = ms ? tBar.end().catch(function () {}) : Promise.resolve();
+      return Promise.all([done, sendPackets(n), tb.update(step >= 4 ? wireRows(s) : [], { hide: s.collect === 'after_summarise' ? RAW_COLS : SUM_COLS })]);
+    },
+    readouts: function (s, d) {
+      var p = d.positions[s.collect];
+      return { rows_moved: p.rows_moved, cols_moved: p.cols_moved, transfer_ms: p.transfer_ms, result_rows: p.result.length, secret_in_code: s.creds === 'code' ? 1 : 0, table_rows: d.table_rows };
+    },
+    metrics: { el: document.getElementById('metrics'), spec: [
+      { key: 'rows_moved', label: 'rows over the wire', fmt: 0 },
+      { key: 'transfer_ms', label: 'est. transfer (ms, 10 Mbps)', fmt: 2 },
+      { key: 'result_rows', label: 'rows in the answer', fmt: 0 },
+      { key: 'table_rows', label: 'rows in flights', fmt: 0 }] },
+    status: document.getElementById('status'), codeEl: document.getElementById('code'),
+    statusText: function (s, r) { return 'collect() ' + POS_LABEL[s.collect] + ': ' + d3.format(',')(r.rows_moved) + ' of ' + d3.format(',')(r.table_rows) + ' rows cross the network'; },
+    code: { r: codeR, sql: function (s) { return D ? D.positions[s.collect].sql : ''; } },
+    onState: function (s) {
+      document.querySelectorAll('#c-collect button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.collect)); });
+      document.querySelectorAll('#c-creds button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === s.creds)); });
+    }
+  });
+  document.querySelectorAll('#c-collect button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ collect: b.dataset.v }); }); });
+  document.querySelectorAll('#c-creds button').forEach(function (b) { b.addEventListener('click', function () { lab.setState({ creds: b.dataset.v }); }); });
+  function step(dx) { var s = lab.getState(); var cur = s.step == null ? 5 : s.step; lab.setState({ step: (cur + dx + STEPS.length) % STEPS.length }); }
+  document.getElementById('step-prev').addEventListener('click', function () { step(-1); });
+  document.getElementById('step-next').addEventListener('click', function () { step(1); });
+})();
+</script>
+</body>
+</html>

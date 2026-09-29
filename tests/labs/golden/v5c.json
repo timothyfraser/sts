@@ -1,0 +1,105 @@
+{
+  "lab": "v5c",
+  "page": "docs-v3/labs/v5c-simulate-qoi.html",
+  "generated_by": "tools/labs/prep/v5c.R",
+  "tolerance": 1e-06,
+  "states": [
+    {
+      "name": "baseline",
+      "state": {
+        "qoi": "ev",
+        "n": 1000,
+        "frac": 1,
+        "pop": 50000,
+        "income": 1200
+      },
+      "readouts": {
+        "n_fit": 1737,
+        "n_sims": 1000,
+        "sim_mean": 423.983143720734,
+        "sim_lower": 413.284487322831,
+        "sim_upper": 434.12880198608,
+        "sim_width": 20.8443146632493,
+        "an_lower": 413.123809770241,
+        "an_upper": 435.200360656071,
+        "an_width": 22.0765508858302
+      },
+      "code": {
+        "r": "emissions = read_csv(\"data/jp_emissions.csv\", show_col_types = FALSE) %>%\n  filter(year == 2017, emissions > 0, pop > 0)\n\nfit_data = emissions\nm = fit_data %>% lm(formula = log(emissions) ~ log(pop) + log(income_per_capita))\n\nset.seed(5460)\nsims = MASS::mvrnorm(n = 1000, mu = coef(m), Sigma = vcov(m)) %>%\n  as_tibble() %>%\n  setNames(c(\"b0\", \"b_pop\", \"b_income\"))\n\nqoi = sims %>%\n  mutate(q = exp(b0 + b_pop * log(50000) + b_income * log(1200)))\n\nanalytic = predict(m, newdata = tibble(pop = 50000, income_per_capita = 1200),\n  interval = \"confidence\") %>% exp()\n\nqoi %>%\n  summarize(n_fit = nrow(fit_data), n_sims = n(), sim_mean = mean(q),\n            sim_lower = quantile(q, 0.025), sim_upper = quantile(q, 0.975))"
+      }
+    },
+    {
+      "name": "sub20",
+      "state": {
+        "qoi": "ev",
+        "n": 1000,
+        "frac": 0.2,
+        "pop": 50000,
+        "income": 1200
+      },
+      "readouts": {
+        "n_fit": 347,
+        "n_sims": 1000,
+        "sim_mean": 421.948016859927,
+        "sim_lower": 399.122045607714,
+        "sim_upper": 447.619383022395,
+        "sim_width": 48.4973374146801,
+        "an_lower": 396.940994149325,
+        "an_upper": 447.768446889485,
+        "an_width": 50.8274527401595
+      },
+      "code": {
+        "r": "emissions = read_csv(\"data/jp_emissions.csv\", show_col_types = FALSE) %>%\n  filter(year == 2017, emissions > 0, pop > 0)\n\nset.seed(5460)\nfit_data = emissions %>% slice_sample(prop = 0.2)\nm = fit_data %>% lm(formula = log(emissions) ~ log(pop) + log(income_per_capita))\n\nset.seed(5460)\nsims = MASS::mvrnorm(n = 1000, mu = coef(m), Sigma = vcov(m)) %>%\n  as_tibble() %>%\n  setNames(c(\"b0\", \"b_pop\", \"b_income\"))\n\nqoi = sims %>%\n  mutate(q = exp(b0 + b_pop * log(50000) + b_income * log(1200)))\n\nanalytic = predict(m, newdata = tibble(pop = 50000, income_per_capita = 1200),\n  interval = \"confidence\") %>% exp()\n\nqoi %>%\n  summarize(n_fit = nrow(fit_data), n_sims = n(), sim_mean = mean(q),\n            sim_lower = quantile(q, 0.025), sim_upper = quantile(q, 0.975))"
+      }
+    },
+    {
+      "name": "few",
+      "state": {
+        "qoi": "ev",
+        "n": 100,
+        "frac": 1,
+        "pop": 50000,
+        "income": 1200
+      },
+      "readouts": {
+        "n_fit": 1737,
+        "n_sims": 100,
+        "sim_mean": 424.546881744113,
+        "sim_lower": 413.213743858675,
+        "sim_upper": 433.465513720416,
+        "sim_width": 20.2517698617412,
+        "an_lower": 413.123809770241,
+        "an_upper": 435.200360656071,
+        "an_width": 22.0765508858302
+      },
+      "code": {
+        "r": "emissions = read_csv(\"data/jp_emissions.csv\", show_col_types = FALSE) %>%\n  filter(year == 2017, emissions > 0, pop > 0)\n\nfit_data = emissions\nm = fit_data %>% lm(formula = log(emissions) ~ log(pop) + log(income_per_capita))\n\nset.seed(5460)\nsims = MASS::mvrnorm(n = 100, mu = coef(m), Sigma = vcov(m)) %>%\n  as_tibble() %>%\n  setNames(c(\"b0\", \"b_pop\", \"b_income\"))\n\nqoi = sims %>%\n  mutate(q = exp(b0 + b_pop * log(50000) + b_income * log(1200)))\n\nanalytic = predict(m, newdata = tibble(pop = 50000, income_per_capita = 1200),\n  interval = \"confidence\") %>% exp()\n\nqoi %>%\n  summarize(n_fit = nrow(fit_data), n_sims = n(), sim_mean = mean(q),\n            sim_lower = quantile(q, 0.025), sim_upper = quantile(q, 0.975))"
+      }
+    },
+    {
+      "name": "fd",
+      "state": {
+        "qoi": "fd",
+        "n": 1000,
+        "frac": 1,
+        "pop": 50000,
+        "income": 1200
+      },
+      "readouts": {
+        "n_fit": 1737,
+        "n_sims": 1000,
+        "sim_mean": 382.814841033902,
+        "sim_lower": 367.212447061386,
+        "sim_upper": 398.987292173869,
+        "sim_width": 31.7748451124834,
+        "an_lower": "none",
+        "an_upper": "none",
+        "an_width": "none"
+      },
+      "code": {
+        "r": "emissions = read_csv(\"data/jp_emissions.csv\", show_col_types = FALSE) %>%\n  filter(year == 2017, emissions > 0, pop > 0)\n\nfit_data = emissions\nm = fit_data %>% lm(formula = log(emissions) ~ log(pop) + log(income_per_capita))\n\nset.seed(5460)\nsims = MASS::mvrnorm(n = 1000, mu = coef(m), Sigma = vcov(m)) %>%\n  as_tibble() %>%\n  setNames(c(\"b0\", \"b_pop\", \"b_income\"))\n\nqoi = sims %>%\n  mutate(q = exp(b0 + b_pop * log(100000) + b_income * log(1200)) -\n             exp(b0 + b_pop * log(50000) + b_income * log(1200)))\n\nanalytic = NULL  # predict() has no interval for a difference of two predictions\n\nqoi %>%\n  summarize(n_fit = nrow(fit_data), n_sims = n(), sim_mean = mean(q),\n            sim_lower = quantile(q, 0.025), sim_upper = quantile(q, 0.975))"
+      }
+    }
+  ],
+  "ack": []
+}
