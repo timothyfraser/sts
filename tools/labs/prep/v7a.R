@@ -4,6 +4,7 @@
 # It writes:
 #   docs-v3/labs/data/v7a_sites.csv      sensor sites in the core NYC metro, projected (UTM 18N, metres)
 #   docs-v3/labs/data/v7a_readings.csv   hourly PM2.5 (ug/m3) per site for one week, complete sites only
+#   docs-v3/labs/data/v7a_metro.json     the metro boundary, clipped to the map, projected (UTM 18N, metres)
 #   tests/labs/golden/v7a.json           named states, readouts, code, acks (the gate's truth)
 # Running it twice must leave `git status` unchanged (byte-for-byte output).
 # Built from tools/labs/prep/_template.R; the SQL twin is PostGIS (ST_SquareGrid), which has no
@@ -38,6 +39,7 @@ week_end   = "2025-05-11"
 bbox_ll    = c(xmin = -74.30, ymin = 40.50, xmax = -73.70, ymax = 40.95)   # core NYC metro
 sites_out    = "docs-v3/labs/data/v7a_sites.csv"
 readings_out = "docs-v3/labs/data/v7a_readings.csv"
+metro_out    = "docs-v3/labs/data/v7a_metro.json"
 golden_out   = paste0("tests/labs/golden/", lab_id, ".json")
 ack = list()
 
@@ -81,7 +83,35 @@ readings_df = readings_raw %>%
 dir.create(dirname(file.path(root, sites_out)), recursive = TRUE, showWarnings = FALSE)
 write_csv(sites_df %>% select(site_id, name, x, y), file.path(root, sites_out), na = "")
 write_csv(readings_df, file.path(root, readings_out), na = "")
-stopifnot(file.size(file.path(root, sites_out)) + file.size(file.path(root, readings_out)) <= 500 * 1024)
+
+# Metro boundary. metro.rds is a table of the metro's counties (state, county, geoid) with no
+# geometry, so the outline is the union of those counties' block groups in bg.geojson, clipped to
+# the map extent (the site box rounded up to 10 km, plus a 2 km margin) and simplified to 150 m.
+metro_ids = readRDS(file.path(root, "data/air_quality/metro.rds")) %>% pull(geoid)
+map_box = sites_df %>%
+  summarize(xmin = min(x) - 2000, ymin = min(y) - 2000,
+            xmax = min(x) + 10000 * ceiling((max(x) - min(x)) / 10000) + 2000,
+            ymax = min(y) + 10000 * ceiling((max(y) - min(y)) / 10000) + 2000)
+clip = st_as_sfc(st_bbox(unlist(map_box), crs = st_crs(32618)))
+metro = st_read(file.path(root, "data/air_quality/bg.geojson"), quiet = TRUE) %>%
+  filter(county %in% metro_ids) %>%
+  st_transform(crs = 32618) %>%
+  st_make_valid() %>%
+  st_filter(clip) %>%
+  summarize() %>%
+  st_intersection(clip) %>%
+  st_simplify(dTolerance = 150) %>%
+  st_cast("MULTIPOLYGON")
+# Write it as GeoJSON-shaped JSON in metres: MultiPolygon -> polygons -> rings -> [x, y].
+xy = st_coordinates(metro) %>% as_tibble() %>% mutate(X = round(X), Y = round(Y))
+metro_json = list(type = "MultiPolygon", crs = "EPSG:32618", counties = length(metro_ids),
+  coordinates = xy %>% split(.$L2) %>% unname() %>% map(function(p) {
+    p %>% split(.$L1) %>% unname() %>% map(function(r) unname(map2(r$X, r$Y, c)))
+  }))
+write_json(metro_json, file.path(root, metro_out), auto_unbox = TRUE, digits = NA)
+stopifnot(file.size(file.path(root, metro_out)) <= 50 * 1024)
+stopifnot(file.size(file.path(root, sites_out)) + file.size(file.path(root, readings_out)) +
+          file.size(file.path(root, metro_out)) <= 500 * 1024)
 
 # Re-read exactly the bytes the browser fetches.
 sites = read_csv(file.path(root, sites_out), show_col_types = FALSE) %>%
@@ -195,5 +225,6 @@ golden = list(
 )
 dir.create(dirname(file.path(root, golden_out)), recursive = TRUE, showWarnings = FALSE)
 write_json(golden, file.path(root, golden_out), auto_unbox = TRUE, digits = NA, pretty = TRUE)
-message("prep: wrote ", sites_out, " + ", readings_out, " (",
-        file.size(file.path(root, sites_out)) + file.size(file.path(root, readings_out)), " B) and ", golden_out)
+message("prep: wrote ", sites_out, " + ", readings_out, " + ", metro_out, " (",
+        file.size(file.path(root, sites_out)) + file.size(file.path(root, readings_out)) +
+        file.size(file.path(root, metro_out)), " B) and ", golden_out)
