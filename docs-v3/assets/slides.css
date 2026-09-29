@@ -1,0 +1,1332 @@
+/* slides.css — the HTML slide-deck system for this course site.
+   Standalone: decks load only this file. Brand tokens below are copies of
+   assets/sts.css :root, regenerated from the one course colour. */
+
+/* ---------------------------------------------------------------- fonts --
+   Lato, vendored (docs-v3/assets/fonts/lato/). No runtime CDN, ever.
+   -------------------------------------------------------------------- */
+@font-face{font-family:"Lato";font-style:normal;font-weight:400;font-display:swap;
+  src:url("fonts/lato/lato-400.woff2") format("woff2")}
+@font-face{font-family:"Lato";font-style:italic;font-weight:400;font-display:swap;
+  src:url("fonts/lato/lato-400-italic.woff2") format("woff2")}
+@font-face{font-family:"Lato";font-style:normal;font-weight:700;font-display:swap;
+  src:url("fonts/lato/lato-700.woff2") format("woff2")}
+@font-face{font-family:"Lato";font-style:normal;font-weight:900;font-display:swap;
+  src:url("fonts/lato/lato-900.woff2") format("woff2")}
+
+:root{
+  /* ---------- Variant C dual tokens (copied from sts.css :root - keep in sync) ---------- */
+  --variant:"C"; --variant-name:"Dual: yellow = interact, blue = data";
+  /* ---------- brand: purple focal (replaces sigma's --red family 1:1) ---------- */
+  --purple:#6B21A8; --purple-dark:#3B0764; --purple-tint:#F3E8FF; --purple-line:#E9D5FF;
+  --indigo:#1E1B4B;                               /* navbar gradient start (plasma indigo, toned) */
+  /* ---------- neutrals (sigma names) ---------- */
+  --ink:#14121A; --muted:#4B5563; --white:#FFFFFF;
+  --gray:#F3F4F6; --gray-2:#E5E7EB; --line:#D1D5DB;
+  --pink:#FCE7F3; --pink-line:#FBCFE8; --pink-ink:#831843;
+  --nav-bg:linear-gradient(135deg,var(--indigo),var(--purple)); --nav-bg-solid:var(--purple-dark); --nav-ink:#FFFFFF;
+  --rule:rgba(107,33,168,.08);
+  --shadow:0 1px 2px rgba(20,18,26,.06),0 4px 16px rgba(20,18,26,.08);
+  /* ---------- sigma accent slots (kept so shell components resolve) ---------- */
+  --p:var(--purple); --p-soft:var(--purple-tint);
+  /* ---------- code ---------- */
+  --code-bg:#1A1033; --code-ink:#EDE9FE; --code-cm:#A78BFA; --code-kw:#F0ABFC; --code-str:#FDE68A;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --nav-h:52px;
+  /* ---------- semantic layer (sigma names) ---------- */
+  --accent:var(--purple); --accent-dark:var(--purple-dark); --accent-tint:var(--purple-tint); --accent-line:var(--purple-line);
+  --link:var(--purple); --link-hover:var(--purple-dark);
+  --callout:var(--pink); --callout-line:var(--pink-line); --callout-ink:var(--pink-ink);
+  --panel:var(--gray); --panel-line:var(--gray-2);
+  --surface:var(--white); --surface-2:var(--gray);
+  --focus-ring:var(--purple); --focus-ring-w:2px; --focus-ring-offset:2px;
+  /* ---------- deck (slides.css names) ---------- */
+  --stage-w:1280px; --stage-h:720px; --topbar-h:72px; --pad-x:56px;
+  --fs-min:26px; --fs-body:30px; --fs-lead:34px; --fs-small:26px; --fs-sub:44px;
+  --fs-h1:96px; --fs-title:62px; --fs-caption:20px; --fs-chrome:24px;
+  /* ---------- site type ---------- */
+  --fs-base:16px; --lh-base:1.6; --fs-h1-site:clamp(28px,7vw,44px); --fs-h2-site:22px;
+  /* ---------- sequential ramp (viridis-plasma, purple-anchored) ---------- */
+  --seq-1:#0D0887; --seq-2:#5B02A3; --seq-3:#9A179B; --seq-4:#CB4678; --seq-5:#EB7852; --seq-6:#FBB32F;
+  /* ---------- motion ---------- */
+  --dur-fast:150ms; --dur-base:280ms; --dur-slow:600ms; --dur-pulse:2400ms; --stagger:80ms;
+  --ease-out:cubic-bezier(.22,1,.36,1); --ease-in-out:cubic-bezier(.65,0,.35,1); --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --rise:12px;
+  /* ---------- VARIANT C: two roles ----------
+     yellow  = INTERACTIVE highlight (hover, active, focus-on-dark, selected control)
+     l.blue  = DATA / INFORMATIONAL highlight (the annotated point, info chips, KPI delta) */
+  --y:#F5D90A; --y-soft:#FEF9C3; --y-ink:#3B0764;
+  --b:#7DD3FC; --b-soft:#E0F2FE; --b-ink:#0C4A6E; --b-strong:#38BDF8;
+  --hl:var(--y); --hl-soft:var(--y-soft); --hl-ink:var(--y-ink);
+  --hl-underline:var(--y);
+  --data-hl:var(--b-strong); --data-hl-soft:var(--b-soft); --data-hl-ink:var(--b-ink);
+  --focus-ring-invert:var(--y);
+  --cat-1:#6B21A8; --cat-2:#38BDF8; --cat-3:#CC4778; --cat-4:#E0B800; --cat-5:#1E1B4B; --cat-6:#9CA3AF;
+  /* ---------- legacy names kept as aliases so ported CSS/JS keeps working ---------- */
+  --red:var(--purple); --red-dark:var(--purple-dark); --red-tint:var(--purple-tint); --red-line:var(--purple-line);
+
+  /* ---------- deck-only tints and marks (not in the variant) ---------- */
+  --red-tint-2:#e6d9f1;
+  --o:#f0b068; --o-soft:#f8dcc0;
+  --b-mid:#3880c0; --p-mid:#6048a0;
+  --b-mid-ink:#3070a8;
+  --berry:#a04878; --berry-soft:#e8c8da;
+  --rose:#d08080; --lav:#b0a8d0; --peach-dk:#f0a880;
+  --navy-ink:#302050; --peach-ink:#8f1414; --rose-ink:#580808;
+  --g:#24a148; --g-soft:#d3f0da;
+  --mean:#DC267F; --median:#4589ff;
+  --letterbox:#1b1010; --card-bg:#f2f2f2;
+
+  /* ---------- slide-system tokens ---------- */
+  /* If the vendored woff2s are ever missing, the stack degrades gracefully. */
+  --slide-font:"Lato","Calibri","Segoe UI","Inter",-apple-system,Helvetica,Arial,sans-serif;
+  --stage-w:1280px; --stage-h:720px;
+  --sc:1;                                  /* set by slides.js */
+  --letterbox:#1b1010;                     /* bars around the stage */
+  --card-bg:#f2f2f2;                       /* the intro-people card gray */
+
+  /* Typography scale (px @ the 1280×720 stage).
+     HARD FLOOR: body copy never below --fs-min (26px ≈ 20pt). */
+  --fs-min:26px;
+  --fs-body:30px;      /* default bullet / paragraph */
+  --fs-lead:34px;      /* lead-in line above a list */
+  --fs-small:26px;     /* dense two-column lists — still at the floor */
+  --fs-sub:44px;       /* red sub-headline under a topbar */
+  --fs-h1:96px;        /* s-section title */
+  --fs-title:62px;     /* s-title deck title */
+  --fs-caption:20px;   /* legacy alias — kept so decks referencing it still work */
+  --fs-chrome:24px;    /* HARD CHROME FLOOR: captions, sources, category
+                          labels. Not body copy (that floor is --fs-min), but
+                          nothing in a deck renders below 24px. */
+
+  --topbar-h:72px;
+  --pad-x:56px;        /* standard slide gutter */
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{background:var(--letterbox)}
+body{
+  background:var(--letterbox);
+  color:var(--ink);
+  font-family:var(--slide-font);
+  line-height:1.4;
+  overflow:hidden;                          /* the deck owns the viewport */
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ================================================================== deck ==
+   The stage: one slide visible, centered, scaled, letterboxed.
+   ======================================================================== */
+/* The single auto track used to be sized to the 1280px slide's max-content, so
+   on any viewport NARROWER than the stage the track overflowed to the right and
+   the scaled slide was pushed off-screen (fatal on a phone: 390px viewport put
+   the slide at x=445). Pinning both tracks to the viewport makes the centered
+   overflow symmetric, which is what the scale() transform assumes. */
+.deck{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+
+.slide{
+  position:relative;
+  width:var(--stage-w);height:var(--stage-h);
+  flex:0 0 auto;
+  display:none;
+  overflow:hidden;
+  background:var(--white);
+  color:var(--ink);
+  font-size:var(--fs-body);
+  transform:scale(var(--sc));
+  transform-origin:center center;
+}
+.slide.is-active{display:block}
+/* s-agenda is the one archetype whose grid lives on the slide root itself
+   (panel | side). .slide.is-active's display:block outranks .s-agenda's
+   single class, so the active state must re-assert the grid. */
+.slide.is-active.s-agenda{display:grid}
+body.is-print .s-agenda{display:grid}
+
+/* The floor rule. Any component may lower --fs locally; it can never push
+   real body copy below --fs-min. Captions/sources are divs, not p/li, and
+   are therefore exempt by construction (see specs/SLIDES.md §4). */
+.slide p,.slide li{
+  font-size:max(var(--fs-min), var(--fs, var(--fs-body)));
+  margin:0 0 .55em;
+}
+.slide ul,.slide ol{margin:0 0 .4em;padding-left:1.15em}
+.slide li{margin-bottom:.5em}
+.slide li::marker{color:var(--red)}
+.slide h1,.slide h2,.slide h3{margin:0;font-weight:700;line-height:1.12}
+.slide a{color:var(--red-dark);text-decoration:underline;text-underline-offset:2px}
+.slide strong{color:var(--red);font-weight:700}     /* red emphasis default */
+.slide em{font-style:italic}
+.slide code{font-family:var(--mono);background:var(--gray-2);
+  border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.86em}
+
+/* ============================================================ 1. s-title ==
+   Hero image band across the top, cut by a diagonal white wedge; kicker,
+   big white title, italic subtitle; presenter block bottom-right with a
+   circular headshot straddling the wedge; thin red bar at the very bottom.
+   ======================================================================== */
+.s-title{background:var(--white)}
+.s-title .hero{
+  position:absolute;top:0;left:0;right:0;height:58%;
+  overflow:hidden;background:var(--ink);
+  clip-path:polygon(0 0,100% 0,100% 74%,0 100%);
+}
+.s-title .hero img{width:100%;height:100%;object-fit:cover;display:block}
+.s-title .titlebox{position:absolute;top:34px;left:var(--pad-x);right:120px;z-index:2}
+.s-title .kicker{color:#fff;font-size:38px;font-weight:400;letter-spacing:.2px;
+  text-shadow:0 1px 10px rgba(0,0,0,.45)}
+.s-title h1{color:#fff;font-size:var(--fs-title);font-weight:700;margin:.06em 0 .02em;
+  text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.s-title .sub{color:#fff;font-size:34px;font-weight:700;font-style:italic;
+  text-shadow:0 1px 10px rgba(0,0,0,.45)}
+
+.s-title .headshot{
+  position:absolute;left:52px;top:378px;width:190px;height:190px;border-radius:50%;
+  object-fit:cover;border:5px solid #fff;box-shadow:0 3px 18px rgba(0,0,0,.22);z-index:3;
+}
+.s-title .presenter{position:absolute;left:300px;top:472px;right:var(--pad-x)}
+.s-title .presenter .who{font-size:27px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.s-title .presenter .role{font-size:26px;color:#4a3838;line-height:1.28}
+.s-title .presenter .course{font-size:30px;color:var(--red);font-weight:400;margin-top:12px}
+.s-title .presenter .tag{font-size:22px;color:#7a6a6a;font-weight:700;margin-top:6px}
+.s-title .redbar{position:absolute;left:0;right:0;bottom:0;height:9px;background:var(--red)}
+
+/* ========================================================== 2. s-section ==
+   Full-bleed red divider. Huge white title, short white rule, deck-name
+   subtitle. `--q` = the big-statement / question variant.
+   ======================================================================== */
+.s-section{background:var(--red);color:#fff;padding:96px var(--pad-x) 0 64px}
+.s-section h1{color:#fff;font-size:var(--fs-h1);font-weight:900;letter-spacing:-1px}
+.s-section .rule{width:640px;height:7px;background:#fff;margin:38px 0 34px;border:0}
+.s-section .sub{font-size:40px;font-weight:400;color:#fff}
+.s-section .caption{color:rgba(255,255,255,.82)} /* light grey on red; was var(--muted), unreadable (Tim 2026-09-22) */
+.s-section .cutout{position:absolute;right:24px;bottom:0;max-height:74%;max-width:52%;
+  object-fit:contain;z-index:2}
+
+/* --q reserves the bottom-right corner for the .cutout. The statement's
+   max-width + the cutout's max-width are set as a matched pair: 700px of text
+   column ends at x=764, the cutout starts at x=766. Text and image cannot
+   overlap at any wrap count, and the reserve does not depend on font size, so
+   it holds when the studio pushes body copy to 1.4×.
+   (Tim review 2026-08-16: "text overflows onto image improperly".) */
+.s-section--q{padding-top:118px}
+.s-section--q h1{font-size:78px;font-weight:700;line-height:1.16;max-width:700px;
+  letter-spacing:0}
+.s-section--q .sub{max-width:700px}
+.s-section--q .cutout{max-width:38%;max-height:66%;right:28px}
+.s-section--q h1 em{font-style:italic;font-weight:400}
+.s-section--q h1 u{text-decoration-thickness:4px;text-underline-offset:6px}
+.s-section--q .rule{width:120px;height:6px;margin-top:44px}
+
+/* =========================================================== 3. s-agenda ==
+   Red left panel (title + numbered list) | large image or free content.
+   ======================================================================== */
+/* display comes from the active/print rules near .slide.is-active — declaring
+   it here would out-cascade .slide{display:none} and show every agenda slide */
+.s-agenda{grid-template-columns:34% 1fr;grid-template-rows:100%;
+  background:var(--white)}
+.s-agenda .panel{background:var(--red);color:#fff;padding:82px 34px 40px 44px;overflow:hidden}
+.s-agenda .panel h1{color:#fff;font-size:52px;font-weight:700;margin-bottom:34px}
+.s-agenda .panel ol,.s-agenda .panel ul{padding-left:1.1em;--fs:28px}
+.s-agenda .panel li{color:#fff;margin-bottom:.62em;line-height:1.26}
+.s-agenda .panel li::marker{color:#fff}
+.s-agenda .side{position:relative;overflow:hidden;padding:0;background:var(--white)}
+.s-agenda .side img.fill{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block}
+.s-agenda .side img.contain{position:absolute;left:5%;top:7%;width:90%;height:72%;
+  object-fit:contain}
+.s-agenda .side .caption{position:absolute;left:0;right:0;bottom:26px;text-align:center}
+
+/* =========================================================== 4. s-topbar ==
+   The recurring breadcrumb bar + a content region. Everything below is a
+   layout helper usable inside ANY slide that has a .content region.
+   ======================================================================== */
+.topbar{
+  position:absolute;top:0;left:0;right:0;height:var(--topbar-h);
+  background:var(--red);color:#fff;display:flex;align-items:center;
+  padding:0 var(--pad-x);font-size:34px;font-weight:700;letter-spacing:.2px;
+}
+.slide .content{position:absolute;top:var(--topbar-h);left:0;right:0;bottom:0;
+  padding:26px var(--pad-x) 64px}
+.subhead{color:var(--red);font-size:var(--fs-sub);font-weight:700;margin-bottom:22px}
+.lead{font-size:var(--fs-lead);color:#3a2828;margin-bottom:14px}
+
+/* two-column grids */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:start}
+.cols--21{grid-template-columns:2fr 1fr}
+.cols--12{grid-template-columns:1fr 2fr}
+.cols.middle{align-items:center}
+.cols img{max-width:100%;display:block}
+.cols img.fit{width:100%;height:100%;object-fit:cover;border-radius:6px}
+
+/* dense list variant for two-column text (still at the 26px body floor —
+   max() so a deck that lowers --fs-small can never take .tight under 24px) */
+.tight{--fs:max(var(--fs-chrome), var(--fs-small))}
+.tight li{margin-bottom:.36em;line-height:1.28}
+.tight .caption,.tight .src{font-size:var(--fs-chrome)}
+
+/* chrome — 24px floor (Tim review 2026-08-16). These are <div>/<a>, exempt
+   from the 26px body floor by construction, but they still have to be
+   readable from the back of the room. */
+.caption{font-size:var(--fs-chrome);color:var(--muted);line-height:1.3;margin-top:10px}
+.src{position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:30px;
+  font-size:var(--fs-chrome);line-height:1.25;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+/* A11Y F-08: was #c98a8a — 2.8:1 on white, under even the 3:1 large-text
+   floor. Same hue and saturation, lower lightness. */
+.src a{color:#ad5252;text-decoration:underline}
+/* On the red section/agenda slides that same red is invisible (Tim 2026-09-22):
+   the "[link]" students are told to follow disappeared. White, still underlined. */
+.s-section .src,.s-agenda .panel .src{color:rgba(255,255,255,.88)}
+.s-section .src a,.s-agenda .panel .src a{color:#fff;text-decoration:underline}
+/* .s-agenda .side is WHITE - its source line keeps the red link colour. */
+
+/* =========================================================== 5. s-twocol ==
+   Topbar + two text columns, each with a small gray category label and a
+   red pill header (the "Prevention Costs" / "Appraisal Costs" bars).
+   ======================================================================== */
+.s-twocol .content{padding-top:18px}
+.catlabel{font-size:var(--fs-chrome);color:#5c5c5c;margin-bottom:8px}
+.pillhead{
+  display:block;background:var(--red);color:#fff;font-size:32px;font-weight:400;
+  border-radius:12px;padding:14px 24px;margin-bottom:18px;
+}
+.s-twocol .colbody{padding-left:14px}
+.s-twocol .colbody > p{color:#3a2828;--fs:var(--fs-small)}
+.s-twocol .colbody ul{list-style:disc;padding-left:1.5em}
+
+/* =========================================================== 6. s-bigimg ==
+   Topbar + one large image filling the remaining area.
+   ======================================================================== */
+.s-bigimg .content{padding:0}
+.s-bigimg img.fill{width:100%;height:100%;object-fit:cover;display:block}
+/* `contain` letterboxes instead of cropping. The image is absolutely inset
+   into the content region so its box is definite — a `max-height:100%` on a
+   centered grid item is NOT reliably definite in Chromium and silently
+   overflows the stage (caught by verify_slides gate c1, 2026-08-16). */
+.s-bigimg.contain .content{padding:0}
+.s-bigimg.contain img.fill{position:absolute;left:var(--pad-x);top:22px;
+  width:calc(100% - 2 * var(--pad-x));height:calc(100% - 86px);object-fit:contain}
+/* The caption on a full-bleed image is the ONLY text on the slide, so it is
+   not chrome — it carries the point. 28px, ink, opaque plate (Tim review
+   2026-08-16: "slide 8 text is too small"). */
+.s-bigimg .content .caption{position:absolute;left:var(--pad-x);right:var(--pad-x);
+  bottom:56px;font-size:28px;font-weight:700;color:var(--ink);line-height:1.25;
+  background:rgba(255,255,255,.94);padding:12px 20px;border-radius:8px;margin:0;
+  box-shadow:0 2px 12px rgba(0,0,0,.18)}
+
+/* ============================================================= 7. s-quad ==
+   2×2 grid, tight gutters. Each cell is free: image, text, or both, with an
+   optional mini red header.
+   ======================================================================== */
+.s-quad .content{padding:18px 22px 54px}
+.quad{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:12px;height:100%}
+.qcell{position:relative;overflow:hidden;border-radius:8px;background:var(--gray);
+  border:1px solid var(--line);display:flex;flex-direction:column}
+/* tone modifiers — colour the head bar and that cell's body copy together,
+   the way the 2025 comparison quads did (workshop-1 p16/p17). */
+.qcell.t-o > .qhead{background:var(--o);color:var(--peach-ink)}
+.qcell.t-o .qbody{color:var(--peach-ink)}
+.qcell.t-pm > .qhead{background:var(--p-mid)} .qcell.t-pm .qbody{color:var(--p-mid)}
+.qcell.t-bm > .qhead{background:var(--b-mid)} .qcell.t-bm .qbody{color:var(--b-mid-ink)}
+.qcell.t-berry > .qhead{background:var(--berry)} .qcell.t-berry .qbody{color:var(--berry)}
+.qcell.t-r .qbody{color:var(--red)}
+.qcell > .qhead{background:var(--red);color:#fff;font-size:24px;font-weight:700;
+  padding:8px 16px;flex:0 0 auto}
+.qcell > .qbody{flex:1 1 auto;padding:14px 18px;overflow:hidden;--fs:var(--fs-min)}
+.qcell > img{width:100%;height:100%;object-fit:cover;display:block;flex:1 1 auto;min-height:0}
+.qcell.plain{background:var(--white);border-color:transparent}
+
+/* ============================================================ 8. s-cards ==
+   2–4 people cards on white: gray rounded card, red bold name, big circular
+   photo, role lines, red tagline, tiny gray subline.
+   ======================================================================== */
+.s-cards .content{padding:28px var(--pad-x) 54px}
+.cards{display:grid;gap:26px;height:100%;grid-auto-flow:column;
+  grid-auto-columns:1fr;align-items:stretch}
+.card{background:var(--card-bg);border-radius:14px;padding:22px 20px 24px;
+  text-align:center;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.card .name{color:var(--red);font-size:32px;font-weight:700;margin-bottom:16px}
+.card img{width:190px;height:190px;border-radius:50%;object-fit:cover;
+  flex:0 0 auto;margin-bottom:18px}
+.card .role{font-size:var(--fs-min);color:#2c2c2c;line-height:1.24}
+.card .tagline{font-size:var(--fs-caption);color:var(--red);margin-top:12px;font-weight:400}
+.card .subline{font-size:16px;color:#8d8d8d;margin-top:4px}
+.cards--2{grid-auto-columns:1fr}
+.cards--wide .card{text-align:left;align-items:flex-start;flex-direction:row;gap:26px}
+
+/* ============================================================ 9. s-pills ==
+   Stack of red pill rows (the weekly checklist) + a right-hand visual.
+   ======================================================================== */
+.s-pills .content{padding-top:20px}
+.pillstack{display:flex;flex-direction:column;gap:14px}
+.pillrow{background:var(--red);color:#fff;border-radius:12px;padding:14px 24px;
+  font-size:30px;font-weight:400;display:flex;align-items:center;gap:14px}
+.pillrow .n{font-weight:700;opacity:.85;font-size:24px}
+.pillrow a{color:#fff;text-decoration:underline}
+/* "done" is the saturated blue, not green — green is not in the scheme
+   (Tim review 2026-08-16). Checked-off blue reads "done" without it. */
+.pillrow.done{background:var(--b-mid)}
+.pillrow.ghost{background:var(--red-tint);color:var(--red-dark);
+  border:2px solid var(--red-line);font-size:max(var(--fs-chrome),30px)}
+
+.circles{display:flex;flex-direction:column;gap:18px;align-items:center;
+  justify-content:center}
+.circle{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;font-size:28px;font-weight:700;text-align:center;padding:10px;
+  line-height:1.15;flex:0 0 auto}
+/* carnelian */
+.circle.r{background:var(--red)} .circle.rd{background:var(--red-dark)}
+.circle.tint{background:var(--red-tint);color:var(--red-dark)}
+/* 2025 pastel accents — dark partner ink on the light grounds */
+.circle.y{background:var(--y);color:var(--rose-ink)}
+.circle.o{background:var(--o);color:var(--peach-ink)}
+.circle.b{background:var(--b);color:var(--navy-ink)}
+.circle.lav{background:var(--lav);color:var(--navy-ink)}
+.circle.rose{background:var(--rose);color:var(--rose-ink)}
+.circle.peach{background:var(--peach-dk);color:var(--peach-ink)}
+/* mid tones carry white, as the 2025 venn had it */
+.circle.p{background:var(--p);color:#fff}
+.circle.bm{background:var(--b-mid)} .circle.pm{background:var(--p-mid)}
+.circle.berry{background:var(--berry)}
+.circle.g{background:var(--g)}          /* legacy; not in the deck scheme */
+.circles--row{flex-direction:row;gap:18px}
+
+/* =================================================== 10. reusable pieces ==
+   Usable inside any slide.
+   ======================================================================== */
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;
+  padding:5px 18px;font-size:24px;font-weight:700;background:var(--red);color:#fff}
+.pill.rd{background:var(--red-dark)}
+.pill.tint{background:var(--red-tint);color:var(--red-dark);
+  box-shadow:inset 0 0 0 2px var(--red-line)}
+.pill.gray{background:#e6e0de;color:#4a3838}
+/* 2025 pastel accents — dark partner ink on the light grounds */
+.pill.y{background:var(--y);color:var(--rose-ink)}
+.pill.o{background:var(--o);color:var(--peach-ink)}
+.pill.b{background:var(--b);color:var(--navy-ink)}
+.pill.lav{background:var(--lav);color:var(--navy-ink)}
+.pill.rose{background:var(--rose);color:var(--rose-ink)}
+.pill.p{background:var(--p);color:#fff}
+.pill.bm{background:var(--b-mid)} .pill.pm{background:var(--p-mid)}
+.pill.berry{background:var(--berry)}
+/* a link presented as a button (e.g. "Open the Team Boards"). Beats `.slide a`. */
+.slide a.btn{display:inline-flex;align-items:center;gap:10px;border-radius:12px;
+  padding:14px 30px;font-size:max(var(--fs-lead),26px);font-weight:700;
+  background:var(--red);color:#fff;text-decoration:none;border:2px solid var(--red-dark)}
+.slide a.btn:hover{background:var(--red-dark)}
+.slide a.btn:focus-visible{outline:3px solid var(--red-dark);outline-offset:3px}
+.slide a.btn.btn--ghost{background:var(--red-tint);color:var(--red-dark);border-color:var(--red-line)}
+.slide a.btn.btn--ghost:hover{background:var(--red-tint-2)}
+.pill.g{background:var(--g)}            /* legacy; not in the deck scheme */
+
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:8px;
+  padding:3px 12px;font-size:22px;font-weight:700;
+  background:var(--red-tint);color:var(--red-dark);border:1px solid var(--red-line)}
+
+/* speech-bubble callout. DEFAULT IS THE SOFT YELLOW, as originally built and
+   as the 2025 decks had it (Tim review 2026-08-16 — the warm-only round was
+   reverted). Warm variants (.r/.rd/.o) remain available. */
+.bubble{position:relative;display:inline-block;max-width:520px;
+  background:var(--y-soft);border:2px solid var(--y);border-radius:14px;
+  padding:16px 20px;font-size:var(--fs-min);color:#3a2828;line-height:1.3}
+.bubble::after{content:"";position:absolute;left:44px;bottom:-17px;width:0;height:0;
+  border:15px solid transparent;border-top-color:var(--y);border-bottom:0}
+.bubble::before{content:"";position:absolute;left:47px;bottom:-12px;width:0;height:0;
+  border:12px solid transparent;border-top-color:var(--y-soft);border-bottom:0;z-index:1}
+/* carnelian variants */
+.bubble.r{background:var(--red-tint);border-color:var(--red-line);color:#3a2828}
+.bubble.r::after{border-top-color:var(--red-line)}
+.bubble.r::before{border-top-color:var(--red-tint)}
+.bubble.rd{background:var(--red-tint-2);border-color:var(--red-dark);color:#3a1414}
+.bubble.rd::after{border-top-color:var(--red-dark)}
+.bubble.rd::before{border-top-color:var(--red-tint-2)}
+.bubble.o{background:var(--o-soft);border-color:var(--o)}
+.bubble.o::after{border-top-color:var(--o)} .bubble.o::before{border-top-color:var(--o-soft)}
+.bubble.berry{background:var(--berry-soft);border-color:var(--berry)}
+.bubble.berry::after{border-top-color:var(--berry)}
+.bubble.berry::before{border-top-color:var(--berry-soft)}
+/* pastel accent variants */
+.bubble.y{background:var(--y-soft);border-color:var(--y)}
+.bubble.y::after{border-top-color:var(--y)} .bubble.y::before{border-top-color:var(--y-soft)}
+.bubble.b{background:var(--b-soft);border-color:var(--b)}
+.bubble.b::after{border-top-color:var(--b)} .bubble.b::before{border-top-color:var(--b-soft)}
+.bubble.p{background:var(--p-soft);border-color:var(--p)}
+.bubble.p::after{border-top-color:var(--p)} .bubble.p::before{border-top-color:var(--p-soft)}
+.bubble.g{background:var(--g-soft);border-color:var(--g)}
+.bubble.g::after{border-top-color:var(--g)} .bubble.g::before{border-top-color:var(--g-soft)}
+.bubble.up::after{top:-17px;bottom:auto;border-top:0;border-bottom-color:var(--y)}
+.bubble.up::before{top:-12px;bottom:auto;border-top:0;border-bottom-color:var(--y-soft)}
+
+.imgring{border-radius:50%;object-fit:cover;border:4px solid var(--red);
+  box-shadow:0 2px 10px rgba(0,0,0,.16)}
+.imgring.rd{border-color:var(--red-dark)} .imgring.o{border-color:var(--o)}
+.imgring.y{border-color:var(--y)} .imgring.b{border-color:var(--b)}
+.imgring.p{border-color:var(--p)} .imgring.bm{border-color:var(--b-mid)}
+.imgring.pm{border-color:var(--p-mid)} .imgring.berry{border-color:var(--berry)}
+.imgring.lav{border-color:var(--lav)} .imgring.rose{border-color:var(--rose)}
+
+.underline-red{text-decoration:underline;text-decoration-color:var(--red);
+  text-decoration-thickness:3px;text-underline-offset:4px}
+
+/* code block for a slide (dark, like the site's code panels) */
+.slide pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+  padding:18px 22px;font-family:var(--mono);font-size:24px;line-height:1.4;
+  overflow:hidden;margin:0 0 14px}
+.slide pre .cm{color:var(--code-cm)}
+
+/* ================================================= 11. embeds, media, num ==
+   ADDITIVE (SL-3, 2026-08-23). New classes only — nothing above is changed.
+   These exist so decks stop inventing per-slide inline styles:
+     .embed*   a live page inside a slide (SLIDES-AUDIT finding 2)
+     .media--* image height, on the shared scale (finding 3)
+     .num/.tbl table cells without hand-kerned padding (finding 4)
+   Content-area geometry these are sized against: the stage is 1280x720, the
+   topbar takes 72px, .content adds 26px top + 64px bottom padding, so a
+   .content region is 1168 x 558 usable.
+   ======================================================================== */
+
+/* ---- .embed — an <iframe> of a real page on this site --------------------
+   Put the class on the iframe itself. Always pair with a title= (screen
+   readers) and loading="lazy" (37 decks x live pages is a lot of fetching).
+     <iframe class="embed" title="..." loading="lazy" src="../chapters/x.html">
+   Sizes: default sits under a subhead or a short list; --tall fills a content
+   region that has nothing else in it; --split fits a .cols cell.
+   ------------------------------------------------------------------------ */
+.embed{
+  display:block;width:100%;height:var(--embed-h,460px);margin-top:10px;
+  border:1px solid var(--line);border-radius:8px;
+  background:var(--white);                 /* pages with transparent grounds */
+  box-shadow:0 1px 6px rgba(0,0,0,.10);
+}
+.embed--tall{--embed-h:540px}              /* ~the whole 558px content region */
+.embed--split{--embed-h:300px}             /* inside .cols / .cols--21 / --12 */
+
+/* ---- .media--* — image sizing on one scale ------------------------------
+   Replaces inline height:240/300/320/340/380/400/500px. Use INSTEAD OF .fit
+   (these deliberately out-specify .cols img.fit), and keep the alt text.
+   contain, not cover: a plot must never be cropped to fill a box.
+   ------------------------------------------------------------------------ */
+.slide img.media--sm,.slide img.media--md,.slide img.media--lg{
+  display:block;width:auto;max-width:100%;margin-left:auto;margin-right:auto;
+  object-fit:contain;
+}
+.slide img.media--sm{height:240px}         /* thumbnail beside a list */
+.slide img.media--md{height:380px}         /* the deck-set default */
+.slide img.media--lg{height:500px}         /* the slide's whole point */
+
+/* ---- .media--xs — the extra rung below --sm ------------------------------
+   For slides that pack 3-4 small figures at once (a 2x2 of plots, a strip of
+   thumbnails). Same contract as the rungs above: contain, never cover, and
+   never combined with .fit.
+   ------------------------------------------------------------------------ */
+.slide img.media--xs{
+  display:block;width:auto;max-width:100%;margin-left:auto;margin-right:auto;
+  object-fit:contain;height:160px;
+}
+
+/* ---- .num / .tbl — numeric tables without hand-kerned cells -------------
+   .num on a th/td: right-aligned, tabular figures so digits line up.
+   .tbl on the table: compact padding at the 24px chrome floor.
+   ------------------------------------------------------------------------ */
+.slide .num{text-align:right;font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1}
+.slide table.tbl{border-collapse:collapse;width:100%;
+  font-size:var(--fs-chrome);line-height:1.3}
+.slide table.tbl th,.slide table.tbl td{padding:4px 14px;
+  border-bottom:1px solid var(--line);vertical-align:baseline}
+.slide table.tbl th{text-align:left;color:var(--red);font-weight:700}
+.slide table.tbl tr:last-child td{border-bottom:0}
+
+/* ---- .tbl--dense — the rung below .tbl for big lookup tables ------------
+   A MODIFIER on table.tbl, not a replacement: keep both classes. Reach for it
+   when a table has enough rows that .tbl at the 24px chrome floor runs past
+   the 558px content region — a standard-normal or control-chart-constants
+   lookup. It goes under the chrome floor deliberately, and only tables get
+   that exemption: a projected table is read by scanning to one cell, not by
+   reading the back row. Deck 30 inline-styled exactly this three times.
+     <table class="tbl tbl--dense">
+   ------------------------------------------------------------------------ */
+.slide table.tbl--dense{font-size:.62em;line-height:1.25}
+.slide table.tbl--dense th,.slide table.tbl--dense td{padding:2px 8px}
+
+/* ---- .ondark — a figure that needs to carry its own white ground --------
+   Line art exported with a transparent background disappears on a dark panel
+   (s-section, a toned .qcell). This hands the image the white it was drawn
+   against, plus enough padding that the ink is not flush to the edge.
+   Composes with any .media--* rung: the rung sets the height, this sets the
+   ground. Deck 32 inline-styled the background nine times.
+     <img class="media--sm ondark" src="..." alt="...">
+   ------------------------------------------------------------------------ */
+.slide img.ondark{background:#fff;border-radius:6px;padding:4px}
+
+/* =========================================================== deck chrome ==
+   Injected by slides.js onto every non-title slide.
+   ======================================================================== */
+.deckfoot{
+  position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:12px;
+  display:flex;align-items:center;gap:10px;
+  /* A11Y F-08: was #9a8a8a — 3.29:1 on the white slide ground. */
+  font-size:17px;color:#786c6c;pointer-events:auto;z-index:5;
+}
+.deckfoot .df-sep{opacity:.55}
+.deckfoot .df-count{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700}
+.deckfoot .df-chap{color:var(--red-dark);text-decoration:none;border:1px solid var(--red-line);
+  background:var(--red-tint);border-radius:999px;padding:1px 10px;font-weight:700}
+.deckfoot .df-chap:hover{background:var(--red);color:#fff;border-color:var(--red)}
+/* on a red ground the footer must invert or it disappears */
+/* A11Y F-08: was .72 alpha — composited to #eabfbf on --red, 4.11:1. */
+.s-section .deckfoot,.s-agenda .deckfoot{color:rgba(255,255,255,.86)}
+.s-section .deckfoot .df-chap,.s-agenda .deckfoot .df-chap{
+  color:#fff;background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35)}
+
+/* click targets for prev/next (slides.js also binds keys).
+   Legacy: slides.js v2 no longer creates `.edge` elements — the whole stage is
+   the click target now (left 40% back / right 60% forward, bound on document).
+   The rules stay so an older cached deck still renders sanely. */
+.edge{position:fixed;top:0;bottom:0;width:9vw;z-index:60;cursor:pointer;background:transparent}
+.edge.prev{left:0} .edge.next{right:0}
+body.is-print .edge{display:none}
+
+/* ======================================================= nav chrome (v2) ==
+   Everything below is injected by slides.js v2 and is *additive*: chevron
+   buttons, the progress bar, the overview grid, and the slide transition.
+   None of it touches an archetype or a token. See specs/SLIDES.md §5.
+   ======================================================================== */
+
+/* ---- the n / N counter is a real <button> now (opens the overview) ---- */
+.deckfoot .df-count{
+  appearance:none;-webkit-appearance:none;background:transparent;border:0;
+  font:inherit;color:inherit;cursor:pointer;padding:0 2px;line-height:inherit;
+}
+.deckfoot .df-count:hover{color:var(--red)}
+.s-section .deckfoot .df-count:hover,.s-agenda .deckfoot .df-count:hover{color:#fff}
+
+/* ---- nav landmark ------------------------------------------------------
+   A11Y F-09. slides.js puts the two chevrons and the progress bar inside this
+   <nav aria-label="Slide navigation"> instead of straight on <body>, so no
+   deck content sits outside a landmark. All three children are position:fixed,
+   so this element must contribute nothing at all to layout: no size, no
+   stacking context, no pointer surface of its own.
+   ---------------------------------------------------------------------- */
+/* Zero-box on purpose. Must never get transform / filter / contain: those
+   would make it the containing block for its position:fixed children. */
+.sg-chrome{position:static;display:block;width:0;height:0;margin:0;padding:0;border:0}
+
+/* ---- the active slide is a focus target (A11Y F-04) --------------------
+   slides.js parks focus here when the user navigates while tabbing. The ring
+   is inset so it can never widen the 1280×720 stage or disturb the letterbox,
+   and :focus-visible means a mouse or arrow-key presenter never sees it.
+   ---------------------------------------------------------------------- */
+.slide:focus{outline:none}
+.slide:focus-visible{outline:3px solid var(--red);outline-offset:-3px}
+
+/* ---- chevron buttons -------------------------------------------------- */
+.sg-nav{
+  position:fixed;top:50%;transform:translateY(-50%);
+  width:56px;height:56px;min-width:48px;min-height:48px;
+  display:flex;align-items:center;justify-content:center;
+  z-index:70;cursor:pointer;padding:0;
+  border:1px solid rgba(179,27,27,.28);border-radius:999px;
+  background:rgba(255,255,255,.80);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  color:var(--red);font-family:var(--slide-font);font-size:34px;line-height:1;
+  font-weight:700;
+  box-shadow:0 2px 10px rgba(0,0,0,.22);
+  opacity:1;transition:opacity .22s ease, background-color .15s ease;
+}
+.sg-nav span{display:block;margin-top:-4px}
+.sg-nav.sg-prev{left:14px}
+.sg-nav.sg-next{right:14px}
+.sg-nav:hover{background:rgba(255,255,255,.96)}
+.sg-nav:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+/* Fine pointers only: fade the chrome out when the mouse is idle. Coarse /
+   touch pointers keep it at full opacity — that is the whole point. */
+@media (hover:hover) and (pointer:fine){
+  body.is-nav-idle .sg-nav{opacity:.25}
+}
+body.is-print .sg-nav{display:none}
+
+/* ---- progress bar ----------------------------------------------------- */
+.sg-progress{
+  position:fixed;left:0;right:0;bottom:0;height:3px;z-index:71;
+  background:rgba(255,255,255,.14);pointer-events:none;
+}
+.sg-progress-fill{
+  height:100%;width:0;background:var(--red);
+  transition:width .18s ease;
+}
+@media (prefers-reduced-motion:reduce){ .sg-progress-fill{transition:none} }
+body.is-print .sg-progress{display:none}
+
+/* ---- overview grid ----------------------------------------------------
+   No clone and no second DOM: the real slides are re-laid-out at --ovs
+   (set by slides.js). The negative margins shrink each slide's margin box
+   to its scaled size so a plain flex-wrap grid does the layout.
+   ---------------------------------------------------------------------- */
+body.is-overview .deck{
+  position:fixed;inset:0;display:flex;flex-wrap:wrap;
+  align-content:flex-start;justify-content:center;gap:14px;
+  padding:18px;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;background:var(--letterbox);
+}
+body.is-overview .slide{
+  display:block;
+  transform:scale(var(--ovs,.2));transform-origin:top left;
+  margin:0 calc(var(--stage-w) * (var(--ovs,.2) - 1))
+           calc(var(--stage-h) * (var(--ovs,.2) - 1)) 0;
+  cursor:pointer;animation:none;
+  outline:6px solid rgba(255,255,255,.22);outline-offset:0;
+}
+/* the one archetype whose grid lives on the slide root (see §4) */
+body.is-overview .slide.s-agenda{display:grid}
+body.is-overview .slide.is-active{outline:16px solid var(--red)}
+/* a thumbnail is a jump target, not a live page: swallow inner clicks */
+body.is-overview .slide *{pointer-events:none}
+body.is-overview .sg-nav{display:none}
+
+/* ---- slide transition (direction-aware, ~180ms) -----------------------
+   Composed with the stage scale, so the keyframes re-apply scale(--sc).
+   ---------------------------------------------------------------------- */
+@keyframes sg-in-next{
+  from{opacity:0;transform:scale(var(--sc)) translateX(46px)}
+  to  {opacity:1;transform:scale(var(--sc)) translateX(0)}
+}
+@keyframes sg-in-prev{
+  from{opacity:0;transform:scale(var(--sc)) translateX(-46px)}
+  to  {opacity:1;transform:scale(var(--sc)) translateX(0)}
+}
+.slide.sg-in-next{animation:sg-in-next .18s ease-out both}
+.slide.sg-in-prev{animation:sg-in-prev .18s ease-out both}
+@media (prefers-reduced-motion:reduce){
+  .slide.sg-in-next,.slide.sg-in-prev{animation:none}
+  .sg-nav{transition:none}
+}
+body.is-print .slide.sg-in-next,body.is-print .slide.sg-in-prev{animation:none}
+
+/* ---- opt-in bullet-by-bullet build -----------------------------------
+   `<ul class="build">` (or `class="fragment"` on any element): the runtime
+   stamps data-revealed="yes"/"no" on each fragment. Hidden with VISIBILITY,
+   not display, so the list keeps its box and nothing below it jumps as the
+   bullets appear. No deck is affected until it opts in.
+   ---------------------------------------------------------------------- */
+.slide [data-revealed="no"]{visibility:hidden}
+.slide [data-revealed="yes"]{
+  visibility:visible;
+  animation:sg-frag-in .16s ease-out both;
+}
+@keyframes sg-frag-in{
+  from{opacity:0;transform:translateY(6px)}
+  to  {opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .slide [data-revealed="yes"]{animation:none}
+}
+/* Every "see the whole deck at once" surface shows the whole slide: the
+   overview grid, the print/scroll stack, the TOC thumbnails (which are
+   clones, so they carry whatever attribute was set when they were built),
+   and the browser's own print. */
+body.is-overview .slide [data-revealed="no"],
+body.is-print .slide [data-revealed="no"],
+.sg-toc-thumb [data-revealed="no"]{visibility:visible}
+body.is-overview .slide [data-revealed="yes"],
+body.is-print .slide [data-revealed="yes"],
+.sg-toc-thumb [data-revealed="yes"]{animation:none}
+@media print{
+  .slide [data-revealed="no"]{visibility:visible}
+  .slide [data-revealed="yes"]{animation:none}
+}
+
+/* ============================================================ print view ==
+   `?print` / the `p` key: every slide stacked and scrollable, for PDF export.
+   ======================================================================== */
+body.is-print{overflow:auto;background:#3a2a2a}
+body.is-print .deck{position:static;display:block;overflow:visible;padding:24px 0}
+body.is-print .slide{display:block;transform:none;margin:0 auto 22px;
+  box-shadow:0 2px 14px rgba(0,0,0,.4)}
+
+/* WK2.8 — every selector below is written to out-specify the `body.is-print`
+   SCREEN rules directly above. That matters: the Download PDF button (and the
+   `p` key) put `is-print` on <body> before opening the dialog, and
+   `body.is-print .slide` (0,2,1) beats a bare `body .slide` (0,1,1) however
+   late the print block appears. Until this was fixed the stacked view's 22px
+   bottom margin and 24px deck padding survived into the printed page, pushing
+   a 720px slide past the 720px page box and spilling EVERY slide onto a second
+   sheet. The dark #3a2a2a stacked-view ground is screen-only and stays that
+   way — the !important white below is what holds it there. */
+@media print{
+  /* `size: <length>{2} || <orientation>` is not a legal combination; the
+     trailing `landscape` invalidated the whole declaration and the printer
+     fell back to Letter portrait. 1280x720 is landscape by its own ratio. */
+  @page{size:1280px 720px;margin:0}
+  html,body,body.is-print{background:#fff !important;overflow:visible !important}
+  body .deck,body.is-print .deck{position:static;display:block;padding:0;margin:0}
+  body .slide,body.is-print .slide{
+    display:block !important;transform:none !important;
+    margin:0 !important;
+    width:var(--stage-w);height:var(--stage-h);overflow:hidden;
+    page-break-after:always;break-after:page;
+    page-break-inside:avoid;break-inside:avoid;
+    box-shadow:none !important;outline:none;
+  }
+  body .slide:last-child,body.is-print .slide:last-child{
+    page-break-after:auto;break-after:auto}
+  /* the one archetype whose layout lives on the slide root (see §3) — the
+     blanket display:block above would otherwise collapse its two columns */
+  body .slide.s-agenda,body.is-print .slide.s-agenda{display:grid !important}
+  /* position:fixed chrome would otherwise repeat on every sheet. */
+  .edge,.deckfoot .df-count,.sg-nav,.sg-progress,.sg-pdf-btn{display:none !important}
+  body .slide.sg-in-next,body .slide.sg-in-prev{animation:none}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+}
+
+/* Bold inside red-ground regions must stay white — the global red <strong>
+   default is invisible on the panel/section carnelian (lesson-7 catch). */
+.s-agenda .panel strong,.s-section strong,.s-topbar .topbar strong{color:#fff}
+
+/* ================================================ contents + search (WK2.10) ==
+   A toggleable table-of-contents sidebar with an in-deck filter box, built by
+   slides.js for every deck. Colours come from the deck tokens declared at the
+   top of this file — no new literals except the two shadows, which match the
+   existing chrome. Off-screen (and out of the tab order) until body.is-toc.
+   ============================================================================ */
+:root{ --toc-w:336px; --toc-thumb-sc:0.22; }
+
+/* ---- the toggle button (top-left, mirrors the .sg-nav chrome) ---------- */
+.sg-toc-btn{
+  position:fixed;top:14px;left:14px;z-index:72;
+  width:48px;height:48px;min-width:48px;min-height:48px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;cursor:pointer;
+  border:1px solid rgba(179,27,27,.28);border-radius:12px;
+  background:rgba(255,255,255,.80);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  color:var(--red);font-family:var(--slide-font);font-size:22px;line-height:1;
+  box-shadow:0 2px 10px rgba(0,0,0,.22);
+  transition:opacity .22s ease, background-color .15s ease, left .22s ease;
+}
+.sg-toc-btn:hover{background:rgba(255,255,255,.96)}
+.sg-toc-btn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  body.is-nav-idle .sg-toc-btn{opacity:.25}
+}
+body.is-toc .sg-toc-btn{opacity:1;left:calc(var(--toc-w) + 14px)}
+body.is-toc .sg-nav.sg-prev{left:calc(var(--toc-w) + 14px)}
+body.is-print .sg-toc-btn{display:none}
+
+/* ---- the panel -------------------------------------------------------- */
+.sg-toc{
+  position:fixed;top:0;left:0;bottom:0;width:var(--toc-w);max-width:86vw;
+  z-index:75;display:flex;flex-direction:column;
+  background:var(--white);color:var(--ink);
+  font-family:var(--slide-font);
+  border-right:1px solid var(--line);
+  box-shadow:4px 0 18px rgba(0,0,0,.28);
+  overflow:hidden;
+  transform:translateX(-102%);visibility:hidden;
+  transition:transform .22s ease, visibility .22s;
+}
+body.is-toc .sg-toc{transform:translateX(0);visibility:visible}
+body.is-print .sg-toc{display:none}
+
+.sg-toc-head{padding:14px;border-bottom:1px solid var(--line);background:var(--gray)}
+.sg-toc-lab{display:block;margin:0 0 6px;font-size:13px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--red)}
+.sg-toc-q{
+  width:100%;box-sizing:border-box;padding:9px 10px;
+  font-family:inherit;font-size:15px;color:var(--ink);background:var(--white);
+  border:1px solid var(--red-line);border-radius:8px;
+}
+.sg-toc-q:focus{outline:3px solid var(--red);outline-offset:1px}
+.sg-toc-status{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.sg-toc.is-empty .sg-toc-status{color:var(--red-dark);font-weight:700}
+
+/* ---- the list --------------------------------------------------------- */
+.sg-toc-list{
+  list-style:none;margin:0;padding:6px 0 18px;
+  flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.sg-toc-item[hidden]{display:none}
+.sg-toc-link{
+  display:flex;gap:10px;align-items:baseline;width:100%;
+  padding:8px 14px;border:0;background:none;cursor:pointer;
+  font-family:inherit;font-size:15px;line-height:1.3;
+  color:var(--ink);text-align:left;
+}
+.sg-toc-link:hover{background:var(--red-tint)}
+.sg-toc-link:focus-visible{outline:3px solid var(--red);outline-offset:-3px}
+.sg-toc-n{flex:0 0 2.2em;text-align:right;font-size:13px;font-weight:700;
+  color:var(--muted);font-variant-numeric:tabular-nums}
+.sg-toc-t{flex:1 1 auto}
+.sg-toc-item.is-current .sg-toc-link{
+  background:var(--red-tint-2);box-shadow:inset 4px 0 0 var(--red);
+  font-weight:700;color:var(--red-dark);
+}
+.sg-toc-item.is-current .sg-toc-n{color:var(--red-dark)}
+
+/* ---- nested section groups ------------------------------------------- */
+.sg-toc-group{list-style:none;margin:0;padding:0}
+.sg-toc-group[hidden]{display:none}
+.sg-toc-sec{
+  display:block;width:100%;padding:10px 14px 4px;
+  border:0;background:none;cursor:pointer;text-align:left;
+  font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--red);line-height:1.3;
+}
+.sg-toc-sec:hover{color:var(--red-dark)}
+.sg-toc-sec:focus-visible{outline:3px solid var(--red);outline-offset:-3px}
+.sg-toc-sub{list-style:none;margin:0;padding:0 0 8px}
+.sg-toc-sub .sg-toc-link{padding-left:22px}
+.sg-toc-sub .sg-toc-n{flex:0 0 1.8em}
+
+/* ---- panes (Contents / Thumbs / Links) -------------------------------- */
+.sg-toc-tabs{
+  display:flex;gap:4px;margin-top:10px;
+}
+.sg-toc-tab{
+  flex:1 1 0;padding:6px 4px;cursor:pointer;
+  border:1px solid var(--red-line);border-radius:8px;
+  background:var(--white);color:var(--muted);
+  font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.02em;
+}
+.sg-toc-tab.is-on{background:var(--red);color:#fff;border-color:var(--red)}
+.sg-toc-tab:focus-visible{outline:3px solid var(--red);outline-offset:1px}
+.sg-toc [data-pane]{display:none;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sg-toc.tab-toc [data-pane="toc"]{display:block}
+.sg-toc.tab-thumbs [data-pane="thumbs"]{display:flex}
+.sg-toc.tab-links [data-pane="links"]{display:block}
+
+/* ---- thumbnail scroller ---------------------------------------------- */
+.sg-toc-thumbs{
+  flex-direction:column;gap:10px;padding:10px 12px 18px;
+}
+.sg-toc-thumb{
+  position:relative;display:block;width:100%;padding:0;margin:0;
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  background:var(--letterbox);cursor:pointer;
+  aspect-ratio:16/9;flex:0 0 auto;
+}
+.sg-toc-thumb[hidden]{display:none}
+.sg-toc-thumb.is-current{outline:3px solid var(--red);outline-offset:0;border-color:var(--red)}
+.sg-toc-thumb:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.sg-toc-thumb-stage{
+  position:absolute;top:0;left:0;
+  width:1280px;height:720px;
+  transform-origin:top left;
+  transform:scale(var(--toc-thumb-sc, .22));
+  pointer-events:none;
+}
+.sg-toc-thumb .slide,
+.sg-toc-thumb .sg-thumb-slide{
+  display:block !important;
+  transform:none !important;
+  animation:none !important;
+  margin:0 !important;
+  width:1280px;height:720px;
+}
+.sg-toc-thumb .slide.s-agenda,
+.sg-toc-thumb .sg-thumb-slide.s-agenda{display:grid !important}
+.sg-toc-thumb-n{
+  position:absolute;top:6px;left:6px;z-index:2;
+  background:var(--red);color:#fff;
+  font-size:12px;font-weight:700;line-height:1;
+  padding:3px 7px;border-radius:999px;
+  font-variant-numeric:tabular-nums;
+}
+.sg-toc-thumb-ph{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;min-height:120px;
+  background:var(--gray-2);color:var(--muted);font-size:28px;font-weight:700;
+}
+
+/* ---- links chips ----------------------------------------------------- */
+.sg-toc-chips{
+  display:flex;flex-wrap:wrap;gap:4px;
+  padding:0 14px 8px 22px;
+}
+.sg-toc-chip{
+  display:inline-block;max-width:100%;
+  padding:3px 8px;border-radius:999px;
+  font-size:11px;font-weight:700;line-height:1.3;
+  text-decoration:none;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.sg-toc-chip.kind-hw{background:#5c0a0a;color:#fff}          /* homework: dark red */
+.sg-toc-chip.kind-activity{background:var(--red);color:#fff} /* activity: red */
+.sg-toc-chip.kind-canvas{background:var(--red-tint);color:var(--red-dark);
+  border:1px solid var(--red-line)}                          /* Canvas page: light red */
+.sg-toc-chip.kind-site{background:var(--o-soft);color:var(--peach-ink)} /* textbook: tan */
+.sg-toc-chip.kind-other{background:var(--gray-2);color:#6a5858;
+  border:1px solid var(--line)}                              /* generic: grey */
+
+/* ---- desktop push layout (do not overlay the 16:9 stage) ------------- */
+@media (min-width:900px){
+  body.is-toc-push .deck{
+    left:var(--toc-w);right:0;width:auto;
+  }
+  body.is-toc-push .sg-progress{left:var(--toc-w)}
+  body.is-toc-push .sg-toc{
+    box-shadow:none;border-right:1px solid var(--line);max-width:none;
+  }
+}
+
+@media (max-width:640px){
+  :root{ --toc-w:300px; }
+  /* the panel covers the chevrons at this width — get them out of the way */
+  body.is-toc .sg-toc-btn{left:auto;right:14px}
+  body.is-toc .sg-nav{opacity:0;pointer-events:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .sg-toc,.sg-toc-btn{transition:none}
+}
+@media print{
+  .sg-toc,.sg-toc-btn{display:none !important}
+}
+
+/* ================================================== download PDF (WK2.8) ==
+   Top-RIGHT, mirroring the ☰ contents button across the top edge. Top-left is
+   WK2.10's, and the chevrons own the vertical middle of both sides, so the
+   top-right corner is the only fixed slot with nothing in it. Same tokens,
+   same 48px minimum hit target, same idle-fade as the rest of the chrome.
+   Hidden in the stacked print view AND in @media print, so it can never end
+   up on a page. Also in NO_NAV and activationTarget() in slides.js.
+   ========================================================================= */
+.sg-pdf-btn{
+  position:fixed;top:14px;right:14px;z-index:72;
+  height:48px;min-height:48px;
+  display:flex;align-items:center;gap:7px;
+  padding:0 15px;cursor:pointer;
+  border:1px solid rgba(179,27,27,.28);border-radius:12px;
+  background:rgba(255,255,255,.80);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  color:var(--red);font-family:var(--slide-font);font-size:15px;line-height:1;
+  font-weight:700;letter-spacing:.02em;
+  box-shadow:0 2px 10px rgba(0,0,0,.22);
+  transition:opacity .22s ease, background-color .15s ease;
+}
+.sg-pdf-btn .sg-pdf-ico{font-size:19px;line-height:1}
+.sg-pdf-btn:hover{background:rgba(255,255,255,.96)}
+.sg-pdf-btn:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  body.is-nav-idle .sg-pdf-btn{opacity:.25}
+}
+body.is-print .sg-pdf-btn{display:none}
+body.is-overview .sg-pdf-btn{display:none}
+@media (max-width:640px){
+  /* the label is the first thing to go, then the whole button once the
+     contents panel has pushed the ☰ into this same corner */
+  .sg-pdf-btn .sg-pdf-lab{display:none}
+  .sg-pdf-btn{padding:0;width:48px;min-width:48px;justify-content:center}
+  body.is-toc .sg-pdf-btn{opacity:0;pointer-events:none}
+}
+@media (prefers-reduced-motion:reduce){ .sg-pdf-btn{transition:none} }
+@media print{ .sg-pdf-btn{display:none !important} }
+
+/* ================================================= lang-pair (R ⇄ Python) ==
+   Paired <pre data-lang="r"> / <pre data-lang="py">. slides.js injects the
+   R | Python pill and persists the choice as localStorage sts-slide-track
+   so every pair in the deck (and same-origin playground iframes) stay in
+   sync. Without JS, R stays visible — fail open to the first-track default.
+   ======================================================================== */
+.lang-pair{display:flex;flex-direction:column;gap:10px;min-width:0}
+.lang-toggle{
+  display:inline-flex;align-self:flex-start;flex-shrink:0;
+  border:1px solid var(--line);border-radius:999px;overflow:hidden;
+  background:var(--white);
+}
+.lang-seg{
+  appearance:none;-webkit-appearance:none;border:0;margin:0;
+  background:transparent;color:var(--muted);
+  font-family:var(--slide-font);font-size:var(--fs-chrome);font-weight:700;
+  line-height:1;letter-spacing:.02em;
+  padding:7px 16px;cursor:pointer;
+}
+.lang-seg + .lang-seg{border-left:1px solid var(--line)}
+.lang-seg:hover{color:var(--red);background:var(--red-tint)}
+.lang-seg.is-active{background:var(--red);color:#fff}
+.lang-seg.is-active:hover{color:#fff;background:var(--red)}
+.lang-seg:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.lang-pair pre[data-lang="py"]{display:none}
+.lang-pair pre[data-lang="r"]{display:block}
+body[data-slide-track="py"] .lang-pair pre[data-lang="r"]{display:none}
+body[data-slide-track="py"] .lang-pair pre[data-lang="py"]{display:block}
+body[data-slide-track="r"] .lang-pair pre[data-lang="py"]{display:none}
+body[data-slide-track="r"] .lang-pair pre[data-lang="r"]{display:block}
+body.is-print .lang-toggle{display:none}
+body.is-print .lang-pair pre[data-lang]{display:block;margin-bottom:14px}
+
+/* ============================================= attendance slide (ATT.4) ==
+   `<section class="slide s-attendance" data-attendance>` — the in-class QR
+   check. slides.js injects .att-stage (frame + caption bar) and mounts the
+   iframe only while the slide is on screen; see specs/SLIDES.md §"Attendance
+   slide". The frame is full-bleed except for a bottom band that keeps the
+   injected .deckfoot legible, and the caption/link line is chrome (24px
+   floor), not body copy.
+   ======================================================================== */
+.s-attendance .att-stage{
+  position:absolute;left:0;right:0;top:0;bottom:40px;
+  display:flex;flex-direction:column;background:var(--white);
+}
+.s-attendance .att-frame{
+  position:relative;flex:1 1 auto;min-height:0;overflow:hidden;
+  background:var(--gray);border-bottom:3px solid var(--red);
+}
+.s-attendance .att-iframe{
+  position:absolute;left:0;top:0;width:100%;height:100%;
+  border:0;display:block;background:var(--white);
+}
+/* shown instead of the iframe under automation (no network from the gate) */
+.s-attendance .att-offline{
+  position:absolute;left:0;top:0;width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;color:var(--muted);text-align:center;padding:0 var(--pad-x);
+}
+.s-attendance .att-bar{
+  flex:0 0 auto;display:flex;align-items:baseline;gap:20px;
+  padding:10px var(--pad-x) 8px;font-size:var(--fs-chrome);
+}
+.s-attendance .att-caption{font-weight:700;color:var(--red)}
+.s-attendance .att-open{color:var(--red-dark);text-decoration:underline}
+.s-attendance .att-open:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.s-attendance .att-hint{margin-left:auto;color:var(--muted)}
+/* The deck may carry a .subhead purely so the contents sidebar has a name for
+   the slide; the stage is full-bleed, so it never renders. */
+.s-attendance .subhead{display:none}
+
+/* L5 fragment: 24-types.html */
+/* L5.2 slide 24 - Types of Control Charts (scoped under .l5-types) */
+.l5-types .subhead{margin-bottom:14px}
+.l5-types .l5-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.l5-types .l5-colhead{display:flex;align-items:baseline;gap:12px;margin:0 0 10px;
+  padding-bottom:6px;border-bottom:3px solid var(--red)}
+.l5-types .l5-colhead b{font-size:28px;color:var(--red-dark)}
+.l5-types .l5-colhead span{font-size:22px;color:#5a4242}
+.l5-types .l5-list{display:flex;flex-direction:column;gap:16px}
+.l5-types .l5-card{display:grid;grid-template-columns:118px 1fr;column-gap:16px;align-items:center;
+  background:var(--gray);border:1px solid var(--line);border-left:6px solid var(--red);
+  border-radius:10px;padding:10px 14px;min-height:104px;box-sizing:border-box}
+.l5-types .l5-attr .l5-card{border-left-color:var(--p-mid)}
+.l5-types .l5-attr .l5-colhead{border-bottom-color:var(--p-mid)}
+.l5-types .l5-attr .l5-colhead b{color:var(--p-mid)}
+.l5-types .l5-sym{font-family:"Cambria Math","STIX Two Math","Times New Roman",Georgia,serif;
+  font-style:italic;font-size:44px;line-height:1;color:var(--ink);text-align:center;white-space:nowrap}
+.l5-types .l5-sym .amp{font-style:normal;font-size:24px;color:var(--muted);margin:0 5px;vertical-align:middle}
+.l5-types .l5-sym .bar{position:relative;display:inline-block}
+.l5-types .l5-sym .bar::before{content:"";position:absolute;left:22%;right:-6%;top:-3px;border-top:3px solid currentColor}
+.l5-types .l5-name{font-size:23px;font-weight:700;color:var(--ink);line-height:1.2}
+.l5-types .l5-name a{color:inherit}
+.l5-types .l5-when{font-size:20px;color:#4a3434;line-height:1.25;margin-top:1px}
+.l5-types .l5-fn{font-size:20px;line-height:1.3;margin-top:3px}
+.l5-types .l5-fn a{font-family:var(--mono);font-size:20px;color:var(--red-dark);
+  background:#fff;border:1px solid var(--red-line);border-radius:6px;padding:0 6px;text-decoration:none}
+.l5-types .l5-attr .l5-fn a{color:var(--p-mid);border-color:var(--p-soft)}
+.l5-types .l5-fn a:hover{text-decoration:underline}
+.l5-types .l5-foot{font-size:20px;color:var(--muted);margin-top:16px}
+.l5-types .l5-foot code{font-size:20px}
+
+/* L5 fragment: 33-tests.html */
+.l5-tests .content{padding-top:14px;padding-bottom:48px}
+.l5-tests .subhead{font-size:28px;margin-bottom:10px}
+.l5-tests .tests-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;
+  gap:12px;height:500px}
+.l5-tests .tcard{display:flex;flex-direction:column;background:var(--gray);border:1px solid var(--line);
+  border-radius:8px;padding:8px 10px 8px;min-height:0;overflow:hidden}
+.l5-tests .tcard h3{font-size:20px;line-height:1.18;font-weight:700;color:var(--ink);margin:0 0 4px}
+.l5-tests .tcard h3 b{color:var(--red)}
+.l5-tests .tcard img{flex:1 1 auto;min-height:0;width:100%;object-fit:contain;display:block;border-radius:4px}
+.l5-tests .tcard .sig{font-size:20px;line-height:1.2;color:var(--red-dark);margin-top:4px}
+.l5-tests .caption{margin-top:6px}
+
+/* L5 fragment: 40-46-attribute.html */
+/* L5.5 slides 40-46 - Attribute Charts subsection (scoped under section.l5-attr;
+   "section." keeps it clear of the .l5-attr column div inside L5.2's slide 24) */
+section.l5-attr .content{font-size:26px}
+section.l5-attr .subhead{margin-bottom:10px}
+section.l5-attr p{margin:0 0 10px}
+section.l5-attr .m{font-family:"Cambria Math","STIX Two Math","Times New Roman",Georgia,serif;font-style:italic;white-space:nowrap}
+section.l5-attr .m .up{font-style:normal}
+section.l5-attr .bar{text-decoration:overline;text-decoration-thickness:2px}
+section.l5-attr .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px}
+section.l5-attr .frac>span:first-child{border-bottom:2px solid currentColor;padding:0 6px 2px}
+section.l5-attr .frac>span:last-child{padding:2px 6px 0}
+section.l5-attr .rad{border-top:2px solid currentColor;padding:0 4px 0 2px}
+section.l5-attr .eq{font-size:32px;line-height:1.5;margin:4px 0 8px 36px;color:var(--ink)}
+section.l5-attr .eqs .eq{margin:2px 0}
+section.l5-attr .tbls{display:flex;gap:26px;align-items:flex-start;justify-content:center}
+section.l5-attr table.tbl{width:auto;font-size:20px;line-height:1.2}
+section.l5-attr table.tbl th,section.l5-attr table.tbl td{padding:3px 12px}
+section.l5-attr table.tbl td{white-space:nowrap}
+section.l5-attr table.tbl td.n,section.l5-attr table.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
+section.l5-attr table.tbl tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+section.l5-attr table.big{font-size:26px}
+section.l5-attr table.big td{padding:6px 22px}
+section.l5-attr .tcap{font-size:22px;font-weight:700;color:var(--ink);text-align:center;margin:0 0 6px}
+section.l5-attr .fig{width:100%;display:block;border:1px solid var(--line);border-radius:6px}
+section.l5-attr .figcap{font-size:20px;color:var(--muted);margin-top:6px}
+section.l5-attr .figcap a,section.l5-attr .note a{color:#ad5252}
+section.l5-attr .note{font-size:22px;line-height:1.3;color:#4a3434;background:var(--gray);
+  border-left:6px solid var(--p-mid);border-radius:8px;padding:8px 14px;margin-top:10px}
+section.l5-attr ol.tight li,section.l5-attr ul.tight li{margin-bottom:.25em}
+section.l5-attr .src{font-size:20px;bottom:50px}
+section.l5-attr .figcap code{font-size:19px}
+section.l5-attr .src code{font-size:19px}
+
+/* L5 fragment: 28-31-weights.html */
+.l5-weights .ov{display:inline-block;border-top:2px solid currentColor;line-height:1;padding-top:2px}
+.l5-weights .ov2{display:inline-block;border-top:5px double currentColor;line-height:1;padding-top:1px}
+.l5-weights table.l5t{border-collapse:collapse;font-variant-numeric:tabular-nums;margin:0 auto;color:var(--ink)}
+.l5-weights table.l5t th{font-weight:700;color:var(--red-dark);border-bottom:2px solid var(--red);padding:4px 12px;text-align:right;white-space:nowrap}
+.l5-weights table.l5t td{padding:3px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.l5-weights table.l5t .c{text-align:center}
+.l5-weights table.l5t tfoot td{border-top:2px solid var(--red);border-bottom:none;font-weight:700;color:var(--red-dark);vertical-align:top}
+.l5-weights table.l5t-w{font-size:22px}
+.l5-weights table.l5t-w td.d{color:#5c4848}
+.l5-weights table.l5t-c{font-size:22px;line-height:1.2}
+.l5-weights table.l5t-c td{padding:2px 12px}
+.l5-weights table.l5t-c th.grp{border-bottom:1px solid var(--red-line)}
+.l5-weights table.l5t-c td:nth-child(4){border-right:2px solid var(--red-line)}
+.l5-weights table.l5t-c td:nth-child(7){border-right:2px solid var(--red-line)}
+.l5-weights table.l5t-c td.flagged{background:var(--red-tint)}
+.l5-weights sup.flag{color:var(--red);font-weight:700}
+.l5-weights table.l5t-p{font-size:22px;margin:0}
+.l5-weights table.l5t-p{line-height:1.2}
+.l5-weights table.l5t-p td,.l5-weights table.l5t-p th{padding:1px 10px}
+.l5-weights table.l5t-f{font-size:24px;margin:0}
+.l5-weights table.l5t-f td,.l5-weights table.l5t-f th{padding:5px 14px}
+.l5-weights table.l5t-f td:first-child,.l5-weights table.l5t-f th:first-child{text-align:left}
+.l5-weights table.l5t-f td{text-align:center}
+.l5-weights .tcap{font-size:22px;color:#5c5c5c;text-align:center;margin-bottom:8px}
+.l5-weights .tcap b{color:var(--red-dark)}
+.l5-weights .note{font-size:20px;color:#5c5c5c;line-height:1.35;margin-top:10px}
+.l5-weights .eqs{font-size:30px;line-height:1.5}
+.l5-weights .eqs .eq{font-size:34px;margin:4px 0 14px 24px;font-family:"Cambria Math","Times New Roman",serif}
+.l5-weights .frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 4px;font-size:30px}
+.l5-weights .frac > span:first-child{border-bottom:2px solid currentColor;padding:0 4px}
+.l5-weights .twotab{display:flex;gap:18px;align-items:flex-start}
+.l5-weights .fig img{width:100%;display:block;border:1px solid var(--line)}
+
+/* ======================================================= formula cards ==
+   CAP.5 — the course-wide way to put a formula on a slide as real text
+   (copyable, searchable, crisp at any zoom) instead of a screenshot.
+   Spec: specs/SLIDES.md §3 "Formula cards". Generalises the Lesson-5
+   one-offs (.l5-tests .tcard, section.l5-attr .eq, .l5-weights .eqs .eq),
+   which stay as they are.
+
+     <div class="fcards">                          1-3 cards, equal height
+       <div class="fcard">
+         <div class="fname">C<sub>p</sub> · capability</div>
+         <div class="fx">C<sub>p</sub> = <span class="frac"><span
+           class="num">USL − LSL</span><span class="den">6σ</span></span></div>
+         <div class="fnote">use when …</div>                (optional)
+         <div class="fchips"><span>stable</span></div>       (optional)
+       </div>
+       <div class="fcard fcard--work"> … .fx > .fstep × 2-4 … </div>
+     </div>
+
+   COPY TEXT. Selecting a card must paste as one readable line, e.g.
+   "Ppk = (USL − Mean) / (3σtotal)". So nothing structural is display:block
+   or flex/grid-item inside .fx (innerText/Selection would add newlines):
+   .frac / .fargs stack their parts as full-width inline-blocks, and the
+   linear punctuation ("(", ") / (", ")", ", ") lives in .sr spans the
+   author writes — kept in the DOM text, clipped out of sight. The snippet
+   in specs/SLIDES.md carries them; copy it rather than retyping.
+   ======================================================================== */
+.fcards{display:flex;gap:22px;align-items:stretch;margin-top:4px}
+.fcards > .fcard{flex:1 1 0}
+.fcards > .fcard--wide{flex-grow:1.3}        /* e.g. min() of two fractions */
+.fcard{position:relative;display:flex;flex-direction:column;gap:12px;
+  background:var(--gray);border:1px solid var(--line);border-left:8px solid var(--red);
+  border-radius:4px 12px 12px 4px;padding:16px 20px 18px 22px;
+  box-shadow:0 2px 0 var(--line);min-width:0;
+  break-inside:avoid;page-break-inside:avoid}
+.fcard .fname{font-size:max(var(--fs-min),26px);font-weight:700;line-height:1.2;
+  color:var(--red-dark);padding-bottom:8px;border-bottom:2px solid var(--red-line)}
+.fcard .fname sub,.fcard .fname sup{font-size:.7em}
+/* the formula itself: math serif, 36px (>= 34 floor), centered on a white
+   plate so it reads as "the thing to copy down" */
+.fcard .fx{flex:1 1 auto;display:block;align-content:center;
+  font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;
+  font-size:34px;line-height:1.25;color:var(--ink);text-align:center;
+  background:var(--white);border:1px solid var(--line);border-radius:10px;
+  padding:14px 8px;min-height:120px}
+.fcard .fx .fline{white-space:nowrap}          /* optional: keep a run unbroken */
+.fcard .fx sub,.fcard .fx sup{font-size:.58em;line-height:0}
+.fcard .fx sub{vertical-align:-.38em}
+.fcard .fx sup{vertical-align:.62em}
+.fcard .fx i,.fcard .fx var{font-style:italic}
+/* stacked fraction: .frac > .num + .den, rule between; .sr carries the
+   linear "(" … ")/(" … ")" for copy-paste */
+.fcard .frac{display:inline-block;width:min-content;vertical-align:middle;
+  text-align:center;margin:0 .15em;white-space:normal;line-height:1.15}
+.fcard .frac .num,.fcard .frac .den{display:inline-block;width:100%;
+  white-space:nowrap;padding:0 .2em;box-sizing:border-box}
+.fcard .frac .num{border-bottom:2px solid currentColor;padding-bottom:.08em}
+.fcard .frac .den{padding-top:.08em}
+/* min( a , b ) with the arguments stacked — fits a formula like Ppk into a
+   one-third card. Rounded side borders draw the parentheses. */
+.fcard .fargs{display:inline-block;width:min-content;vertical-align:middle;white-space:normal;
+  border-left:2.5px solid currentColor;border-right:2.5px solid currentColor;
+  border-radius:22px / 50%;padding:4px .3em;margin-left:.08em}
+.fcard .fargs > .farg{display:inline-block;width:100%;white-space:nowrap;text-align:center}
+.fcard .fargs > .farg ~ .farg{margin-top:18px}  /* ~ not +: an .sr sits between */
+.fcard .fop{font-style:normal;font-family:var(--slide-font);font-size:.8em;
+  font-weight:700;color:var(--red-dark);letter-spacing:.02em}   /* min / max */
+/* visually hidden, still in the selection text */
+.fcard .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:pre}
+.fcard .fnote{font-size:max(var(--fs-min),26px);line-height:1.25;color:var(--ink)}
+.fcard .fnote b{color:var(--red-dark)}
+.fcard .fchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.fcard .fchips > span{font-size:var(--fs-chrome);font-weight:700;line-height:1;
+  padding:5px 12px;border-radius:999px;background:var(--red-tint);
+  color:var(--red-dark);box-shadow:inset 0 0 0 2px var(--red-line)}
+/* worked example: givens -> substitution -> result, result emphasised */
+.fcard--work{background:var(--white);border-left-color:var(--red-dark)}
+.fcard--work .fx{flex-direction:column;align-items:stretch;justify-content:center;
+  gap:10px;background:var(--gray-2)}
+.fcard--work .fx .fstep{display:block;white-space:nowrap;text-align:left;
+  font-size:34px;line-height:1.3;color:var(--ink)}
+.fcard--work .fx .fstep.fgiven{font-family:var(--slide-font);font-size:max(var(--fs-min),26px);
+  color:var(--muted);white-space:normal}
+.fcard--work .fx .fstep:last-child{margin-top:4px;padding-top:12px;
+  border-top:2px dashed var(--red-line);font-weight:700;color:var(--red)}
+.fcard .fverdict{display:inline-block;align-self:flex-start;font-size:max(var(--fs-min),26px);
+  font-weight:700;line-height:1.1;padding:8px 16px;border-radius:8px;
+  background:var(--red);color:var(--white)}
+.fcard .fverdict.ok{background:var(--b-mid)}
+.fcard .fverdict sub{font-size:.7em}
+/* one card on its own: don't stretch a short formula across 1168px */
+.fcards > .fcard:only-child{flex:0 1 760px;margin:0 auto}
+.fcards > .fcard:only-child .fx{font-size:44px}
+/* print: keep every card whole, keep the plates */
+body.is-print .fcard{break-inside:avoid;page-break-inside:avoid}
+@media print{
+  .fcard{break-inside:avoid;page-break-inside:avoid;box-shadow:none;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .fcard .sr{position:absolute !important}
+}
+/* ====================================================== /formula cards == */
+
+/* ---- .tbl-scroll — a full data table in a scroll box (L6.FIX2, 2026-09-28)
+   Wrap a table.tbl in <div class="tbl-scroll" style="max-height:…"> to show
+   ALL rows rather than truncating them: vertical scroll, a sticky header row
+   and a sticky totals row (tfoot), and an always-visible scrollbar. In print
+   the box keeps its scroll (a full 22-row table does not fit the stage at the
+   26px floor); the sticky header and footer frame whatever rows show. */
+.slide .tbl-scroll{max-height:460px;overflow-y:auto;overflow-x:hidden;
+  border:1px solid var(--line);border-radius:6px;background:var(--white);
+  scrollbar-width:auto;scrollbar-color:var(--red-line) var(--gray)}
+.slide .tbl-scroll::-webkit-scrollbar{width:12px}
+.slide .tbl-scroll::-webkit-scrollbar-track{background:var(--gray)}
+.slide .tbl-scroll::-webkit-scrollbar-thumb{background:var(--red-line);border-radius:6px}
+.slide .tbl-scroll table.tbl{border-collapse:separate;border-spacing:0}
+.slide .tbl-scroll thead th{position:sticky;top:0;z-index:1;background:var(--white);
+  box-shadow:inset 0 -2px 0 var(--red-line)}
+.slide .tbl-scroll tfoot td{position:sticky;bottom:0;z-index:1;background:var(--gray-2);
+  font-weight:700;box-shadow:inset 0 2px 0 var(--ink)}
+@media print{.slide .tbl-scroll{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+/* ================================================== /tbl-scroll (L6.FIX2) == */

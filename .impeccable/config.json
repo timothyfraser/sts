@@ -1,0 +1,30 @@
+{
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "docs-v3/slides/**"
+        ],
+        "createdAt": "2026-09-29T05:19:38.530Z",
+        "reason": "Purple heading text is the course colour (#6B21A8 / #3B0764) chosen by the instructor; DESIGN.md Intentional decisions"
+      },
+      {
+        "rule": "overused-font",
+        "value": "lato",
+        "createdAt": "2026-09-29T05:21:32.763Z",
+        "reason": "Vendored Lato in decks is the course font split chosen by the instructor (system sans on the site, Lato in decks); DESIGN.md Intentional decisions"
+      }
+    ]
+  }
+}
