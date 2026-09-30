@@ -1,0 +1,117 @@
+# .github/workflows/deploy.yml: build the page and publish dist/ to Posit Connect
+# as a static site, every time you push a change to the page.
+#
+# This file only runs when it sits at .github/workflows/deploy.yml in the ROOT
+# of your own repository, with this app (package.json, src/, ...) at that root too.
+# In the course repo it is an example: GitHub ignores workflows in subfolders.
+#
+# One-time setup in your repo (Settings -> Secrets and variables -> Actions):
+#   Secrets   CONNECT_API_KEY       your Posit Connect API key (Connect: your name -> API Keys)
+#             CONNECT_SERVER        optional; only if your server is not the default below
+#   Variables CONNECT_CONTENT_GUID  the GUID of the static content to replace (README, "Deploy")
+#             VITE_API_URL          your deployed Plumber API's URL (baked into the build; not secret)
+#
+# How it publishes: upload a bundle, start the deploy, watch it briefly, then
+# DETACH. Connect finishes the deploy on its own whether or not we watch, and
+# watching costs Actions minutes. The log prints the task id either way.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+    # Only redeploy when something that changes the page changed. Editing the
+    # README does not burn a deploy.
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: {}   # adds a "Run workflow" button on the Actions tab
+
+# One deploy at a time. A newer push cancels an older, still-running deploy,
+# so the site always ends up at the newest commit.
+concurrency:
+  group: deploy-connect
+  cancel-in-progress: true
+
+env:
+  # The Connect server, in ONE place. The course server is tentative: if your
+  # instructor gives you another, set the CONNECT_SERVER secret instead of editing here.
+  CONNECT_SERVER: ${{ secrets.CONNECT_SERVER || 'https://connect.systems-apps.com' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm           # reuse downloaded packages between runs
+
+      # npm ci installs EXACTLY what package-lock.json says, so CI builds what you built.
+      - run: npm ci
+
+      # VITE_ variables are read at BUILD time and end up inside the built files.
+      - run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+
+      - name: Publish dist/ to Posit Connect (upload, deploy, watch 60 s, detach)
+        env:
+          CONNECT_API_KEY: ${{ secrets.CONNECT_API_KEY }}
+          CONTENT_GUID: ${{ vars.CONNECT_CONTENT_GUID }}
+        run: |
+          set -euo pipefail
+          # Fail early, in words, if setup is missing. (The key itself is never printed.)
+          [ -n "$CONNECT_API_KEY" ] || { echo "Missing secret CONNECT_API_KEY"; exit 1; }
+          [ -n "$CONTENT_GUID" ]    || { echo "Missing variable CONNECT_CONTENT_GUID (see README, Deploy)"; exit 1; }
+          SERVER="${CONNECT_SERVER%/}"
+          AUTH="Authorization: Key ${CONNECT_API_KEY}"
+
+          # 1. A manifest tells Connect "this is a static site; index.html is the front page".
+          cd dist
+          python3 - <<'PY'
+          import hashlib, json, os
+          files = {}
+          for root, _, names in os.walk("."):
+              for n in names:
+                  p = os.path.relpath(os.path.join(root, n)).replace(os.sep, "/")
+                  if p != "manifest.json":
+                      files[p] = {"checksum": hashlib.md5(open(p, "rb").read()).hexdigest()}
+          json.dump({"version": 1,
+                     "metadata": {"appmode": "static", "primary_html": "index.html", "entrypoint": "index.html"},
+                     "files": files}, open("manifest.json", "w"), indent=2)
+          print(f"manifest: {len(files)} files")
+          PY
+          tar -czf ../bundle.tar.gz .
+          cd ..
+
+          # 2. Upload the bundle.
+          BUNDLE_ID=$(curl -fsS -X POST "$SERVER/__api__/v1/content/$CONTENT_GUID/bundles" \
+            -H "$AUTH" -H "Content-Type: application/gzip" --data-binary @bundle.tar.gz | jq -r .id)
+          echo "uploaded bundle $BUNDLE_ID"
+
+          # 3. Ask Connect to deploy it. This returns at once with a task id.
+          TASK_ID=$(curl -fsS -X POST "$SERVER/__api__/v1/content/$CONTENT_GUID/deploy" \
+            -H "$AUTH" -H "Content-Type: application/json" -d "{\"bundle_id\": \"$BUNDLE_ID\"}" | jq -r .task_id)
+          echo "deploy task $TASK_ID started"
+
+          # 4. Watch for up to 60 s to catch an immediate failure, then detach.
+          FIRST=0
+          for i in 1 2 3 4 5 6; do
+            T=$(curl -fsS "$SERVER/__api__/v1/tasks/$TASK_ID?wait=10&first=$FIRST" -H "$AUTH")
+            echo "$T" | jq -r '.output[]?' | sed 's/^/  connect> /'
+            FIRST=$(echo "$T" | jq -r '.last // 0')
+            if [ "$(echo "$T" | jq -r .finished)" = "true" ]; then
+              [ "$(echo "$T" | jq -r .code)" = "0" ] && { echo "Deployed."; exit 0; }
+              echo "Deploy FAILED: $(echo "$T" | jq -r '.error // "see the connect> lines above"')"; exit 1
+            fi
+          done
+          echo "Detaching: task $TASK_ID is still running on Connect. That is normal, not a failure."
+          echo "Follow it at $SERVER/connect/#/apps/$CONTENT_GUID"

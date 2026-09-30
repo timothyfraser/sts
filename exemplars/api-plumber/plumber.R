@@ -112,3 +112,30 @@ function(month = "2012-01") {
   list(stub = TRUE, month = month, predicted_solar_rate = round(base, 4),
        model = "baseline-mean")
 }
+
+#* Boston precincts as GeoJSON with voter turnout attached (for exemplars/react-map).
+#* GeoJSON must be WGS84 longitude/latitude (EPSG:4326): the spec (RFC 7946) says so
+#* and MapLibre/Leaflet assume it. So we st_transform() BEFORE writing, always, even
+#* when the file already looks like degrees. Simplified and rounded to keep it small.
+#* @param tolerance Simplify tolerance in metres (default 15; 0 = no simplification)
+#* @serializer contentType list(type = "application/geo+json")
+#* @get /geo
+function(tolerance = 15) {
+  s = read_spatial()
+  tol = suppressWarnings(as.numeric(tolerance))
+  if (is.na(tol) || tol < 0) tol = 15
+  shapes = s$precincts %>%
+    left_join(s$votes %>% select(ward_precinct, voter_turnout), by = "ward_precinct") %>%
+    select(ward_precinct, voter_turnout)
+  if (tol > 0) {
+    # Simplify in a metre-based CRS (Massachusetts State Plane, EPSG:26986), not in degrees.
+    shapes = shapes %>% sf::st_transform(26986) %>%
+      sf::st_simplify(preserveTopology = TRUE, dTolerance = tol)
+  }
+  shapes = sf::st_transform(shapes, 4326)   # THE CRS TRAP: GeoJSON is WGS84, full stop
+  path = tempfile(fileext = ".geojson")
+  on.exit(unlink(path))
+  sf::st_write(shapes, path, driver = "GeoJSON", quiet = TRUE,
+               layer_options = c("COORDINATE_PRECISION=5", "RFC7946=YES"))
+  readChar(path, file.info(path)$size, useBytes = TRUE)
+}
