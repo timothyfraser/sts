@@ -1,0 +1,6 @@
+# Rebuilt from package-lock.json and by `npm run build`; never commit them.
+node_modules/
+dist/
+.env
+.env.*
+!.env.example

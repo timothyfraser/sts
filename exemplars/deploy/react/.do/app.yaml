@@ -1,0 +1,37 @@
+# DigitalOcean App Platform spec: the Vite front end, built with a Dockerfile.
+#
+# Same recipe as the API's spec: GitHub repo + branch, Autodeploy on, Build
+# strategy = Dockerfile, Run command left EMPTY (the nginx image starts
+# itself), smallest instance size.
+#
+# Use it one of two ways:
+#   1. In the DigitalOcean control panel: Create > App Platform, pick your repo,
+#      then open the app's Settings > App Spec, paste this file, and save.
+#   2. With the doctl command-line tool, from the repo root:
+#        doctl apps create --spec exemplars/deploy/react/.do/app.yaml
+#
+# Before you use it: change `repo:`/`branch:` to your own copy, and set
+# VITE_API_URL to your API's live URL (deploy the API first). It is not a
+# secret: it is written into the built page.
+name: sts-test-web
+region: nyc
+services:
+  - name: web
+    github:
+      repo: timothyfraser/sts
+      branch: v2027
+      deploy_on_push: true          # "Autodeploy": every push to the branch rebuilds
+    source_dir: exemplars/deploy    # build context, relative to the repo root
+    dockerfile_path: exemplars/deploy/react/Dockerfile
+    # No run_command on purpose: the nginx image's own start command runs.
+    # App Platform sets PORT to http_port inside the container; nginx listens on $PORT.
+    http_port: 8080
+    instance_size_slug: basic-xxs   # the $5/month size
+    instance_count: 1
+    health_check:
+      http_path: /
+    envs:
+      # BUILD_TIME variables reach the Dockerfile as build args (ARG VITE_API_URL).
+      - key: VITE_API_URL
+        value: "https://your-api-name.ondigitalocean.app"
+        scope: BUILD_TIME

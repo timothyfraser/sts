@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deploy test</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Deploy test</h1>
+      <p class="lede">One page that calls the course test API. If all three boxes fill in, both halves are deployed and talking to each other.</p>
+      <p class="api">API: <code id="api-url"></code></p>
+
+      <section>
+        <h2>GET /echo</h2>
+        <form id="echo-form">
+          <label>Message <input id="echo-msg" value="hello" /></label>
+          <button type="submit">Send</button>
+        </form>
+        <pre id="echo-out" aria-live="polite">(waiting)</pre>
+      </section>
+
+      <section>
+        <h2>POST /sum</h2>
+        <form id="sum-form">
+          <label>a <input id="sum-a" type="number" value="2" step="any" /></label>
+          <label>b <input id="sum-b" type="number" value="3" step="any" /></label>
+          <button type="submit">Add</button>
+        </form>
+        <pre id="sum-out" aria-live="polite">(waiting)</pre>
+      </section>
+
+      <section>
+        <h2>GET /plot</h2>
+        <button id="plot-btn" type="button">New histogram</button>
+        <p id="plot-status" aria-live="polite"></p>
+        <img id="plot-img" alt="Histogram of 100 random normal draws, drawn by the API" />
+      </section>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
