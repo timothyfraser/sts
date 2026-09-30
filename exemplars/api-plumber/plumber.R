@@ -43,6 +43,12 @@ read_spatial = function() {
   )
 }
 
+#* @apiTitle STS Exemplar API
+#* @apiDescription The course's example Plumber API: rooftop solar adoption in Japanese municipalities (/trend), Boston polling places joined to precincts (/spatial-join), a stub model (/predict), and precinct GeoJSON (/geo). Try any route below with "Try it out".
+#* @apiVersion 1.0.0
+#* @plumber
+function(pr) pr
+
 #* CORS for the React starter origin (env ALLOWED_ORIGIN)
 #* @filter cors
 function(req, res) {

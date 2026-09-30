@@ -25,3 +25,7 @@
 table caption{text-align:left;padding-bottom:var(--s2)}
 tbody tr{cursor:pointer}
 tbody tr.on{background:var(--accent-soft)}
+
+/* Chart card + table card: size each to its own content. Grid items stretch by
+   default, which left ~250px of empty card under the chart when the table is taller. */
+.two{align-items:start}
