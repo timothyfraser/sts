@@ -1,0 +1,29 @@
+/* src/styles/app.css: the few styles this app adds on top of the kit. Tokens only. */
+.wrap{max-width:1120px;margin:0 auto;padding:var(--s6) var(--s4);display:grid;gap:var(--s5)}
+.stack{display:grid;gap:var(--s3);align-content:start}
+
+/* Stage indicator: amber while fake data is wired, green on the real API. */
+.stage{display:inline-flex;align-items:center;gap:var(--s2);padding:2px var(--s3);border-radius:999px;font-size:13px;font-weight:600;border:1px solid}
+.stage::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.stage-warn{color:var(--warn);background:var(--warn-soft);border-color:var(--warn)}
+.stage-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);border-color:var(--ok)}
+
+/* Request counter. */
+.reqs{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.reqs b{font-family:var(--mono);font-size:16px;color:var(--fg)}
+
+/* Overview: year cards are links. */
+.years{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--s3)}
+.year{text-decoration:none;color:inherit;transition:border-color .15s,transform .15s}
+.year:hover,.year:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
+
+/* Detail: horizontal bars. */
+.hbars{display:grid;gap:var(--s1)}
+.hbar{display:grid;grid-template-columns:5.5em 1fr 4em;gap:var(--s2);align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.hbar .track{height:12px;background:var(--data-soft);border-radius:var(--r);overflow:hidden}
+.hbar .track i{display:block;height:100%;background:var(--data)}
+.hbar .num{text-align:right}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:4px var(--s2);border-bottom:1px solid var(--line)}
+.tw{text-align:right;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion: reduce){.year{transition:none}.year:hover{transform:none}}
