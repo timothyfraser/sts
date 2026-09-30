@@ -58,6 +58,19 @@
 
 ------------------------------------------------------------------------
 
+## Reference deployments
+
+The four apps in `exemplars/` run live on the course's Posit Connect server, so you can see each one working before you build your own. They are rebuilt from this repository's `v2027` branch by the teaching team.
+
+| Exemplar | Folder | Live at |
+|---|---|---|
+| Plumber API (the data every app below reads) | `exemplars/api-plumber/` | <https://connect.systems-apps.com/sts-api/> (try `/health`, or `/__docs__/` for the interactive route list) |
+| React starter | `exemplars/react-starter/` | <https://connect.systems-apps.com/sts-react-starter/> |
+| React map | `exemplars/react-map/` | <https://connect.systems-apps.com/sts-react-map/> |
+| Staged app (mockup, fake, real data) | `exemplars/app-staged/` | <https://connect.systems-apps.com/sts-app-staged/> |
+
+How the API is bundled: Posit Connect looks for `plumber.R` at the top of the bundle, so the reference deploy ships a small folder holding `plumber.R` next to the `data/` files it reads. `exemplars/api-plumber/manifest.json` describes exactly that folder (`plumber.R`, `data/jp_solar.csv`, and the three `data/boston_voting/` files) and pins the R packages it needs (plumber, sf, dplyr, readr, jsonlite). Each React app is built with `VITE_API_URL` pointing at the API above, and its `dist/` folder is published as a static site. When you deploy your own copies, use your own content names so you never overwrite these.
+
 ## Getting Started
 
 To get started, run the `workshops/packages.R` script to install prerequisite packages. Or type into the console:
