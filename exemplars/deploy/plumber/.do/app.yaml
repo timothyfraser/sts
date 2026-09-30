@@ -1,0 +1,40 @@
+# DigitalOcean App Platform spec: the course test API (Plumber) from GitHub.
+#
+# This file writes down the clicks of the "Create App" screen, so nothing is
+# left to memory: GitHub repo + branch, Autodeploy on, Build strategy =
+# Dockerfile, Run command left EMPTY (the Dockerfile's CMD starts the app),
+# smallest instance size.
+#
+# Use it one of two ways:
+#   1. In the DigitalOcean control panel: Create > App Platform, pick your repo,
+#      then open the app's Settings > App Spec, paste this file, and save.
+#   2. With the doctl command-line tool, from the repo root:
+#        doctl apps create --spec exemplars/deploy/plumber/.do/app.yaml
+#
+# Before you use it, change `repo:` to YOUR copy of the repository
+# (your-github-name/your-repo), and `branch:` to the branch you deploy from.
+# DigitalOcean can only build a repo you have let its GitHub app see.
+name: sts-test-api
+region: nyc
+services:
+  - name: api
+    github:
+      repo: timothyfraser/sts
+      branch: v2027
+      deploy_on_push: true          # "Autodeploy": every push to the branch redeploys
+    # Build context (the folder Docker can see) and the Dockerfile, both
+    # relative to the root of the repository.
+    source_dir: exemplars/deploy
+    dockerfile_path: exemplars/deploy/plumber/Dockerfile
+    # No run_command on purpose: the Dockerfile's CMD ["Rscript", "run.R"] runs.
+    # App Platform sends traffic to http_port and also sets PORT to the same
+    # number inside the container; run.R listens on $PORT. 8080 is the default.
+    http_port: 8080
+    instance_size_slug: basic-xxs   # the $5/month size (shown as 512 MB RAM, 1 shared vCPU)
+    instance_count: 1
+    health_check:
+      http_path: /echo              # a cheap route that answers 200 once R is up
+    envs:
+      - key: ALLOWED_ORIGIN         # which web page may call the API (CORS); "*" = any
+        value: "*"
+        scope: RUN_TIME

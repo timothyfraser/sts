@@ -1,0 +1,14 @@
+/* style.css: plain, readable, no framework. */
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; line-height: 1.5; }
+body { margin: 0; padding: 2rem 1rem; }
+main { max-width: 40rem; margin: 0 auto; }
+h1 { margin: 0 0 .25rem; }
+.lede { margin-top: 0; }
+section { border: 1px solid #8884; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+h2 { font-size: 1rem; margin: 0 0 .5rem; font-family: ui-monospace, monospace; }
+form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
+input { width: 7rem; padding: .3rem; }
+#echo-msg { width: 12rem; }
+button { padding: .35rem .8rem; cursor: pointer; }
+pre { background: #8881; padding: .5rem; border-radius: 6px; white-space: pre-wrap; }
+img { max-width: 100%; display: block; margin-top: .5rem; }
