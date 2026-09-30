@@ -1,0 +1,72 @@
+/* Copied from the STS Starter Kit, tokens.css v1.0. Edit here, not in the kit. */
+/* =====================================================================
+   STS Starter Kit - tokens.css  (kit version 1.0)
+   ---------------------------------------------------------------------
+   Every colour, font, spacing step and radius the kit uses, as CSS
+   custom properties. Components read these with var(--token) and never
+   hard-code a value.
+
+   HOW TO USE IN YOUR APP
+   Copy this file into your app (for example src/styles/tokens.css) and
+   import it once from your entry file. Do NOT import it from this
+   design folder: your app must build on its own, and a copy lets you
+   change the accent without touching the kit.
+
+   THREE BLOCKS, SAME NAMES
+   1. :root                      light theme (the default)
+   2. @media prefers dark        dark theme when the reader's system is
+                                 dark, unless the page forces light
+   3. :root[data-theme="dark"]   dark theme when the page forces dark
+   Blocks 2 and 3 hold the same values. Change one, change the other.
+   ===================================================================== */
+
+:root {
+  /* --- Neutrals: warm greys for the page, panels, text and rules --- */
+  --bg:#F7F7F4;           /* page background, behind every panel */
+  --surface:#FFFFFF;      /* cards, tables, inputs: anything that sits on --bg */
+  --fg:#1C1C1A;           /* body text and headings */
+  --muted:#5F615C;        /* labels, notes, axis text; secondary words */
+  --line:#DCDDD7;         /* borders, table rules, chart gridlines */
+
+  /* --- Accent: the one colour for actions and the selected thing --- */
+  --accent:#0F6E56;       /* primary button, selected chip border, highlighted bar */
+  --accent-ink:#FFFFFF;   /* text and icons placed ON --accent */
+  --accent-soft:#DDF0E9;  /* quiet fill for a selected chip or row */
+
+  /* --- Data: the colour for chart marks and "explain this" buttons --- */
+  --data:#2A52E6;         /* bars, lines, points; info button text */
+  --data-soft:#E4EAFF;    /* info button fill, light data backgrounds */
+
+  /* --- Semantic: meaning only, never decoration --- */
+  --warn:#B4520A;         /* empty / caution state border */
+  --warn-soft:#FBE8D5;    /* empty / caution state fill */
+  --bad:#B42318;          /* error state border; a worse-than-before number */
+  --bad-soft:#FBE3E0;     /* error state fill */
+  --ok:#0F6E56;           /* a better-than-before number */
+
+  /* --- Type: one family, two faces --- */
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;  /* everything people read */
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; /* code, query strings, aligned numbers */
+
+  /* --- Shape and space: one radius, a fixed spacing ladder --- */
+  --r:8px;                /* the one corner radius (pills are for chips only) */
+  --s1:4px;               /* inside a tile: label to value */
+  --s2:8px;               /* tight groups: heading to its text */
+  --s3:12px;              /* controls in a row; small card padding */
+  --s4:16px;              /* card padding; gap between cards; page gutter */
+  --s5:24px;              /* between groups inside a section */
+  --s6:32px;              /* page top and bottom padding */
+  --s7:48px;              /* between page sections */
+}
+
+/* Dark theme, following the reader's system setting (unless the page says light). */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#141513; --surface:#1D1F1C; --fg:#ECEDE8; --muted:#A3A69E; --line:#33362F;
+  --accent:#4FCBA6; --accent-ink:#0B2A21; --accent-soft:#163A30;
+  --data:#8FA7FF; --data-soft:#1E2A5C; --warn:#F0A05C; --warn-soft:#3F2A14; --bad:#F08A80; --bad-soft:#44201C; --ok:#4FCBA6; color-scheme:dark } }
+
+/* Dark theme, forced by the page with <html data-theme="dark">. Same values as above. */
+:root[data-theme="dark"] {
+  --bg:#141513; --surface:#1D1F1C; --fg:#ECEDE8; --muted:#A3A69E; --line:#33362F;
+  --accent:#4FCBA6; --accent-ink:#0B2A21; --accent-soft:#163A30;
+  --data:#8FA7FF; --data-soft:#1E2A5C; --warn:#F0A05C; --warn-soft:#3F2A14; --bad:#F08A80; --bad-soft:#44201C; --ok:#4FCBA6; color-scheme:dark }

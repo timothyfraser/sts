@@ -1,0 +1,7 @@
+# Installed packages and the build output are rebuilt from package-lock.json; never commit them.
+node_modules/
+dist/
+# Local environment files hold your own settings; only .env.example is committed.
+.env
+.env.*
+!.env.example

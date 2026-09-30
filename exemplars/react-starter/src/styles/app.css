@@ -1,0 +1,27 @@
+/* src/styles/app.css: the few styles this app adds on top of the kit.
+   Tokens only (var(--...)): no raw colours, so the dark theme still works. */
+
+/* Page frame: one column, 16px gutter on a phone, centred and capped on a laptop. */
+.wrap{max-width:1120px;margin:0 auto;padding:var(--s6) var(--s4);display:grid;gap:var(--s5)}
+.stack{display:grid;gap:var(--s2);align-content:start}   /* heading + the thing under it */
+
+/* The chart: the tooltip is positioned inside this box. */
+.chart{position:relative;min-width:0}
+.chart svg{display:block;max-width:100%;overflow:visible}
+.chart .mark{fill:var(--data);cursor:pointer;transition:opacity .15s}
+.chart .mark.on{fill:var(--accent)}                       /* selected = accent (kit rule: data is blue until selected) */
+.chart .mark:hover{opacity:.8}
+.chart .mark:focus-visible{outline:none;stroke:var(--fg);stroke-width:2}
+.chart .axis text{fill:var(--muted);font:12px var(--sans);font-variant-numeric:tabular-nums}
+.chart .axis line,.chart .axis path{stroke:var(--line)}
+
+/* Tooltip: sits above the hovered bar. pointer-events:none so it never steals the hover. */
+.tip{position:absolute;transform:translate(-50%,calc(-100% - 8px));pointer-events:none;
+  display:grid;gap:2px;padding:var(--s2) var(--s3);white-space:nowrap;
+  background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 4px 12px color-mix(in srgb,var(--fg) 12%,transparent);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* Table: a clicked row gets the accent's quiet fill, matching the selected bar. */
+table caption{text-align:left;padding-bottom:var(--s2)}
+tbody tr{cursor:pointer}
+tbody tr.on{background:var(--accent-soft)}
