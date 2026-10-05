@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STS Starter Kit</title>
+<meta name="description" content="Preview of the STS Starter Kit: the tokens and components the student React + Plumber template uses.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../tokens.css?v=1">
+<link rel="stylesheet" href="../components.css?v=1">
+<style>
+/* Preview-page layout only. Nothing below ships in an app. */
+body{padding-block:var(--s6);padding-inline:var(--s4)}
+.wrap{max-width:960px;margin:0 auto;display:grid;gap:var(--s7)}
+section{display:grid;gap:var(--s4)}
+.head{display:grid;gap:var(--s2)}
+.top{display:flex;justify-content:space-between;align-items:start;gap:var(--s4);flex-wrap:wrap}
+.cm{color:var(--muted)}
+/* colour swatches */
+.sw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:var(--s3)}
+.sw div{border-radius:var(--r);border:1px solid var(--line);padding:var(--s3);font-family:var(--mono);font-size:12px;min-height:72px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px}
+/* type scale */
+.scale{display:grid;gap:var(--s2)}
+.scale > div{display:flex;align-items:baseline;gap:var(--s4);border-bottom:1px solid var(--line);padding-bottom:var(--s2);flex-wrap:wrap}
+.scale small{font-family:var(--mono);color:var(--muted);font-size:12px;min-width:12ch}
+/* rules list */
+.rules{display:grid;gap:var(--s2)}
+.rules div{display:grid;grid-template-columns:auto 1fr;gap:var(--s3);align-items:baseline}
+.rules b{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500;letter-spacing:.04em;min-width:8ch}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<section class="head">
+  <div class="top">
+    <h1>STS Starter Kit</h1>
+    <button class="btn btn-secondary" id="theme" type="button" aria-pressed="false">Switch to dark</button>
+  </div>
+  <p class="lede">A small, neutral design system for the student React + Plumber template. One accent, one data colour, three states, seven spacing steps.</p>
+  <p class="note">The page below is the kit used as a working dashboard, so what you see is what the template ships. Example figures only.</p>
+</section>
+
+<section>
+  <div class="head"><h2>How a student app looks out of the box</h2><p>The react-starter template renders this shell against the api-plumber <code>/trend</code> endpoint. Tokens only, no raw hex in components.</p></div>
+  <div class="shell" role="region" aria-label="Example dashboard">
+    <header><b>Solar installs by month</b><span class="row"><span class="chip on">2016</span><span class="chip">2017</span><span class="chip">All</span></span></header>
+    <div class="body">
+      <div class="k4">
+        <div class="card kpi"><span class="l">Municipalities</span><span class="v">1,741</span><span class="d up">+12 this year</span></div>
+        <div class="card kpi"><span class="l">Installs (2016)</span><span class="v">140,599</span><span class="d up">+8.4% vs 2015</span></div>
+        <div class="card kpi"><span class="l">Mean rate / 1,000</span><span class="v">2.31</span><span class="d down">−0.06 vs 2015</span></div>
+        <div class="card kpi"><span class="l">Last fetch</span><span class="v sm">212 ms</span><span class="d">GET /trend?year=2016</span></div>
+      </div>
+      <div class="two">
+        <div class="card">
+          <h3>Installs by month</h3>
+          <canvas id="c1" width="640" height="300" role="img" aria-label="Bar chart of solar installs by month for 2016, March highlighted; the peak is November"></canvas>
+          <div class="legend"><span><i class="k-data"></i>installs</span><span><i class="k-accent"></i>selected month</span></div>
+        </div>
+        <div class="card">
+          <h3>Top municipalities</h3>
+          <div class="tw"><table>
+            <thead><tr><th>Municipality</th><th class="n">Installs</th><th class="n">Rate</th></tr></thead>
+            <tbody>
+              <tr><td>Hamamatsu</td><td class="n">3,412</td><td class="n">4.21</td></tr>
+              <tr><td>Kumamoto</td><td class="n">2,987</td><td class="n">4.03</td></tr>
+              <tr><td>Okayama</td><td class="n">2,640</td><td class="n">3.66</td></tr>
+              <tr><td>Kagoshima</td><td class="n">2,215</td><td class="n">3.71</td></tr>
+              <tr><td>Miyazaki</td><td class="n">1,902</td><td class="n">4.75</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="head"><h2>Colour</h2><p>Warm-grey neutrals, a green accent for actions, a blue for data marks. Semantic colours are separate and never used as decoration.</p></div>
+  <div class="sw">
+    <div style="background:var(--bg)">--bg</div>
+    <div style="background:var(--surface)">--surface</div>
+    <div style="background:var(--fg);color:var(--bg)">--fg</div>
+    <div style="background:var(--muted);color:var(--bg)">--muted</div>
+    <div style="background:var(--line)">--line</div>
+    <div style="background:var(--accent);color:var(--accent-ink)">--accent</div>
+    <div style="background:var(--accent-soft)">--accent-soft</div>
+    <div style="background:var(--data);color:var(--bg)">--data</div>
+    <div style="background:var(--data-soft)">--data-soft</div>
+    <div style="background:var(--ok);color:var(--bg)">--ok</div>
+    <div style="background:var(--warn);color:var(--bg)">--warn</div>
+    <div style="background:var(--bad);color:var(--bg)">--bad</div>
+  </div>
+</section>
+
+<section>
+  <div class="head"><h2>Type</h2><p>Two faces from one family: the sans for everything students read, the mono for code, query strings and numbers that must line up.</p></div>
+  <div class="scale">
+    <div><small>h1 · 32–40 / 600</small><span style="font-size:32px;font-weight:600;line-height:1.2">Trips by hour, one station</span></div>
+    <div><small>h2 · 22 / 600</small><span style="font-size:22px;font-weight:600">Where the data comes from</span></div>
+    <div><small>h3 · 16 / 600</small><span style="font-size:16px;font-weight:600">Installs by month</span></div>
+    <div><small>body · 16 / 400</small><span>The API returns one row per month; the chart draws one bar per row.</span></div>
+    <div><small>label · 13 / muted</small><span style="font-size:13px;color:var(--muted)">Mean rate per 1,000 households</span></div>
+    <div><small>mono · 13.5</small><code>GET /trend?year=2016 → 12 rows</code></div>
+  </div>
+</section>
+
+<section>
+  <div class="head"><h2>Controls</h2><p>Three button roles and one chip. Primary is the one thing to do on a screen. Info reveals or explains. Secondary does everything else.</p></div>
+  <div class="row">
+    <button class="btn btn-primary" type="button">Run query</button>
+    <button class="btn btn-secondary" type="button">Reset</button>
+    <button class="btn btn-info" type="button">How is this computed?</button>
+  </div>
+  <div class="row" role="group" aria-label="Travel mode">
+    <button class="chip on" type="button" aria-pressed="true">walk</button>
+    <button class="chip" type="button" aria-pressed="false">bike</button>
+    <button class="chip" type="button" aria-pressed="false">drive</button>
+  </div>
+  <div class="row">
+    <label class="f">Origin <select><option>JFK</option><option>LGA</option><option>EWR</option></select></label>
+    <label class="f">Month <input type="number" min="1" max="12" value="6"></label>
+  </div>
+</section>
+
+<section>
+  <div class="head"><h2>The three states every panel has</h2><p>A panel is never blank. The template ships these, and the ship check refuses a page that lacks them.</p></div>
+  <div class="grid">
+    <div class="card state" role="status"><span class="t">Loading trips…</span><span class="note">GET /trips?station=A32000</span><div class="bar"><i></i></div></div>
+    <div class="card state warn"><span class="t">No rows for this filter</span><span class="note">Try a wider date range, or clear the carrier filter.</span><button class="btn btn-secondary" type="button">Clear filters</button></div>
+    <div class="card state err"><span class="t">The API did not answer</span><span class="note">GET /trend returned 502 after 8 s. Check that the Plumber app is running, then retry.</span><button class="btn btn-secondary" type="button">Retry</button></div>
+  </div>
+</section>
+
+<section>
+  <div class="head"><h2>Rules the template enforces</h2></div>
+  <div class="card rules">
+    <div><b>TOKENS</b><span>Components use <code>var(--token)</code> only. A raw hex value in a component is a lint error.</span></div>
+    <div><b>SPACING</b><span>Seven steps, 4 to 48 px. Gaps between siblings come from <code>gap</code>, not margins.</span></div>
+    <div><b>RADIUS</b><span>One radius, 8 px. Pills are for chips only.</span></div>
+    <div><b>NUMBERS</b><span>Tabular numerals in every table, KPI and axis.</span></div>
+    <div><b>STATES</b><span>Loading, empty and error are built in every fetch hook and rendered by every panel.</span></div>
+    <div><b>PHONE</b><span>One column at 400 px; no horizontal scroll; 44 px touch targets.</span></div>
+    <div><b>DARK</b><span>Both themes from the same tokens; the accent is legible on both grounds.</span></div>
+  </div>
+  <pre><span class="cm">/* src/styles/tokens.css in your app: copied from the kit, never imported from the design folder */</span>
+:root { --bg:#F7F7F4; --surface:#FFFFFF; --fg:#1C1C1A; --muted:#5F615C; --line:#DCDDD7;
+        --accent:#0F6E56; --accent-soft:#DDF0E9; --data:#2A52E6; --data-soft:#E4EAFF;
+        --ok:#0F6E56; --warn:#B4520A; --bad:#B42318; --r:8px; --s4:16px; }</pre>
+</section>
+
+</main>
+
+<script>
+// Draws the example bar chart from the tokens, so it follows the theme.
+function drawChart() {
+  var c = document.getElementById('c1'); if (!c) return;
+  var ctx = c.getContext('2d'); var cs = getComputedStyle(document.documentElement);
+  var tok = function (n) { return cs.getPropertyValue(n).trim(); };
+  var vals = [8200, 9100, 14800, 12500, 11900, 10400, 9800, 9300, 12100, 13600, 15900, 13000]; // example figures
+  var names = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  var sel = 2;  // the highlighted (selected) month
+  var W = c.width, H = c.height, pl = 46, pr = 10, pt = 14, pb = 28;
+  var max = 16000, step = 4000;
+  ctx.clearRect(0, 0, W, H);
+  ctx.font = '12px ' + tok('--mono'); ctx.fillStyle = tok('--muted'); ctx.strokeStyle = tok('--line'); ctx.lineWidth = 1;
+  for (var v = 0; v <= max; v += step) {             // gridlines + y labels
+    var y = pt + (H - pt - pb) * (1 - v / max);
+    ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(W - pr, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText((v / 1000) + 'k', pl - 6, y + 4);
+  }
+  var bw = (W - pl - pr) / vals.length;
+  vals.forEach(function (v, i) {                    // one bar per month
+    var x = pl + i * bw + bw * 0.18, w = bw * 0.64, h = (H - pt - pb) * v / max, y = H - pb - h;
+    ctx.fillStyle = (i === sel) ? tok('--accent') : tok('--data');
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = tok('--muted'); ctx.textAlign = 'center'; ctx.fillText(names[i], x + w / 2, H - 10);
+  });
+  ctx.fillStyle = tok('--fg'); ctx.textAlign = 'center';
+  ctx.fillText(vals[sel].toLocaleString('en-US'), pl + sel * bw + bw / 2, pt + (H - pt - pb) * (1 - vals[sel] / max) - 6);
+}
+
+// Theme switch: sets data-theme on <html>; tokens.css does the rest.
+(function () {
+  var root = document.documentElement, btn = document.getElementById('theme');
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  function isDark() { var t = root.getAttribute('data-theme'); return t ? t === 'dark' : mq.matches; }
+  function sync() { var d = isDark(); btn.textContent = d ? 'Switch to light' : 'Switch to dark'; btn.setAttribute('aria-pressed', String(d)); drawChart(); }
+  btn.addEventListener('click', function () { root.setAttribute('data-theme', isDark() ? 'light' : 'dark'); sync(); });
+  if (mq.addEventListener) mq.addEventListener('change', sync);
+  sync();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawChart); // redraw once Plex Mono loads
+})();
+
+// Chips in the Controls section toggle like a single-choice filter.
+document.querySelectorAll('[role="group"] .chip').forEach(function (chip, _, all) {
+  chip.addEventListener('click', function () {
+    all.forEach(function (c) { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
+    chip.classList.add('on'); chip.setAttribute('aria-pressed', 'true');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "sts-react-starter",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A minimal Vite + React page that asks the api-plumber exemplar for /trend and draws one chart and one table.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "d3": "7.9.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.7.0",
+    "vite": "5.4.21"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -11,6 +11,7 @@
 library(dplyr) # for tidy data wrangling
 library(readr) # for reading in data
 library(viridis) # for visualization
+library(ggplot2) # for visualization
 # Mapping packages
 library(sf) # for spatial data.frames
 # library(rgdal) # for background geospatial operations (might not need this anymore)

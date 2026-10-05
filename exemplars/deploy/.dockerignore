@@ -1,0 +1,7 @@
+# Build context for both Dockerfiles is exemplars/deploy/.
+# Keep locally installed packages and old builds out of the image:
+# the image installs and builds its own.
+**/node_modules
+**/dist
+**/.env
+**/.env.*

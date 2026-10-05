@@ -348,7 +348,7 @@ m4$residuals %>% scale() %>% hist()
 # We could use advanced regression techniques.
 # We can add a spatial correlation 
 
-library(sdep)
+library(spdep)
 # The MASS::glmmPQL() function lets us do penalized 
 # https://stats.oarc.ucla.edu/r/faq/how-do-i-model-a-spatially-autocorrelated-outcome/
 

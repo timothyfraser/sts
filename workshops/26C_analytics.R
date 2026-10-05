@@ -46,8 +46,7 @@ plot(g)
 # What does a bipartite network look like?
 
 # We'd need to generate a graph layout - ggraph can help
-layout = ggraph(graph = g, layout = "fr") %>%
-  with(data)  %>%
+layout = ggraph::create_layout(g, layout = "fr") %>%
   mutate(id = 1:n()) %>%
   # Return each node with its new x-y variables
   select(id, x, y, name, type)

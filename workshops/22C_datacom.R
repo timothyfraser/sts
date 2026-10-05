@@ -47,7 +47,7 @@
 
 # 0. Packages ###############################################
 
-library(dpylr) # data wrangling
+library(dplyr) # data wrangling
 library(readr) # reading data
 library(ggplot2) # visualizing data
 library(viridis) # for color palettes

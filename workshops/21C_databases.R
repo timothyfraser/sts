@@ -107,22 +107,23 @@
 # I generated many other variables too, 
 # saved in `data/bluebikes/stationbg_dataset.rds.`
 # Let's look at them real quick.
-read_rds("data/bluebikes/stationbg_dataset.rds") %>% 
-  select(-contains("smooth")) %>%
-  names()
 
 
 # 0. Setup #################################
 
 ## 0.1 Load Packages ##################################
 
-library(dpylr) # data wrangling
+library(dplyr) # data wrangling
 library(readr) # reading data
 library(ggplot2) # visualizing data
 library(DBI) # for databases
 library(dbplyr) # data wrangling for databases
 library(RSQLite) # for SQLite
 library(stringr) # for string manipulation
+
+read_rds("data/bluebikes/stationbg_dataset.rds") %>% 
+  select(-contains("smooth")) %>%
+  names()
 
 ## 0.2 Loading bluebikes ##############################
 
@@ -669,7 +670,7 @@ rm(list = ls())
 # Use your skills developed in Single Node Join to test it out.
 # Hint: use pop_hisplat_2020_smooth5.
 
-# See solutions in 21S_databases.R.
+# See the answers to this exercise in 21S_databases.R.
 
 
 
@@ -681,7 +682,7 @@ rm(list = ls())
 # to a majority Non-Hispanic/Non-Latino neighborhood?
 
 
-# See solutions in 21S_databases.R.
+# See the answers to this exercise in 21S_databases.R.
 
 ### LC 3 ####################################################
 
@@ -690,7 +691,7 @@ rm(list = ls())
 # Compare this against getting the total number of trips during PM rush hour between 2017 and 2021.
 
 
-# See solutions in 21S_databases.R.
+# See the answers to this exercise in 21S_databases.R.
 
 
 

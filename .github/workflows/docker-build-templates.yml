@@ -1,0 +1,55 @@
+# docker-build-templates.yml: prove the two deployment Dockerfiles in
+# exemplars/deploy/ build, and that each image serves on whatever $PORT it is given.
+#
+# Manual only: Actions tab > docker-build-templates > Run workflow.
+# It builds locally on the runner and pushes nothing. It uses no secrets.
+name: docker-build-templates
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: plumber
+            # POST /sum?a=2&b=3 must answer 5, and data/ must be inside the image.
+            check: |
+              curl -fsS "http://localhost:9090/echo?msg=hi"
+              test "$(curl -fsS -X POST 'http://localhost:9090/sum?a=2&b=3')" = "5"
+              curl -fsS -o /dev/null -w 'plot %{http_code} %{content_type}\n' http://localhost:9090/plot
+              docker exec app ls data/example.csv
+          - image: react
+            check: |
+              curl -fsS http://localhost:9090/ | grep -q '<title>Deploy test</title>'
+              curl -fsS -o /dev/null -w 'fallback %{http_code}\n' http://localhost:9090/some/client/route
+    name: docker build (${{ matrix.image }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: docker build
+        run: |
+          docker build -f exemplars/deploy/${{ matrix.image }}/Dockerfile \
+            --build-arg VITE_API_URL=http://localhost:8080 \
+            -t sts-deploy-${{ matrix.image }}:ci exemplars/deploy
+          docker image ls sts-deploy-${{ matrix.image }}:ci
+
+      - name: run on PORT=9090 (not the default 8080) and smoke-test
+        run: |
+          docker run -d --name app -e PORT=9090 -p 9090:9090 sts-deploy-${{ matrix.image }}:ci
+          for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:9090/ 2>/dev/null && break; \
+            curl -fsS -o /dev/null "http://localhost:9090/echo" 2>/dev/null && break; sleep 2; done
+          set -e
+          ${{ matrix.check }}
+          echo "OK: ${{ matrix.image }} image serves on \$PORT=9090"
+
+      - name: container log
+        if: always()
+        run: docker logs app || true

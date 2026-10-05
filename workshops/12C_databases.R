@@ -11,6 +11,7 @@ library(readr)
 library(sf)
 library(ggplot2)
 library(viridis)
+library(stringr)
 
 # Equal Area projection
 aea <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"

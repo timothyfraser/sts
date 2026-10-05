@@ -1,0 +1,89 @@
+/* Copied from the STS Starter Kit, components.css v1.0. Edit here, not in the kit. */
+/* =====================================================================
+   STS Starter Kit - components.css  (kit version 1.0)
+   ---------------------------------------------------------------------
+   The kit's components. Load tokens.css first. Every value here is a
+   var(--token) or a plain size (font sizes, 44px touch targets); there
+   is no raw colour anywhere in this file.
+   ===================================================================== */
+
+/* --- Base: page, box model, headings, text --- */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans)}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:600}
+h3{font-size:16px;font-weight:600}
+p{margin:0;max-width:72ch}
+.lede{color:var(--muted);font-size:18px}             /* the sentence under a page title */
+.note{color:var(--muted);font-size:14px}             /* small supporting text */
+code,pre{font-family:var(--mono);font-size:13.5px}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);overflow-x:auto;margin:0;line-height:1.5}
+
+/* --- Layout helpers: gaps come from gap, never from margins --- */
+.row{display:flex;gap:var(--s3);flex-wrap:wrap;align-items:center}        /* controls side by side, wrapping on a phone */
+.grid{display:grid;gap:var(--s4);grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.two{display:grid;gap:var(--s4);grid-template-columns:1fr}                /* chart + table: stacked on a phone... */
+@media (min-width:760px){.two{grid-template-columns:3fr 2fr}}            /* ...side by side on a laptop */
+.k4{display:grid;gap:var(--s3);grid-template-columns:repeat(auto-fit,minmax(150px,1fr))} /* a row of KPI tiles */
+.k4 .card{padding:var(--s3)}
+
+/* --- App shell: the frame a dashboard lives in --- */
+.shell{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.shell header{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.shell header b{font-weight:600}
+.shell .body{padding:var(--s4);display:grid;gap:var(--s4)}
+
+/* --- Card: the panel everything sits in --- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);min-width:0}
+
+/* --- Buttons: three roles --- */
+/* primary = the one thing to do on this screen; secondary = everything else; info = reveal or explain */
+.btn{font:500 15px var(--sans);border-radius:var(--r);padding:10px 16px;border:1px solid transparent;cursor:pointer;min-height:44px}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-secondary{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn-info{background:var(--data-soft);color:var(--data)}
+.btn:focus-visible{outline:2px solid var(--data);outline-offset:2px}
+
+/* --- Chip: a filter you toggle; the only pill shape in the kit --- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:13px var(--sans);color:var(--fg);padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+button.chip{cursor:pointer;min-height:44px}           /* a chip that is a real button still gets a 44px target */
+button.chip:focus-visible{outline:2px solid var(--data);outline-offset:2px}
+
+/* --- Form fields: a label wraps its control --- */
+label.f{display:grid;gap:4px;font-size:14px;color:var(--muted)}
+select,input{font:15px var(--sans);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;min-height:44px}
+select:focus-visible,input:focus-visible{outline:2px solid var(--data);outline-offset:2px}
+
+/* --- KPI tile: label, value, change --- */
+.kpi{display:grid;gap:var(--s1)}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .v.sm{font-size:18px}                            /* a value that is text, such as a timing */
+.kpi .d{font-size:13px;font-variant-numeric:tabular-nums}
+.up{color:var(--ok)} .down{color:var(--bad)}
+
+/* --- Chart and table --- */
+canvas{width:100%;height:auto;display:block}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:500;font-size:13px}
+td.n,th.n{text-align:right}                           /* numbers right-aligned so digits line up */
+.tw{overflow-x:auto}                                  /* a wide table scrolls inside its card, never the page */
+
+/* --- The three states every panel has: loading, empty, error --- */
+.state{display:grid;gap:var(--s2);align-content:center;justify-items:start;min-height:120px}
+.state .t{font-weight:600}
+.state.warn{border-color:var(--warn);background:var(--warn-soft)}   /* empty: the query worked, no rows */
+.state.err{border-color:var(--bad);background:var(--bad-soft)}      /* error: the query failed */
+.bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;width:100%}  /* loading bar */
+.bar i{display:block;height:100%;width:38%;background:var(--accent);border-radius:999px;animation:load 1.4s ease-in-out infinite alternate}
+@keyframes load{to{width:82%}}
+@media (prefers-reduced-motion:reduce){.bar i{animation:none;width:60%}}
+
+/* --- Legend: one key per colour on a chart --- */
+.legend{display:flex;gap:var(--s4);flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+.legend .k-data{background:var(--data)}
+.legend .k-accent{background:var(--accent)}

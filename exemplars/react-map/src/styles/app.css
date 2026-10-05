@@ -1,0 +1,32 @@
+/* src/styles/app.css: the few styles this app adds on top of the kit.
+   Tokens only (var(--...)): no raw colours outside the token blocks, so the dark theme still works. */
+
+/* Map tokens: a five-step sequential ramp built on the kit's --data blue, plus a
+   no-data grey. TurnoutMap.jsx reads these with getComputedStyle, because MapLibre
+   paint properties need real colour strings. Light first, then the two dark blocks. */
+:root{--ramp-1:#E4EAFF;--ramp-2:#B3C3FA;--ramp-3:#7D96F2;--ramp-4:#4A6AEA;--ramp-5:#1F3BB0;--nodata:#C9CAC4}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ramp-1:#1E2A5C;--ramp-2:#2F4494;--ramp-3:#4D67C9;--ramp-4:#7F98F5;--ramp-5:#BFCDFF;--nodata:#44473F}}
+:root[data-theme="dark"]{--ramp-1:#1E2A5C;--ramp-2:#2F4494;--ramp-3:#4D67C9;--ramp-4:#7F98F5;--ramp-5:#BFCDFF;--nodata:#44473F}
+
+/* Page frame: one column, 16px gutter on a phone, centred and capped on a laptop. */
+.wrap{max-width:1120px;margin:0 auto;padding:var(--s6) var(--s4);display:grid;gap:var(--s5)}
+.stack{display:grid;gap:var(--s2);align-content:start}
+
+/* The map box: MapLibre fills .map-canvas; the tooltip is positioned inside .map. */
+.map{position:relative;min-width:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.map-canvas{height:clamp(340px,60vh,560px);width:100%;background:var(--bg)}
+.maplibregl-ctrl-group{background:var(--surface)}
+
+/* Tooltip: sits above the pointer. pointer-events:none so it never steals the hover. */
+.tip{position:absolute;transform:translate(-50%,calc(-100% - 12px));pointer-events:none;z-index:2;
+  display:grid;gap:2px;padding:var(--s2) var(--s3);white-space:nowrap;
+  background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 4px 12px color-mix(in srgb,var(--fg) 12%,transparent);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* Legend: one row per class; the class under the pointer gets the accent's quiet fill. */
+.ramp{list-style:none;margin:0;padding:0;display:grid;gap:var(--s1)}
+.ramp li{display:grid;grid-template-columns:20px 1fr auto;gap:var(--s2);align-items:center;padding:6px var(--s2);border-radius:var(--r);font-size:14px;font-variant-numeric:tabular-nums;transition:background .15s}
+.ramp li.on{background:var(--accent-soft)}
+.ramp i{width:20px;height:14px;border-radius:3px;border:1px solid var(--line)}
+.ramp .k-nodata{background:var(--nodata)}
+@media (prefers-reduced-motion:reduce){.ramp li{transition:none}}
